@@ -21,4 +21,9 @@ The choice of a register-based architecture over a stack-based design was driven
     - Easier to implement specialized instructions
     - More straightforward analysis of data flow
 
-## 
+## Why dedicated clear and secret registers
+
+1. **Implicit reveal and hide**
+   - Having dedicated registers for secret and clear values allows us to implicitly reveal and hide values as they're moved between registers.
+   - Separation of registers allows for optimizations to be applied specifically to clear or secret operations.
+   - Avoids having to track the type of the virtual register during runtime as values may become secret shared or reveal through the course of execution.

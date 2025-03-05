@@ -3,7 +3,7 @@
 ## [Introduction](./introduction.md)
 Welcome to Stoffel!! Read through here to learn about what Stoffel is!
 
-## [Architecture](./architecture.md)
+## [Architecture](./architecture/architecture.md)
 Overview of the virtual machine architecture and design rationale.
 
 ## [Development](./development.md)

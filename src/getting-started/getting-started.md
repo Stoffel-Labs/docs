@@ -238,9 +238,9 @@ vec![
 ```
 
 ## Further Reading
-- Check the [examples](../examples/) directory for more complex programs
-- Review the [test cases](../src/core_vm.rs) for implementation details
-- Explore the [hook system](../src/runtime_hooks.rs) for debugging
+- Check the [examples](https://github.com/Stoffel-Labs/StoffelVM/tree/main/examples) directory for more complex programs
+- Review the [test cases](https://github.com/Stoffel-Labs/StoffelVM/blob/0e8543c2c9953dfd9d309af56258e2df1130c106/src/core_vm.rs#L542) for implementation details
+- Explore the [hook system](https://github.com/Stoffel-Labs/StoffelVM/blob/0e8543c2c9953dfd9d309af56258e2df1130c106/src/core_vm.rs#L2187) for debugging
 
 ## Contributing
 Contributions are welcome! Please:

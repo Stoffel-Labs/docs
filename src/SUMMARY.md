@@ -6,9 +6,7 @@
 - [Why Stoffel?](./introduction/why-stoffel.md)
 
 # Getting Started
-- [Installation](./getting-started/installation.md)
-- [Quick Start](./getting-started/quick-start.md)
-- [Basic Usage](./getting-started/basic-usage.md)
+- [Quick Start](./getting-started/getting-started.md)
 
 # Architecture
 - [Rationale](./architecture/rationale.md)

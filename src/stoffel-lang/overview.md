@@ -33,108 +33,109 @@ StoffelLang is designed with the following principles:
 
 ### Basic Syntax
 
-```javascript
-// Variables and types
-let x: i32 = 42;
-let y = 3.14;  // Type inference
-let name = "Stoffel";
-let is_active = true;
+```
+# Variables and types
+let x: int64 = 42
+let y = 3.14  # Type inference
+let name = "Stoffel"
+let is_active = true
 
-// Functions
-fn add(a: i32, b: i32) -> i32 {
-    return a + b;
-}
+# Functions
+proc add(a: int64, b: int64): int64 =
+  return a + b
 
-// Control flow
-if x > 0 {
-    println("Positive");
-} else {
-    println("Non-positive");
-}
+# Control flow
+if x > 0:
+  print("Positive")
+else:
+  print("Non-positive")
 
-// Loops
-for i in 0..10 {
-    println("Count: {}", i);
-}
+# Loops
+for i in 0..10:
+  print("Count: " + $i)
 ```
 
 ### MPC-Specific Syntax
 
-```javascript
-// Secret types
-fn secure_add(a: secret i32, b: secret i32) -> secret i32 {
-    return a + b;
-}
+```
+# Secret types
+proc secure_add(a: secret int64, b: secret int64): secret int64 =
+  return a + b
 
-// Mixed computation
-fn threshold_check(secret_value: secret i32, threshold: i32) -> secret bool {
-    return secret_value > threshold;
-}
+# Mixed computation
+proc threshold_check(secret_value: secret int64, threshold: int64): secret bool =
+  return secret_value > threshold
 
-// Reveal operations
-fn main() {
-    let secret_sum = secure_add(25, 17);
-    let public_result = reveal(secret_sum);
-    println("Result: {}", public_result);
-}
+# Reveal operations (conceptual - actual implementation varies)
+proc main() =
+  let secret_sum = secure_add(25, 17)
+  print("Computation completed securely")
 ```
 
 ### Advanced Features
 
-```javascript
-// Closures
-let multiplier = |x: i32| -> i32 { x * 2 };
-let result = multiplier(21);
+```
+# Type definitions
+type Person = object
+  name: string
+  age: int64
+  is_secret: bool
 
-// Generics (planned)
-fn identity<T>(value: T) -> T {
-    return value;
-}
+# Object creation
+let alice = Person(
+  name: "Alice",
+  age: 25,
+  is_secret: false
+)
 
-// Pattern matching (planned)
-match value {
-    Some(x) => println("Value: {}", x),
-    None => println("No value"),
-}
+# Enum definitions (planned)
+type Status = enum
+  Active
+  Inactive
+  Pending
 ```
 
 ## Type System
 
 ### Primitive Types
 
-- **`i32`, `i64`**: Signed integers
-- **`u32`, `u64`**: Unsigned integers
-- **`f32`, `f64`**: Floating-point numbers
-- **`bool`**: Boolean values
+- **`int64`**: 64-bit signed integers (primary integer type)
+- **`bool`**: Boolean values (`true`, `false`)
 - **`string`**: UTF-8 strings
+- **`nil`**: Null/empty value
 
 ### Collection Types
 
-- **Arrays**: `[T; N]` for fixed-size, `Vec<T>` for dynamic
-- **Objects**: Key-value mappings similar to JavaScript objects
-- **Tuples**: `(T1, T2, ...)` for heterogeneous data
+- **Objects**: Structured data with named fields
+- **Enums**: Enumerated types with named variants
+- **Lists**: Dynamic arrays (planned)
+- **Tuples**: Fixed-size heterogeneous collections (planned)
 
 ### Secret Types
 
 Any type can be made secret by prefixing with `secret`:
 
-```javascript
-let public_value: i32 = 42;
-let secret_value: secret i32 = 42;
-let secret_array: secret [i32; 10] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+```
+let public_value: int64 = 42
+let secret_value: secret int64 = 42
+let secret_name: secret string = "Alice"
 ```
 
 ### Function Types
 
-```javascript
-// Function types
-type BinaryOp = fn(i32, i32) -> i32;
-let add: BinaryOp = |a, b| a + b;
+```
+# Function definitions
+proc add(a: int64, b: int64): int64 =
+  return a + b
 
-// Closures with captured variables
-fn make_adder(x: i32) -> fn(i32) -> i32 {
-    return |y| x + y;
-}
+proc multiply(x: int64, y: int64): int64 =
+  return x * y
+
+# Functions can call other functions
+proc calculate(a: int64, b: int64): int64 =
+  let sum = add(a, b)
+  let product = multiply(a, b)
+  return sum + product
 ```
 
 ## Compilation Process
@@ -142,7 +143,7 @@ fn make_adder(x: i32) -> fn(i32) -> i32 {
 StoffelLang follows a multi-stage compilation process:
 
 ```
-Source (.stfl) → Lexer → Parser → Type Checker → Code Generator → Bytecode (.stfb)
+Source (.stfl) → Lexer → Parser → Type Checker → Code Generator → Bytecode (.stfbin)
 ```
 
 ### Compilation Stages
@@ -157,10 +158,10 @@ Source (.stfl) → Lexer → Parser → Type Checker → Code Generator → Byte
 
 ```bash
 # Different optimization levels
-stoffellang -O0 source.stfl    # No optimization (debug)
-stoffellang -O1 source.stfl    # Basic optimization
-stoffellang -O2 source.stfl    # Standard optimization
-stoffellang -O3 source.stfl    # Maximum optimization
+stoffel compile source.stfl -O0    # No optimization (debug)
+stoffel compile source.stfl -O1    # Basic optimization
+stoffel compile source.stfl -O2    # Standard optimization
+stoffel compile source.stfl -O3    # Maximum optimization
 ```
 
 ## Integration with StoffelVM
@@ -174,7 +175,7 @@ StoffelLang compiles to StoffelVM bytecode, which includes:
 
 ### Binary Format
 
-The compiler generates `.stfb` files that contain:
+The compiler generates `.stfbin` files that contain:
 
 ```
 ┌─────────────────┐
@@ -198,16 +199,16 @@ The compiler generates `.stfb` files that contain:
 
 ```bash
 # Basic compilation
-stoffellang source.stfl
+stoffel compile source.stfl
 
 # Generate VM-compatible binary
-stoffellang -b source.stfl
+stoffel compile source.stfl --binary
 
 # Enable optimizations
-stoffellang -O2 -b source.stfl
+stoffel compile source.stfl --binary -O2
 
 # Print intermediate representations
-stoffellang --print-ir source.stfl
+stoffel compile source.stfl --print-ir
 ```
 
 ### Integration with Stoffel CLI
@@ -219,79 +220,67 @@ The StoffelLang compiler is integrated with the main Stoffel CLI:
 stoffel compile src/main.stfl
 
 # Compile with optimizations
-stoffel compile --binary -O3
+stoffel compile src/main.stfl --binary -O3
 
-# Watch mode for development
-stoffel dev
+# Development workflow
+stoffel compile src/main.stfl --binary --output app.stfbin
+stoffel-run app.stfbin main
 ```
 
 ## Examples
 
 ### Hello World
 
-```javascript
-fn main() {
-    println("Hello, world!");
-}
+```
+proc main() =
+  print("Hello, world!")
 ```
 
 ### Secure Addition
 
-```javascript
-fn secure_add(a: secret i32, b: secret i32) -> secret i32 {
-    return a + b;
-}
+```
+proc secure_add(a: secret int64, b: secret int64): secret int64 =
+  return a + b
 
-fn main() {
-    let result = secure_add(25, 17);
-    let revealed = reveal(result);
-    println("Secure addition result: {}", revealed);
-}
+proc main() =
+  let result = secure_add(25, 17)
+  print("Secure addition completed")
 ```
 
 ### Complex Data Structures
 
-```javascript
-struct Person {
-    name: string,
-    age: secret i32,
-    email: string,
-}
+```
+type Person = object
+  name: string
+  age: secret int64
+  email: string
 
-fn process_person(person: Person) -> secret bool {
-    return person.age >= 18;
-}
+proc process_person(person: Person): bool =
+  # Note: Age comparison would need special MPC operations
+  return true  # Simplified for example
 
-fn main() {
-    let alice = Person {
-        name: "Alice",
-        age: secret(25),
-        email: "alice@example.com",
-    };
+proc main() =
+  let alice = Person(
+    name: "Alice",
+    age: secret(25),
+    email: "alice@example.com"
+  )
 
-    let is_adult = process_person(alice);
-    let result = reveal(is_adult);
-    println("Is adult: {}", result);
-}
+  let is_adult = process_person(alice)
+  print("Person processed: " + $is_adult)
 ```
 
-### Arrays and Iteration
+### Basic Computation
 
-```javascript
-fn sum_array(arr: secret [i32; 5]) -> secret i32 {
-    let sum = secret(0);
-    for i in 0..5 {
-        sum = sum + arr[i];
-    }
-    return sum;
-}
+```
+proc calculate_total(base: int64, multiplier: int64): int64 =
+  return base * multiplier
 
-fn main() {
-    let numbers = secret([1, 2, 3, 4, 5]);
-    let total = sum_array(numbers);
-    let result = reveal(total);
-    println("Sum: {}", result);
-}
+proc main() =
+  let base_value: int64 = 100
+  let factor: int64 = 3
+  let total = calculate_total(base_value, factor)
+  print("Total: " + $total)
 ```
 
 ## Future Features

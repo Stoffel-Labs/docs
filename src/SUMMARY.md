@@ -29,7 +29,13 @@
 - [Using the VM](./stoffel-vm/usage.md)
 - [Built-in Functions](./stoffel-vm/builtins.md)
 
-# Python SDK
+# Rust SDK
+- [SDK Overview](./rust-sdk/overview.md)
+- [Installation](./rust-sdk/installation.md)
+- [API Reference](./rust-sdk/api.md)
+- [Examples](./rust-sdk/examples.md)
+
+# Python SDK (WIP)
 - [SDK Overview](./python-sdk/overview.md)
 - [Installation](./python-sdk/installation.md)
 - [API Reference](./python-sdk/api.md)

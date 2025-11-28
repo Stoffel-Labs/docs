@@ -1,0 +1,305 @@
+# Examples
+
+## Simple Local Execution
+
+The most basic usage - compile and run locally without MPC:
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+
+fn main() -> Result<()> {
+    let source = r#"
+        def add(a: int64, b: int64) -> int64:
+            return a + b
+
+        main main() -> int64:
+            return add(10, 20)
+    "#;
+
+    let result = Stoffel::compile(source)?
+        .execute_local()?;
+
+    println!("Result: {:?}", result);  // Output: I64(30)
+    Ok(())
+}
+```
+
+## MPC Configuration
+
+Configure for multi-party computation:
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+
+fn main() -> Result<()> {
+    let source = r#"
+        def secure_sum(a: secret int64, b: secret int64) -> secret int64:
+            return a + b
+
+        main main() -> int64:
+            return 0
+    "#;
+
+    let runtime = Stoffel::compile(source)?
+        .parties(5)           // 5-party MPC
+        .threshold(1)         // Tolerate 1 Byzantine party
+        .instance_id(42)      // Unique computation ID
+        .build()?;
+
+    // Test locally first
+    let result = runtime.program().execute_local()?;
+    println!("Local test: {:?}", result);
+
+    // Access configuration
+    if let Some((parties, threshold, instance)) = runtime.mpc_config() {
+        println!("MPC: {} parties, threshold {}, instance {}",
+                 parties, threshold, instance);
+    }
+
+    Ok(())
+}
+```
+
+## Complete MPC Workflow
+
+End-to-end example with servers and clients:
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+use std::net::SocketAddr;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let source = r#"
+        def compute(a: secret int64, b: secret int64) -> secret int64:
+            return a * b + 100
+
+        main main() -> int64:
+            return 0
+    "#;
+
+    // Build runtime with MPC configuration
+    let runtime = Stoffel::compile(source)?
+        .parties(4)
+        .threshold(1)
+        .instance_id(1234)
+        .build()?;
+
+    // Create MPC servers
+    let mut server0 = runtime.server(0)
+        .with_preprocessing(10, 25)
+        .build()?;
+
+    let mut server1 = runtime.server(1)
+        .with_preprocessing(10, 25)
+        .build()?;
+
+    // Configure peer connections
+    let addr0: SocketAddr = "127.0.0.1:19200".parse().unwrap();
+    let addr1: SocketAddr = "127.0.0.1:19201".parse().unwrap();
+
+    server0.add_peer(1, addr1);
+    server1.add_peer(0, addr0);
+
+    // Start listeners
+    server0.bind_and_listen(addr0).await?;
+    server1.bind_and_listen(addr1).await?;
+
+    // Initialize nodes
+    server0.initialize_node()?;
+    server1.initialize_node()?;
+
+    // Connect peers
+    server0.connect_to_peers().await?;
+    server1.connect_to_peers().await?;
+
+    // Create client with secret inputs
+    let mut client = runtime.client(100)
+        .with_inputs(vec![42, 17])
+        .build()?;
+
+    client.add_server(0, addr0);
+    client.add_server(1, addr1);
+
+    // Execute MPC
+    client.connect_to_servers().await?;
+    client.send_inputs().await?;
+    let result = client.receive_outputs().await?;
+
+    println!("MPC Result: {:?}", result);
+    Ok(())
+}
+```
+
+## Bytecode Operations
+
+Work with compiled bytecode:
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+
+fn main() -> Result<()> {
+    let source = r#"
+        def factorial(n: int64) -> int64:
+            if n <= 1:
+                return 1
+            return n * factorial(n - 1)
+
+        def fibonacci(n: int64) -> int64:
+            if n <= 1:
+                return n
+            var a: int64 = 0
+            var b: int64 = 1
+            for i in 2..n:
+                var temp = a + b
+                a = b
+                b = temp
+            return b
+
+        main main() -> int64:
+            return factorial(5)
+    "#;
+
+    let runtime = Stoffel::compile(source)?.build()?;
+    let program = runtime.program();
+
+    // List available functions
+    for func in program.list_functions()? {
+        println!("Function: {} ({} params, {} registers)",
+                 func.name, func.parameters.len(), func.register_count);
+    }
+
+    // Execute different functions
+    let fact_result = program.execute_local_function("factorial")?;
+    println!("factorial(5) = {:?}", fact_result);
+
+    // Execute with arguments
+    let fib_result = program.execute_local_with_args("fibonacci", vec![Value::I64(10)])?;
+    println!("fibonacci(10) = {:?}", fib_result);
+
+    // Save bytecode for later
+    program.save("my_program.stfb")?;
+
+    Ok(())
+}
+```
+
+## Loading Saved Bytecode
+
+Load and execute previously compiled programs:
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+use std::fs;
+
+fn main() -> Result<()> {
+    // Load bytecode from file
+    let bytecode = fs::read("my_program.stfb")?;
+
+    let runtime = Stoffel::load(bytecode)?
+        .parties(5)
+        .threshold(1)
+        .build()?;
+
+    let result = runtime.program().execute_local()?;
+    println!("Result: {:?}", result);
+
+    Ok(())
+}
+```
+
+## Network Configuration from TOML
+
+Use a configuration file for network settings:
+
+```toml
+# stoffel.toml
+[network]
+party_id = 0
+bind_address = "127.0.0.1:9001"
+bootstrap_address = "127.0.0.1:9000"
+min_parties = 4
+
+[mpc]
+n_parties = 5
+threshold = 1
+instance_id = 12345
+```
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+
+fn main() -> Result<()> {
+    let runtime = Stoffel::compile_file("program.stfl")?
+        .network_config_file("stoffel.toml")?
+        .build()?;
+
+    // Network config is automatically applied
+    println!("Runtime configured from TOML");
+
+    Ok(())
+}
+```
+
+## Error Handling
+
+Comprehensive error handling example:
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+use stoffel_rust_sdk::error::Error;
+
+fn main() {
+    let source = r#"
+        main main() -> int64:
+            return 42
+    "#;
+
+    match run_mpc(source) {
+        Ok(result) => println!("Success: {:?}", result),
+        Err(Error::CompilationError(msg)) => {
+            eprintln!("Compilation failed: {}", msg);
+        }
+        Err(Error::Configuration(msg)) => {
+            eprintln!("Invalid configuration: {}", msg);
+        }
+        Err(Error::Network(msg)) => {
+            eprintln!("Network error: {}", msg);
+        }
+        Err(Error::RuntimeError(msg)) => {
+            eprintln!("Runtime error: {}", msg);
+        }
+        Err(e) => {
+            eprintln!("Other error: {:?}", e);
+        }
+    }
+}
+
+fn run_mpc(source: &str) -> Result<Value> {
+    let runtime = Stoffel::compile(source)?
+        .parties(5)
+        .threshold(1)
+        .build()?;
+
+    runtime.program().execute_local()
+}
+```
+
+## Using the CLI Template
+
+The easiest way to get started:
+
+```bash
+# Create a new Rust MPC project
+stoffel init my-mpc-app --template rust
+cd my-mpc-app
+
+# Build and run
+cargo run
+```
+
+The generated project includes a complete example with:
+- SDK integration
+- StoffelLang program
+- MPC configuration
+- Ready-to-run code

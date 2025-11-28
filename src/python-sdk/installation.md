@@ -1,1 +1,91 @@
 # Installation
+
+> **Status: Work in Progress**
+>
+> The Python SDK is under active development. Installation instructions will be finalized when the SDK reaches beta.
+
+## Repository
+
+Clone the SDK repository to get started:
+
+```bash
+git clone https://github.com/Stoffel-Labs/stoffel-python-sdk.git
+cd stoffel-python-sdk
+```
+
+## Development Installation
+
+For contributors and early adopters:
+
+```bash
+# With Poetry (recommended)
+poetry install
+
+# Or with pip in development mode
+pip install -e .
+```
+
+## Future Installation
+
+Once the SDK reaches stable release, it will be available via pip:
+
+```bash
+pip install stoffel-python-sdk
+```
+
+## Prerequisites
+
+The Python SDK requires:
+
+- Python 3.8 or higher
+- StoffelVM shared library (`libstoffel_vm.so` / `libstoffel_vm.dylib`)
+- StoffelLang compiler (included with Stoffel CLI)
+
+### Building StoffelVM Shared Library
+
+```bash
+# Clone and build StoffelVM
+git clone https://github.com/Stoffel-Labs/StoffelVM.git
+cd StoffelVM
+cargo build --release
+
+# The shared library will be at:
+# Linux: target/release/libstoffel_vm.so
+# macOS: target/release/libstoffel_vm.dylib
+```
+
+## Current Alternative
+
+For production use today, the [Rust SDK](../rust-sdk/overview.md) is fully functional:
+
+```bash
+# Add to your Cargo.toml
+[dependencies]
+stoffel-rust-sdk = { git = "https://github.com/Stoffel-Labs/stoffel-rust-sdk" }
+```
+
+Or use the CLI to create a Rust project:
+
+```bash
+stoffel init my-project --template rust
+```
+
+## Using the Python Template
+
+Even while the SDK is in development, you can scaffold a Python project structure:
+
+```bash
+stoffel init my-python-project --template python
+```
+
+This creates:
+- Project structure with `pyproject.toml`
+- StoffelLang program in `stoffel/src/program.stfl`
+- Python entry point ready for SDK integration
+- Test scaffolding with pytest
+
+## Next Steps
+
+- **[SDK Overview](./overview.md)**: Understand the SDK architecture
+- **[API Reference](./api.md)**: See the target API design
+- **[Rust SDK](../rust-sdk/overview.md)**: Use the production-ready alternative

@@ -1,1 +1,196 @@
 # Examples
+
+> **Status: Work in Progress**
+>
+> These examples demonstrate the target API. Some functionality may not yet be implemented.
+
+## Basic Usage
+
+### Simple Computation
+
+```python
+import asyncio
+from stoffel import StoffelProgram, StoffelClient
+
+async def main():
+    # Compile the program
+    program = StoffelProgram("add.stfl")
+    program.compile()
+
+    # Connect to MPC network
+    client = StoffelClient({
+        "nodes": ["http://node1:9000", "http://node2:9000", "http://node3:9000"],
+        "client_id": "demo_client",
+        "program_id": "addition"
+    })
+
+    # Execute with secret inputs
+    result = await client.execute_with_inputs(
+        secret_inputs={"a": 25, "b": 17}
+    )
+
+    print(f"Result: {result}")
+    await client.disconnect()
+
+asyncio.run(main())
+```
+
+### Local Testing
+
+Test your program locally before deploying to MPC:
+
+```python
+from stoffel import StoffelProgram
+
+program = StoffelProgram("my_program.stfl")
+program.compile()
+
+# Test with sample inputs
+result = program.execute_locally({
+    "input_a": 100,
+    "input_b": 200
+})
+
+print(f"Local result: {result}")
+```
+
+## Use Case Examples
+
+### Healthcare Data Privacy
+
+```python
+async def analyze_patient_data():
+    client = StoffelClient(config)
+
+    result = await client.execute_with_inputs(
+        secret_inputs={
+            "patient_age": 45,
+            "blood_pressure": 120,
+            "cholesterol": 180
+        },
+        public_inputs={
+            "analysis_type": "cardiovascular_risk"
+        }
+    )
+
+    return result
+```
+
+### Financial Computation
+
+```python
+async def calculate_credit_score():
+    client = StoffelClient(config)
+
+    result = await client.execute_with_inputs(
+        secret_inputs={
+            "income": 75000,
+            "debt": 15000,
+            "payment_history_score": 95
+        },
+        public_inputs={
+            "model_version": "v2"
+        }
+    )
+
+    return result
+```
+
+### Secure Auction
+
+```python
+async def submit_bid():
+    client = StoffelClient(config)
+
+    result = await client.execute_with_inputs(
+        secret_inputs={
+            "bid_amount": 1500,
+            "max_price": 2000
+        },
+        public_inputs={
+            "auction_id": "auction_123",
+            "item_category": "electronics"
+        }
+    )
+
+    return result
+```
+
+## Error Handling
+
+```python
+from stoffel import StoffelClient
+from stoffel.errors import NetworkError, MPCError, CompilationError
+
+async def safe_execution():
+    client = StoffelClient(config)
+
+    try:
+        result = await client.execute_with_inputs(
+            secret_inputs={"value": 42}
+        )
+        return result
+    except NetworkError as e:
+        print(f"Connection failed: {e}")
+    except MPCError as e:
+        print(f"MPC protocol error: {e}")
+    except CompilationError as e:
+        print(f"Program compilation failed: {e}")
+    finally:
+        await client.disconnect()
+```
+
+## Working Examples Today
+
+While the Python SDK is in development, you can:
+
+### 1. Use the Rust SDK
+
+See [Rust SDK Examples](../rust-sdk/examples.md) for production-ready code.
+
+### 2. Create a Python Project Template
+
+```bash
+stoffel init my-python-project --template python
+cd my-python-project
+```
+
+This creates a project structure ready for SDK integration:
+
+```
+my-python-project/
+├── pyproject.toml
+├── src/my_python_project/
+│   └── main.py
+├── stoffel/
+│   └── src/program.stfl
+└── tests/
+    └── test_main.py
+```
+
+### 3. Compile and Run StoffelLang Directly
+
+```bash
+# Compile and run with the CLI
+stoffel compile stoffel/src/program.stfl --binary
+stoffel run
+```
+
+## Repository Examples
+
+The Python SDK repository includes example code:
+
+```bash
+git clone https://github.com/Stoffel-Labs/stoffel-python-sdk.git
+cd stoffel-python-sdk
+
+# Run examples (when available)
+poetry run python examples/simple_api_demo.py
+poetry run python examples/complete_workflow.py
+```
+
+## Next Steps
+
+- **[API Reference](./api.md)**: Full API documentation
+- **[Rust SDK Examples](../rust-sdk/examples.md)**: Working code examples
+- **[StoffelLang Syntax](../stoffel-lang/syntax.md)**: Write your computation

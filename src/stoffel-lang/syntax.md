@@ -10,7 +10,7 @@ StoffelLang uses `#` for comments:
 
 ```
 # This is a single-line comment
-let x = 42  # Inline comment
+var x = 42  # Inline comment
 
 # Multi-line comments can be created
 # by using multiple single-line comments
@@ -24,17 +24,17 @@ let x = 42  # Inline comment
 - Case-sensitive
 
 ```
-let my_variable = 10
-let _private_value = "secret"
-let camelCase = true
-let snake_case_name = "Alice"
+var my_variable = 10
+var _private_value = "secret"
+var camelCase = true
+var snake_case_name = "Alice"
 ```
 
 **Reserved keywords:**
 ```
-let var proc type object enum
+var def type object enum main
 if else elif while for in
-return yield break continue
+return break continue
 true false nil secret discard
 ```
 
@@ -42,17 +42,20 @@ true false nil secret discard
 
 ### Variable Declarations
 
-StoffelLang supports immutable (`let`) and mutable (`var`) variables:
+StoffelLang uses `var` for variable declarations:
 
 ```
-# Immutable variables
-let name: string = "Alice"
-let age: int64 = 25
-let is_active = true  # Type inference
+# Variable with type inference
+var name = "Alice"
+var age = 25
+var is_active = true
 
-# Mutable variables
+# Variable with explicit type annotation
 var counter: int64 = 0
-var status = "pending"  # Type inference
+var status: string = "pending"
+
+# Variable declaration without initialization (requires type)
+var result: int64
 ```
 
 ### Type Annotations
@@ -60,10 +63,9 @@ var status = "pending"  # Type inference
 Explicit type annotations use colon syntax:
 
 ```
-let count: int64 = 100
-let message: string = "Hello"
-let flag: bool = false
-let empty: nil = nil
+var count: int64 = 100
+var message: string = "Hello"
+var flag: bool = false
 ```
 
 ### Type Inference
@@ -71,119 +73,128 @@ let empty: nil = nil
 StoffelLang can infer types from context:
 
 ```
-let inferred_int = 42        # int64
-let inferred_string = "text" # string
-let inferred_bool = true     # bool
+var inferred_int = 42        # int64
+var inferred_string = "text" # string
+var inferred_bool = true     # bool
 ```
 
 ## Primitive Types
 
 ### Integer Types
 
-StoffelLang primarily uses `int64`:
+StoffelLang supports multiple integer types:
 
 ```
-let small_number: int64 = 10
-let large_number: int64 = 9223372036854775807
-let negative: int64 = -42
+# Signed integers
+var a: int64 = 100
+var b: int32 = 50
+var c: int16 = 25
+var d: int8 = 10
+
+# Unsigned integers
+var e: uint64 = 100
+var f: uint32 = 50
+var g: uint16 = 25
+var h: uint8 = 10
+
+# Typed integer literals
+var typed_i64 = 42i64
+var typed_u32 = 100u32
+var typed_i8 = 127i8
 ```
 
 ### Boolean Type
 
 ```
-let is_ready: bool = true
-let is_complete: bool = false
-
-# Boolean operations
-let result = true and false  # false
-let combined = true or false # true
-let negated = not true       # false
+var is_ready: bool = true
+var is_complete: bool = false
 ```
 
 ### String Type
 
 ```
-let greeting: string = "Hello, world!"
-let empty_string: string = ""
-let multiline = "First line\nSecond line"
-
-# String concatenation
-let full_name = "Alice" + " " + "Smith"
-let message = "Count: " + $42  # Convert int to string with $
+var greeting: string = "Hello, world!"
+var empty_string: string = ""
 ```
 
 ### Nil Type
 
 ```
-let nothing: nil = nil
-let maybe_value = nil  # Type inferred as nil
+var nothing = nil
 ```
 
 ## Secret Types
 
-The `secret` keyword creates MPC-aware types:
+The `secret` keyword creates MPC-aware types for secure computation:
 
 ```
-# Secret primitive types
-let secret_age: secret int64 = 25
-let secret_name: secret string = "Bob"
-let secret_flag: secret bool = true
+# Secret variable declaration
+secret var my_secret = 42
 
-# Secret values in computations
-proc secure_comparison(a: secret int64, b: secret int64): secret bool =
-  return a > b
+# Secret with explicit type
+var secret_value: secret int64 = 100
 
-# Mixed public/secret operations
-proc threshold_check(secret_value: secret int64, public_threshold: int64): secret bool =
-  return secret_value >= public_threshold
+# Secret function parameter
+def process_secret(data: secret int64) -> secret int64:
+    return data * 2
 ```
+
+**Important Constraints:**
+- Secret values **cannot** be used in `if` or `while` conditions
+- Comparisons involving secrets produce secret boolean results
+- Use `ClientStore.take_share()` to get secret inputs from MPC clients
 
 ## Functions
 
 ### Function Definitions
 
-Functions use the `proc` keyword:
+Functions use the `def` keyword:
 
 ```
 # Basic function
-proc greet(name: string): string =
-  return "Hello, " + name
+def greet(name: string) -> string:
+    return "Hello, " + name
 
 # Function with multiple parameters
-proc add(a: int64, b: int64): int64 =
-  return a + b
+def add(a: int64, b: int64) -> int64:
+    return a + b
 
-# Function without return value (implicit nil return)
-proc log_message(msg: string) =
-  print(msg)
+# Function without return value
+def log_message(msg: string) -> nil:
+    print(msg)
 
 # Function with secret parameters
-proc secure_multiply(a: secret int64, b: secret int64): secret int64 =
-  return a * b
+def secure_multiply(a: secret int64, b: secret int64) -> secret int64:
+    return a * b
+```
+
+### Entry Point
+
+The program entry point uses the `main` keyword:
+
+```
+main main() -> int64:
+    return 42
 ```
 
 ### Function Calls
 
 ```
 # Basic function calls
-let result = add(10, 20)
-let greeting = greet("Alice")
+var result = add(10, 20)
+var greeting = greet("Alice")
 
 # Nested function calls
-let complex_result = add(add(1, 2), add(3, 4))
-
-# Secret function calls
-let secret_result = secure_multiply(secret(5), secret(6))
+var complex_result = add(add(1, 2), add(3, 4))
 ```
 
 ### Functions with Local Variables
 
 ```
-proc calculate_area(length: int64, width: int64): int64 =
-  let area = length * width
-  let formatted_msg = "Area calculated: " + $area
-  print(formatted_msg)
-  return area
+def calculate_area(length: int64, width: int64) -> int64:
+    var area = length * width
+    print("Area calculated")
+    return area
 ```
 
 ## Control Flow
@@ -193,32 +204,23 @@ proc calculate_area(length: int64, width: int64): int64 =
 ```
 # Basic if statement
 if age >= 18:
-  print("Adult")
+    print("Adult")
 
 # If-else
 if temperature > 30:
-  print("Hot")
+    print("Hot")
 else:
-  print("Not hot")
+    print("Not hot")
 
 # If-elif-else
 if score >= 90:
-  print("A grade")
+    print("A grade")
 elif score >= 80:
-  print("B grade")
+    print("B grade")
 elif score >= 70:
-  print("C grade")
+    print("C grade")
 else:
-  print("Below C grade")
-```
-
-### If Expressions
-
-If statements can be used as expressions:
-
-```
-let status = if age >= 18: "adult" else: "minor"
-let max_value = if a > b: a else: b
+    print("Below C grade")
 ```
 
 ### While Loops
@@ -227,129 +229,29 @@ let max_value = if a > b: a else: b
 # Basic while loop
 var count = 0
 while count < 10:
-  print("Count: " + $count)
-  count = count + 1
-
-# While with complex condition
-var running = true
-var attempts = 0
-while running and attempts < 5:
-  # Do something
-  attempts = attempts + 1
-  if attempts >= 3:
-    running = false
+    print("Counting")
+    count = count + 1
 ```
 
 ### For Loops
 
 ```
-# Range-based for loops
+# Range-based for loops (inclusive)
 for i in 0..10:
-  print("Number: " + $i)
-
-# For loop with step (conceptual - syntax may vary)
-for i in 0..20:
-  if i % 2 == 0:
-    print("Even: " + $i)
+    print("Number")
 ```
 
-## Data Structures
-
-### Object Types
+### Loop Control
 
 ```
-# Object type definition
-type Person = object
-  name: string
-  age: int64
-  email: string
-  is_active: bool
-
-# Object with secret fields
-type SecurePerson = object
-  name: string
-  age: secret int64
-  salary: secret int64
-  public_id: int64
-```
-
-### Object Creation and Access
-
-```
-# Creating objects
-let alice = Person(
-  name: "Alice Smith",
-  age: 30,
-  email: "alice@example.com",
-  is_active: true
-)
-
-# Accessing fields
-let person_name = alice.name
-let person_age = alice.age
-
-# Creating objects with secret fields
-let secure_employee = SecurePerson(
-  name: "Bob Jones",
-  age: secret(35),
-  salary: secret(75000),
-  public_id: 12345
-)
-```
-
-### Nested Objects
-
-```
-type Address = object
-  street: string
-  city: string
-  country: string
-
-type Employee = object
-  personal: Person
-  address: Address
-  employee_id: int64
-
-let employee = Employee(
-  personal: Person(
-    name: "Carol Davis",
-    age: 28,
-    email: "carol@company.com",
-    is_active: true
-  ),
-  address: Address(
-    street: "123 Main St",
-    city: "Tech City",
-    country: "USA"
-  ),
-  employee_id: 98765
-)
-
-# Accessing nested fields
-let employee_name = employee.personal.name
-let employee_city = employee.address.city
-```
-
-### Enum Types (Planned)
-
-```
-# Basic enum
-type Status = enum
-  Active
-  Inactive
-  Pending
-  Suspended
-
-# Enum with values
-type Priority = enum
-  Low = 1
-  Medium = 2
-  High = 3
-  Critical = 4
-
-# Using enums
-let current_status = Status.Active
-let task_priority = Priority.High
+# Break and continue
+var i = 0
+while i < 100:
+    i = i + 1
+    if i == 5:
+        continue
+    if i == 10:
+        break
 ```
 
 ## Operators
@@ -357,98 +259,180 @@ let task_priority = Priority.High
 ### Arithmetic Operators
 
 ```
-let a = 10
-let b = 3
+var a = 10
+var b = 3
 
-let sum = a + b      # 13
-let difference = a - b  # 7
-let product = a * b     # 30
-let quotient = a / b    # 3 (integer division)
-let remainder = a % b   # 1
+var sum = a + b         # 13
+var difference = a - b  # 7
+var product = a * b     # 30
+var quotient = a / b    # 3 (integer division)
+var remainder = a % b   # 1
 ```
 
 ### Comparison Operators
 
 ```
-let x = 10
-let y = 20
+var x = 10
+var y = 20
 
-let equal = x == y        # false
-let not_equal = x != y    # true
-let less_than = x < y     # true
-let less_equal = x <= y   # true
-let greater_than = x > y  # false
-let greater_equal = x >= y # false
+var equal = x == y        # false
+var not_equal = x != y    # true
+var less_than = x < y     # true
+var less_equal = x <= y   # true
+var greater_than = x > y  # false
+var greater_equal = x >= y # false
 ```
 
-### Logical Operators
+### Bitwise Operators
 
 ```
-let a = true
-let b = false
+var a = 5   # 0101 in binary
+var b = 3   # 0011 in binary
 
-let logical_and = a and b  # false
-let logical_or = a or b    # true
-let logical_not = not a    # false
+var and_result = a & b    # 1 (0001)
+var or_result = a | b     # 7 (0111)
+var xor_result = a ^ b    # 6 (0110)
+var not_result = ~a       # bitwise NOT
+var shift_left = a << 1   # 10
+var shift_right = a >> 1  # 2
 ```
 
-### String Operations
+## Built-in Functions
+
+### print
+
+Output text to the console:
 
 ```
-let first = "Hello"
-let second = "World"
-
-let combined = first + " " + second  # "Hello World"
-let with_number = "Count: " + $42    # "Count: 42"
+def greet() -> nil:
+    print("Hello, World!")
 ```
 
-## Advanced Features
+### ClientStore
 
-### Working with Secret Types
-
-```
-# Secret arithmetic
-proc secure_calculation(a: secret int64, b: secret int64, c: int64): secret int64 =
-  let secret_sum = a + b
-  let mixed_operation = secret_sum * c  # Public value used with secret
-  return mixed_operation
-
-# Secret comparisons
-proc secure_threshold(value: secret int64, threshold: int64): secret bool =
-  return value > threshold
-
-# Multiple secret operations
-proc complex_secure_calc(
-  secret_a: secret int64,
-  secret_b: secret int64,
-  public_factor: int64
-): secret int64 =
-  let temp1 = secret_a + secret_b
-  let temp2 = secret_a * secret_b
-  let result = (temp1 + temp2) * public_factor
-  return result
-```
-
-### Error Handling (Planned)
+Access secret inputs from MPC clients:
 
 ```
-# Try-catch blocks (future feature)
-try:
-  let result = risky_operation()
-  print("Success: " + $result)
-catch error:
-  print("Error occurred: " + error.message)
+# Get the number of connected clients
+var num_clients = ClientStore.get_number_clients()
+
+# Take a secret share from a client
+# Must be assigned to a secret variable!
+secret var client_input = ClientStore.take_share(0, 0)
+
+# Parameters: (party_id, share_index)
+secret var share1 = ClientStore.take_share(0, 0)  # Party 0, share 0
+secret var share2 = ClientStore.take_share(1, 0)  # Party 1, share 0
 ```
 
-### Pattern Matching (Planned)
+**Important:** Results from `ClientStore.take_share()` must be assigned to `secret` variables.
+
+## Working with Secret Types
+
+### Secret Arithmetic
 
 ```
-# Match expressions (future feature)
-let result = match status:
-  Status.Active: "Currently active"
-  Status.Inactive: "Not active"
-  Status.Pending: "Waiting for approval"
-  _: "Unknown status"
+def secure_calculation(a: secret int64, b: secret int64) -> secret int64:
+    var result = a + b
+    return result * 2
+
+def mixed_operation(secret_val: secret int64, public_val: int64) -> secret int64:
+    # Public values can be used with secrets
+    return secret_val * public_val
+```
+
+### MPC Input Pattern
+
+Common pattern for processing client inputs:
+
+```
+def process_client_inputs() -> secret int64:
+    # Get inputs from two clients
+    secret var input1 = ClientStore.take_share(0, 0)
+    secret var input2 = ClientStore.take_share(1, 0)
+
+    # Perform secure computation
+    return input1 + input2
+
+main main() -> nil:
+    var num_clients = ClientStore.get_number_clients()
+    secret var result = process_client_inputs()
+    print("Computation complete")
+```
+
+## Complete Examples
+
+### Fibonacci (Iterative)
+
+```
+def fibonacci(n: int64) -> int64:
+    if n <= 1:
+        return n
+    var a: int64 = 0
+    var b: int64 = 1
+    for i in 2..n:
+        var temp = a + b
+        a = b
+        b = temp
+    return b
+
+main main() -> int64:
+    return fibonacci(10)
+```
+
+### Factorial (Recursive)
+
+```
+def factorial(n: int64) -> int64:
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)
+
+main main() -> int64:
+    return factorial(5)  # Returns 120
+```
+
+### Secure Sum
+
+```
+def secure_sum() -> secret int64:
+    var num_clients = ClientStore.get_number_clients()
+    secret var total: secret int64 = ClientStore.take_share(0, 0)
+
+    # Note: In practice, you'd loop based on num_clients
+    secret var input2 = ClientStore.take_share(1, 0)
+    total = total + input2
+
+    return total
+
+main main() -> nil:
+    secret var result = secure_sum()
+    print("Sum computed")
+```
+
+## Data Structures (Planned)
+
+### Object Types
+
+> **Note:** Object types are parsed but have limited code generation support.
+
+```
+# Object type definition (planned)
+type Person = object
+    name: string
+    age: int64
+```
+
+### Enum Types
+
+> **Note:** Enum types are parsed but have limited code generation support.
+
+```
+# Enum definition (planned)
+type Status = enum
+    Active
+    Inactive
+    Pending
 ```
 
 ## Best Practices
@@ -457,117 +441,31 @@ let result = match status:
 
 ```
 # Use snake_case for variables and functions
-let user_name = "alice"
-let max_retry_count = 5
+var user_name = "alice"
+var max_retry_count = 5
 
-proc calculate_total_cost(base_price: int64, tax_rate: int64): int64 =
-  return base_price + (base_price * tax_rate / 100)
+def calculate_total_cost(base_price: int64, tax_rate: int64) -> int64:
+    return base_price + (base_price * tax_rate / 100)
 
-# Use PascalCase for types
+# Use PascalCase for types (when supported)
 type UserAccount = object
-  user_id: int64
-  account_balance: secret int64
-```
-
-### Type Safety
-
-```
-# Prefer explicit types for public interfaces
-proc public_api(user_id: int64, amount: secret int64): bool =
-  # Implementation
-  return true
-
-# Use type inference for local variables
-proc internal_calculation() =
-  let temp = 42  # Type inferred as int64
-  let message = "Processing"  # Type inferred as string
+    user_id: int64
 ```
 
 ### Secret Type Usage
 
 ```
 # Clearly distinguish between public and secret data
-proc process_transaction(
-  public_user_id: int64,
-  secret_amount: secret int64,
-  public_currency: string
-): secret bool =
-  # Only secret operations on secret data
-  let is_valid_amount = secret_amount > 0
-  return is_valid_amount
+def process_transaction(
+    public_user_id: int64,
+    secret_amount: secret int64
+) -> secret int64:
+    # Perform secure computation
+    return secret_amount * 2
 
-# Avoid unnecessary secret wrapping
-proc calculate_fee(amount: int64): int64 =  # Public calculation
-  return amount * 5 / 100
-
-proc apply_secret_fee(secret_amount: secret int64): secret int64 =
-  let fee_rate = 5  # Public constant
-  return secret_amount * fee_rate / 100  # Secret result
+# Avoid using secrets in conditions (not allowed!)
+# BAD: if secret_value > 0:  # This will fail!
+# GOOD: Keep secret values in computations only
 ```
 
-### Function Organization
-
-```
-# Small, focused functions
-proc validate_age(age: int64): bool =
-  return age >= 0 and age <= 150
-
-proc validate_email(email: string): bool =
-  # Simplified validation
-  return email.length > 0
-
-proc create_user(name: string, age: int64, email: string): Person =
-  # Use validation functions
-  if not validate_age(age):
-    # Error handling (simplified)
-    print("Invalid age")
-
-  if not validate_email(email):
-    print("Invalid email")
-
-  return Person(
-    name: name,
-    age: age,
-    email: email,
-    is_active: true
-  )
-```
-
-## Common Patterns
-
-### Data Processing
-
-```
-proc process_user_data(user: Person): string =
-  let age_category = if user.age < 18:
-    "minor"
-  elif user.age < 65:
-    "adult"
-  else:
-    "senior"
-
-  let status_text = if user.is_active: "active" else: "inactive"
-
-  return user.name + " (" + age_category + ", " + status_text + ")"
-```
-
-### Secret Computation Patterns
-
-```
-# Secure comparison with public result indication
-proc secure_age_check(secret_age: secret int64, min_age: int64): bool =
-  let meets_requirement = secret_age >= min_age
-  # In practice, this would use proper MPC reveal operations
-  return true  # Simplified for syntax example
-
-# Secure aggregation pattern
-proc secure_sum(values: [secret int64; 5]): secret int64 =
-  var total: secret int64 = 0
-  for i in 0..5:
-    # Note: Array indexing syntax may vary in implementation
-    # This is a conceptual example
-    total = total + values[i]
-  return total
-```
-
-This syntax guide covers the current StoffelLang implementation and provides a foundation for understanding the language's structure and capabilities.
+This syntax guide covers the current StoffelLang implementation. Features marked as "planned" are parsed by the compiler but may have limited code generation support.

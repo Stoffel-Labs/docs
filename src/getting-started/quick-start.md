@@ -39,27 +39,22 @@ secure-addition/
 
 Open `src/main.stfl` and replace the contents with:
 
-```javascript
-// Secure addition function
-fn secure_add(a: secret i32, b: secret i32) -> secret i32 {
-    return a + b;
-}
+```python
+# Secure addition function
+def secure_add(a: secret int64, b: secret int64) -> secret int64:
+    return a + b
 
-// Main function - entry point for execution
-fn main() {
-    // These values would normally come from different parties
-    let secret_value_a = secret(25);
-    let secret_value_b = secret(17);
+# Main function - entry point for execution
+main main() -> nil:
+    # Get secret inputs from MPC clients
+    secret var secret_value_a = ClientStore.take_share(0, 0)
+    secret var secret_value_b = ClientStore.take_share(1, 0)
 
-    // Perform secure computation
-    let secure_result = secure_add(secret_value_a, secret_value_b);
+    # Perform secure computation
+    secret var secure_result = secure_add(secret_value_a, secret_value_b)
 
-    // Reveal the result (only the final result, not the inputs)
-    let public_result = reveal(secure_result);
-
-    // Print the result
-    println("Secure addition result: {}", public_result);
-}
+    # Print completion message
+    print("Secure addition complete")
 ```
 
 ### Step 3: Compile Your Program
@@ -129,9 +124,9 @@ stoffel-run secure-addition.stfbin main --trace-instr --trace-regs
 
 In your secure addition example:
 
-1. **Secret Sharing**: Your inputs (25 and 17) were automatically split into shares
-2. **Distributed Computation**: Each party computed on shares without seeing the original values
-3. **Result Reconstruction**: The final result (42) was reconstructed from the output shares
+1. **Secret Sharing**: The inputs from each client are automatically split into shares
+2. **Distributed Computation**: Each party computes on shares without seeing the original values
+3. **Result Reconstruction**: The final result is reconstructed from the output shares
 
 ```
 Party 1: Receives shares [8, 23] → Computes 8 + 23 = 31
@@ -141,16 +136,16 @@ Party 3: Receives shares [12, -18] → Computes 12 + (-18) = -6
 Result: Reconstruct 31 + 17 + (-6) + ... = 42
 ```
 
-No single party ever saw your original values (25 and 17)!
+No single party ever sees the original input values!
 
 ### StoffelLang Features
 
 Your simple program demonstrated several key features:
 
-- **Secret Types**: `secret i32` for private data
+- **Secret Types**: `secret int64` for private data
 - **Automatic Operations**: `+` works on secret values
-- **Reveal Operations**: `reveal()` to make results public
-- **Built-in Functions**: `println()` for output
+- **ClientStore**: `ClientStore.take_share()` retrieves secret inputs from MPC clients
+- **Built-in Functions**: `print()` for output
 
 ## Next Steps
 
@@ -215,7 +210,7 @@ Now that you've created your first MPC application:
 1. **[Basic Usage](./basic-usage.md)**: Learn all the essential Stoffel CLI commands
 2. **[Your First MPC Project](./first-project.md)**: Build a more complex privacy-preserving application
 3. **[StoffelLang Overview](../stoffel-lang/overview.md)**: Deep dive into the programming language
-4. **[Python SDK](../python-sdk/overview.md)**: Integrate Stoffel with Python applications
+4. **[Rust SDK](../rust-sdk/overview.md)**: Integrate Stoffel with Rust applications
 
 ## Troubleshooting
 
@@ -249,46 +244,62 @@ stoffel-run program.stfbin main --trace-instr --trace-regs --trace-stack
 
 **"Execution error"**: Check that the entry function exists and has the correct signature using `--trace-instr` for debugging.
 
+**"ClientStore.take_share can only be assigned to secret variables"**: Ensure you use `secret var` when receiving values from `ClientStore.take_share()`.
+
 ## Example Variations
 
 Try these variations of the secure addition example:
 
 ### Secure Comparison
 
-```javascript
-fn secure_compare(a: secret i32, b: secret i32) -> secret bool {
-    return a > b;
-}
+```python
+def secure_compare(a: secret int64, b: secret int64) -> secret int64:
+    # Returns 1 if a > b, 0 otherwise (secret result)
+    if a > b:
+        return 1
+    return 0
 
-fn main() {
-    let alice_value = secret(75);
-    let bob_value = secret(68);
+main main() -> nil:
+    secret var alice_value = ClientStore.take_share(0, 0)
+    secret var bob_value = ClientStore.take_share(1, 0)
 
-    let alice_wins = secure_compare(alice_value, bob_value);
-    let result = reveal(alice_wins);
-
-    println("Alice has higher value: {}", result);
-}
+    secret var result = secure_compare(alice_value, bob_value)
+    print("Comparison complete")
 ```
 
 ### Secure Average
 
-```javascript
-fn secure_average(values: secret [i32; 3]) -> secret i32 {
-    let sum = secret(0);
-    for value in values {
-        sum = sum + value;
-    }
-    return sum / secret(3);
-}
+```python
+def secure_sum(a: secret int64, b: secret int64, c: secret int64) -> secret int64:
+    return a + b + c
 
-fn main() {
-    let party_values = secret([85, 92, 78]);
-    let average = secure_average(party_values);
-    let result = reveal(average);
+main main() -> nil:
+    # Get inputs from three clients
+    secret var input1 = ClientStore.take_share(0, 0)
+    secret var input2 = ClientStore.take_share(1, 0)
+    secret var input3 = ClientStore.take_share(2, 0)
 
-    println("Average score: {}", result);
-}
+    # Compute secure sum
+    secret var total = secure_sum(input1, input2, input3)
+
+    # Note: Division for average would require additional MPC support
+    print("Sum computed")
+```
+
+### Using get_number_clients
+
+```python
+main main() -> nil:
+    # Query the number of connected clients
+    var num_clients: int64 = ClientStore.get_number_clients()
+    print("Number of clients connected")
+
+    # Process inputs from first two clients
+    secret var input1 = ClientStore.take_share(0, 0)
+    secret var input2 = ClientStore.take_share(1, 0)
+
+    secret var result = input1 + input2
+    print("Computation complete")
 ```
 
 You're now ready to build privacy-preserving applications with Stoffel! The framework handles all the complex cryptography while you focus on your application logic.

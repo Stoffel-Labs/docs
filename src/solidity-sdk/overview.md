@@ -1,0 +1,228 @@
+# Solidity SDK Overview
+
+The Stoffel Solidity SDK provides smart contracts for coordinating MPC computations on-chain. It enables trustless orchestration of multi-party computation with verifiable input collection and output distribution.
+
+## Purpose
+
+On-chain coordination solves key challenges in MPC deployments:
+
+- **Trustless Setup**: No single party controls the computation lifecycle
+- **Verifiable Inputs**: Clients prove they submitted valid masked inputs
+- **Guaranteed Outputs**: Results are published on-chain for all participants
+- **Timeout Handling**: Automatic round progression prevents deadlock
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Blockchain                            │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              StoffelCoordinator Contract               │  │
+│  │                                                        │  │
+│  │  ┌─────────────────┐  ┌─────────────────────────────┐ │  │
+│  │  │ StoffelAccess   │  │    StoffelInputManager     │ │  │
+│  │  │    Control      │  │                            │ │  │
+│  │  │  - Party roles  │  │  - Mask reservation        │ │  │
+│  │  │  - Permissions  │  │  - Input submission        │ │  │
+│  │  └─────────────────┘  │  - Client authentication   │ │  │
+│  │                       └─────────────────────────────┘ │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+           │                              │
+           ▼                              ▼
+    ┌──────────────┐              ┌──────────────┐
+    │  MPC Nodes   │◄────────────►│   Clients    │
+    │  (Servers)   │              │ (App Users)  │
+    └──────────────┘              └──────────────┘
+```
+
+## Components
+
+### StoffelCoordinator
+
+The main abstract contract implementing a 7-phase state machine for MPC orchestration. Subclass this to create your specific computation coordinator.
+
+[Learn more →](./coordinator.md)
+
+### StoffelAccessControl
+
+Role-based access control for MPC parties:
+- **PARTY_ROLE**: Assigned to MPC compute nodes
+- **DESIGNATED_PARTY_ROLE**: Elevated privileges for orchestration
+
+[Learn more →](./access-control.md)
+
+### StoffelInputManager
+
+Client input handling:
+- Input mask reservation system
+- Masked input submission and storage
+- ECDSA-based client authentication
+
+[Learn more →](./input-manager.md)
+
+## Quick Start
+
+### 1. Create Your Coordinator
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {StoffelCoordinator} from "stoffel-solidity-sdk/StoffelCoordinator.sol";
+
+contract MyComputation is StoffelCoordinator {
+    constructor(
+        bytes32 programHash,
+        uint256 n,
+        uint256 t,
+        address designatedParty,
+        address[] memory mpcNodes
+    ) StoffelCoordinator(programHash, n, t, designatedParty, mpcNodes) {}
+
+    function startPreprocessing() external override atRound(Round.PreprocessingRound) {
+        // Initialize preprocessing
+        nextRound();
+    }
+
+    function gatherInputs() external override atRound(Round.ClientInputMaskReservationRound) {
+        // Move to input collection
+        nextRound();
+    }
+
+    function initiateMPCComputation() external override atRound(Round.CollectingClientInputRound) {
+        // Start MPC execution
+        nextRound();
+    }
+
+    function publishOutputs() external override atRound(Round.MPCTaskExecutionRound) {
+        // Distribute results
+        nextRound();
+    }
+}
+```
+
+### 2. Deploy
+
+```bash
+forge create MyComputation \
+    --constructor-args \
+    0x1234...  \  # program hash
+    5 \           # n parties
+    1 \           # threshold
+    0xDesignated... \
+    "[0xNode1..., 0xNode2..., ...]"
+```
+
+### 3. Coordinate Computation
+
+```javascript
+// Designated party starts preprocessing
+await coordinator.startPreprocessing();
+
+// Clients reserve input masks
+await coordinator.reserveInputMask(0);
+
+// Clients submit masked inputs
+await coordinator.submitMaskedInput(maskedValue, reservedIndex);
+
+// MPC nodes execute off-chain
+// ...
+
+// Publish results on-chain
+await coordinator.publishOutputs();
+```
+
+## State Machine
+
+The coordinator follows a strict 7-phase lifecycle:
+
+```
+PreprocessingRound (0)
+        │
+        ▼
+ClientInputMaskReservationRound (1)
+        │
+        ▼
+CollectingClientInputRound (2)
+        │
+        ▼
+ClientInputsCollectionEndRound (3)
+        │
+        ▼
+MPCTaskExecutionRound (4)
+        │
+        ▼
+MPCTaskExecutionEndRound (5)
+        │
+        ▼
+ClientOutputCollectionRound (6)
+```
+
+See [StoffelCoordinator](./coordinator.md) for detailed round descriptions.
+
+## Integration with Rust SDK
+
+The Solidity SDK works with the Rust SDK's MPCaaS architecture:
+
+1. **Deploy coordinator** on-chain
+2. **MPC servers** watch for round transitions
+3. **Clients** submit inputs through the contract
+4. **Servers** perform off-chain computation
+5. **Designated party** publishes outputs on-chain
+
+```rust
+// Rust SDK: Watch for contract events
+let client = StoffelClient::builder()
+    .with_coordinator_contract("0x...")
+    .connect()
+    .await?;
+```
+
+## Security Considerations
+
+### Byzantine Fault Tolerance
+
+The coordinator enforces `n >= 3t + 1`:
+- `n`: Number of MPC parties
+- `t`: Maximum faulty/malicious parties
+
+### Input Privacy
+
+- Clients submit **masked** inputs, not raw values
+- Input masks are pre-generated by MPC nodes
+- Only the threshold can reconstruct original values
+
+### Access Control
+
+- Only authorized parties can trigger round transitions
+- Designated party has additional privileges
+- Party count cannot drop below threshold
+
+## Development
+
+### Build
+
+```bash
+cd Stoffel-solidity-SDK
+forge build
+```
+
+### Test
+
+```bash
+forge test -vvv
+```
+
+### Deploy
+
+```bash
+forge script script/Deploy.s.sol --broadcast
+```
+
+## Next Steps
+
+- [StoffelCoordinator](./coordinator.md): State machine details
+- [Access Control](./access-control.md): Role management
+- [Input Manager](./input-manager.md): Client input handling
+- [MPC Protocols](../mpc-protocols/overview.md): Underlying cryptography

@@ -1,1 +1,256 @@
 # Protocol Overview
+
+Stoffel uses the **HoneyBadger MPC protocol** for secure multi-party computation. This protocol provides Byzantine fault tolerance, allowing computations to complete correctly even when some parties are malicious or unavailable.
+
+## What is MPC?
+
+Multi-Party Computation (MPC) allows multiple parties to jointly compute a function over their private inputs without revealing those inputs to each other.
+
+```
+┌─────────┐     ┌─────────┐     ┌─────────┐
+│ Alice   │     │  Bob    │     │ Carol   │
+│ input=5 │     │ input=3 │     │ input=7 │
+└────┬────┘     └────┬────┘     └────┬────┘
+     │               │               │
+     └───────────────┼───────────────┘
+                     │
+              ┌──────▼──────┐
+              │  MPC Engine │
+              │  sum(5,3,7) │
+              └──────┬──────┘
+                     │
+              Result: 15
+    (No party learns other inputs)
+```
+
+## HoneyBadger Protocol
+
+### Overview
+
+HoneyBadger is an asynchronous Byzantine fault-tolerant (BFT) MPC protocol that:
+
+- **Tolerates malicious parties**: Up to `t` parties can be actively malicious
+- **Works asynchronously**: No timing assumptions required
+- **Provides guaranteed output delivery**: Honest parties always get results
+
+### Security Guarantees
+
+| Property | Description |
+|----------|-------------|
+| **Privacy** | No coalition of ≤t parties learns anything about honest inputs |
+| **Correctness** | Output is always the correct result of the computation |
+| **Guaranteed Output** | Honest parties always receive their outputs |
+| **Fairness** | Either all honest parties get output, or none do |
+
+### Configuration Constraints
+
+The number of parties `n` and threshold `t` must satisfy:
+
+```
+n >= 3t + 1
+```
+
+This means:
+- With `n=4` parties, at most `t=1` can be malicious
+- With `n=7` parties, at most `t=2` can be malicious
+- With `n=10` parties, at most `t=3` can be malicious
+
+**TripleGen Preprocessing** has a stricter constraint:
+
+```
+n >= 4t + 1
+```
+
+For Beaver triple generation used in secure multiplication.
+
+### Valid Configurations
+
+| Parties (n) | Max Threshold (t) | Notes |
+|-------------|-------------------|-------|
+| 4 | 1 | Minimum for HoneyBadger |
+| 5 | 1 | Recommended minimum |
+| 7 | 2 | Good for production |
+| 10 | 3 | High fault tolerance |
+| 13 | 4 | Enterprise deployments |
+
+## Shamir Secret Sharing
+
+HoneyBadger uses Shamir's Secret Sharing to distribute values among parties.
+
+### How It Works
+
+A secret value `s` is split into `n` shares such that:
+- Any `t+1` shares can reconstruct `s`
+- Any `t` or fewer shares reveal nothing about `s`
+
+```
+Secret: 42
+
+         ┌─────────────────────────────────┐
+         │   Polynomial: f(x) = 42 + 7x   │
+         │   (degree t=1, constant = 42)  │
+         └─────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+    Share 1         Share 2         Share 3
+    f(1) = 49       f(2) = 56       f(3) = 63
+
+    Any 2 shares → reconstruct 42
+    Any 1 share  → reveals nothing
+```
+
+### Operators on Shares
+
+StoffelVM supports arithmetic operations directly on secret-shared values:
+
+| Operation | Description | Protocol Cost |
+|-----------|-------------|---------------|
+| Addition | `a + b` | Local (no communication) |
+| Subtraction | `a - b` | Local (no communication) |
+| Scalar multiply | `a * c` (c is public) | Local (no communication) |
+| Multiplication | `a * b` | Requires Beaver triples |
+| Comparison | `a < b`, `a > b`, etc. | Multiple rounds |
+
+### Precision Types
+
+The `mpc-protocols` crate supports configurable precision:
+
+**Fixed-Point Arithmetic:**
+```rust
+// 64-bit with 16 fractional bits
+type FixedPoint = Fixed<16>;
+
+// Change precision at runtime
+value.with_precision::<32>();  // 32 fractional bits
+```
+
+**Integer Types:**
+- `int64` / `uint64`: 64-bit integers
+- `int32` / `uint32`: 32-bit integers
+- Field elements: BLS12-381, BN254, secp256k1, prime61
+
+## Preprocessing Phase
+
+Before computation, parties generate cryptographic material:
+
+### Beaver Triples
+
+Used for secure multiplication without revealing operands.
+
+A Beaver triple is `(a, b, c)` where `c = a * b`, and each value is secret-shared.
+
+**Multiplication protocol:**
+1. Parties have shares of `[x]` and `[y]`
+2. Open `d = x - a` and `e = y - b` (masked values)
+3. Compute `[z] = de + d[b] + e[a] + [c]`
+4. Result: `[z] = [x * y]` without revealing `x` or `y`
+
+### Random Shares
+
+Pre-generated random secret-shared values used for:
+- Randomizing intermediate values
+- Coin-flipping protocols
+- Zero-knowledge proofs
+
+### Configuration
+
+```rust
+// Rust SDK preprocessing configuration
+.with_preprocessing(
+    n_triples,        // Number of Beaver triples
+    n_random_shares   // Number of random shares
+)
+
+// Recommended: n_triples = 2t + 1, n_random_shares = 2 + 2*n_triples
+```
+
+## Network Topology
+
+### Full Mesh
+
+All MPC parties maintain direct connections to all other parties:
+
+```
+     Party 1 ←──────→ Party 2
+        ↑ ╲           ╱ ↑
+        │   ╲       ╱   │
+        │     ╲   ╱     │
+        │       ╳       │
+        │     ╱   ╲     │
+        │   ╱       ╲   │
+        ↓ ╱           ╲ ↓
+     Party 4 ←──────→ Party 3
+```
+
+Benefits:
+- No single point of failure
+- Minimum latency between parties
+- Required for asynchronous BFT
+
+### QUIC Transport
+
+Stoffel uses QUIC for party-to-party communication:
+
+- **Stream multiplexing**: Multiple logical channels per connection
+- **TLS 1.3 encryption**: Secure by default
+- **Connection migration**: Handles network changes gracefully
+- **Low latency**: 0-RTT connection establishment
+
+## Protocol Phases
+
+A complete MPC computation proceeds through these phases:
+
+### 1. Setup Phase
+
+- Parties establish network connections (full mesh)
+- Agree on computation parameters (`n`, `t`, `instance_id`)
+- Load the compiled Stoffel program
+
+### 2. Preprocessing Phase
+
+- Generate Beaver triples for multiplications
+- Generate random shares for other operations
+- All parties must complete before proceeding
+
+### 3. Input Phase
+
+- Clients submit secret-shared inputs
+- Each input is split into shares distributed to parties
+- Parties receive their share of each input
+
+### 4. Computation Phase
+
+- Execute the Stoffel program on shares
+- Addition/subtraction: computed locally
+- Multiplication: uses Beaver triples
+- Comparisons: multi-round protocols
+
+### 5. Output Phase
+
+- Result shares are sent to designated recipients
+- Recipients reconstruct final values
+- Only authorized parties see outputs
+
+## Field Choices
+
+Stoffel supports multiple finite fields for different use cases:
+
+| Field | Modulus | Use Case |
+|-------|---------|----------|
+| `prime61` | 2^61 - 1 | Fast testing, development |
+| `bn254` | BN254 curve order | Ethereum compatibility |
+| `bls12-381` | BLS12-381 curve order | Production, high security |
+| `secp256k1` | secp256k1 curve order | Bitcoin compatibility |
+
+Specify the field when compiling:
+
+```bash
+stoffel compile program.stfl --field bls12-381
+```
+
+## Next Steps
+
+- [Implementation Details](./implementation.md): Deep dive into protocol internals
+- [Rust SDK](../rust-sdk/overview.md): Use MPC in your applications
+- [StoffelVM](../stoffel-vm/overview.md): How the VM executes MPC programs

@@ -1,6 +1,5 @@
 [book]
 authors = ["Mikerah"]
 language = "en"
-multilingual = false
 src = "src"
 title = "Stoffel Official Documentation"

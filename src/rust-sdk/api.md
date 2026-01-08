@@ -220,6 +220,190 @@ impl MPCNodeBuilder {
 }
 ```
 
+## StoffelClient (MPCaaS)
+
+High-level client API for app developers. Handles connection, input submission, and result retrieval.
+
+### Builder
+
+```rust
+impl StoffelClientBuilder {
+    // Set server addresses to connect to
+    fn with_servers(self, servers: &[&str]) -> Self
+
+    // Set client ID (auto-generated if not specified)
+    fn client_id(self, id: u64) -> Self
+
+    // Set connection timeout
+    fn connection_timeout(self, duration: Duration) -> Self
+
+    // Set computation timeout
+    fn computation_timeout(self, duration: Duration) -> Self
+
+    // Connect to the MPC network
+    async fn connect(self) -> Result<StoffelClient>
+}
+```
+
+### Methods
+
+```rust
+impl StoffelClient {
+    // Create a new builder
+    fn builder() -> StoffelClientBuilder
+
+    // Submit inputs and wait for result (blocking)
+    async fn run(&self, inputs: &[i64]) -> Result<i64>
+
+    // Submit inputs (non-blocking)
+    async fn submit(&self, inputs: &[i64]) -> Result<ComputationHandle>
+
+    // Get current client state
+    fn state(&self) -> ClientState
+
+    // Disconnect from servers
+    async fn disconnect(self) -> Result<()>
+}
+
+impl ComputationHandle {
+    // Wait for computation result
+    async fn await_result(self) -> Result<i64>
+
+    // Check if computation is complete
+    fn is_complete(&self) -> bool
+
+    // Cancel the computation
+    async fn cancel(self) -> Result<()>
+}
+```
+
+### Client States
+
+```rust
+pub enum ClientState {
+    // Connected to servers, ready to submit
+    Connected,
+
+    // Currently sending input shares
+    Submitting,
+
+    // Waiting for computation result
+    Computing,
+
+    // Session ended
+    Disconnected,
+}
+```
+
+## StoffelServer (MPCaaS)
+
+High-level server API for infrastructure operators. Manages peer connections and computation.
+
+### Builder
+
+```rust
+impl StoffelServerBuilder {
+    // Set bind address for incoming connections
+    fn bind(self, address: &str) -> Self
+
+    // Set peer server addresses
+    fn with_peers(self, peers: &[(usize, &str)]) -> Self
+
+    // Set the compiled program to execute
+    fn with_program(self, program: Program) -> Self
+
+    // Configure preprocessing parameters
+    fn with_preprocessing(self, n_triples: usize, n_random_shares: usize) -> Self
+
+    // Set instance ID (must match across all servers)
+    fn with_instance_id(self, id: u64) -> Self
+
+    // Set preprocessing start time (must match across all servers)
+    fn with_preprocessing_start_time(self, epoch: u64) -> Self
+
+    // Build the server
+    fn build(self) -> Result<StoffelServer>
+}
+
+// Entry point
+Stoffel::server(party_id: usize) -> StoffelServerBuilder
+```
+
+### Methods
+
+```rust
+impl StoffelServer {
+    // Start the QUIC listener
+    async fn start(&self) -> Result<()>
+
+    // Connect to all peer servers (establish full mesh)
+    async fn connect_to_peers(&self) -> Result<()>
+
+    // Run preprocessing phase
+    async fn run_preprocessing(&self) -> Result<()>
+
+    // Handle a single computation session
+    async fn run_once(&self) -> Result<()>
+
+    // Run indefinitely, handling multiple sessions
+    async fn run_forever(&self) -> Result<()>
+
+    // Get current server state
+    fn state(&self) -> ServerState
+
+    // Graceful shutdown
+    async fn shutdown(self) -> Result<()>
+}
+```
+
+### Server States
+
+```rust
+pub enum ServerState {
+    // Just created, not started
+    Initialized,
+
+    // Binding to port
+    Starting,
+
+    // Establishing peer connections
+    ConnectingPeers,
+
+    // Generating preprocessing material
+    Preprocessing,
+
+    // Ready to accept clients
+    Ready,
+
+    // Actively computing
+    Computing,
+
+    // Shutting down
+    ShuttingDown,
+}
+```
+
+### Configuration Synchronization
+
+All servers in an MPC cluster must agree on these parameters:
+
+```rust
+// These values MUST be identical across all servers
+let instance_id: u64 = 12345;
+let n_parties: usize = 5;
+let threshold: usize = 1;
+
+// Start preprocessing at the same wall-clock time
+let preprocessing_start_epoch = SystemTime::now()
+    .duration_since(UNIX_EPOCH)?
+    .as_secs() + 20;  // 20 seconds in future
+```
+
+**Failure to synchronize causes:**
+- `instance_id` mismatch: Parties won't recognize each other
+- `n_parties` mismatch: Protocol messages misrouted
+- `preprocessing_start_epoch` mismatch: Preprocessing fails
+
 ## Error Types
 
 ```rust

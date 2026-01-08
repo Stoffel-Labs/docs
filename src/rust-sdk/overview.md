@@ -21,6 +21,87 @@ Programs are configured for MPC during compilation, ensuring all participants us
 
 The SDK hides cryptographic complexity while providing clear semantics for secret and public data.
 
+## MPCaaS Architecture
+
+The SDK implements an **MPC-as-a-Service (MPCaaS)** architecture that separates app developers from infrastructure operators:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     App Developers                          │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              StoffelClient                            │   │
+│  │  - Simple API: submit inputs, get outputs            │   │
+│  │  - Auto-discovers network configuration              │   │
+│  │  - No MPC knowledge required                         │   │
+│  └──────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────┤
+│                 Infrastructure Operators                     │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              StoffelServer                            │   │
+│  │  - Full mesh peer connections                        │   │
+│  │  - HoneyBadger preprocessing                         │   │
+│  │  - Handles secure computation                        │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### StoffelClient (For App Developers)
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+
+async fn submit_computation() -> Result<i64> {
+    // Connect to MPC network
+    let client = StoffelClient::builder()
+        .with_servers(&["mpc1.example.com:9000", "mpc2.example.com:9000"])
+        .client_id(12345)
+        .connect()
+        .await?;
+
+    // Submit inputs and get result
+    let result = client.run(&[42, 100]).await?;
+
+    Ok(result)
+}
+```
+
+### StoffelServer (For Infrastructure Operators)
+
+```rust
+use stoffel_rust_sdk::prelude::*;
+
+async fn run_mpc_server(party_id: usize) -> Result<()> {
+    // Load compiled program
+    let program = Stoffel::compile_file("program.stfl")?.build()?;
+
+    // Build and configure server
+    let server = Stoffel::server(party_id)
+        .bind("0.0.0.0:9000")
+        .with_peers(&[
+            (0, "peer0.example.com:9000"),
+            (1, "peer1.example.com:9000"),
+            (2, "peer2.example.com:9000"),
+        ])
+        .with_program(program.program().clone())
+        .with_preprocessing(3, 8)  // triples, random shares
+        .with_instance_id(12345)
+        .build()?;
+
+    // Start serving
+    server.start().await?;
+    server.connect_to_peers().await?;
+    server.run_forever().await
+}
+```
+
+### QUIC Networking
+
+All network communication uses QUIC for:
+- **TLS 1.3 encryption**: Secure by default
+- **Stream multiplexing**: Efficient message handling
+- **Low latency**: 0-RTT connection establishment
+- **Connection migration**: Handles network changes
+
 ## Quick Start
 
 ### Simple Local Execution

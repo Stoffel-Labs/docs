@@ -310,22 +310,73 @@ def greet() -> nil:
 
 ### ClientStore
 
-Access secret inputs from MPC clients:
+The `ClientStore` is a built-in singleton that provides access to client inputs in MPC computations. It acts as the bridge between external clients and the secure computation.
+
+#### ClientStore.get_number_clients()
+
+Returns the total number of clients participating in the MPC computation.
 
 ```
-# Get the number of connected clients
-var num_clients = ClientStore.get_number_clients()
-
-# Take a secret share from a client
-# Must be assigned to a secret variable!
-secret var client_input = ClientStore.take_share(0, 0)
-
-# Parameters: (party_id, share_index)
-secret var share1 = ClientStore.take_share(0, 0)  # Party 0, share 0
-secret var share2 = ClientStore.take_share(1, 0)  # Party 1, share 0
+# Returns a clear (non-secret) int64
+var num_clients: int64 = ClientStore.get_number_clients()
 ```
 
-**Important:** Results from `ClientStore.take_share()` must be assigned to `secret` variables.
+**Characteristics:**
+- Returns a **clear** (public) `int64` value, not a secret
+- Can be assigned to regular (non-secret) variables
+- Useful for dynamic iteration over client inputs
+
+#### ClientStore.take_share()
+
+Retrieves a secret share from a specific client at a given index.
+
+```
+# Parameters: (client_id, share_index)
+secret var share1 = ClientStore.take_share(0, 0)  # Client 0, share 0
+secret var share2 = ClientStore.take_share(1, 0)  # Client 1, share 0
+secret var share3 = ClientStore.take_share(0, 1)  # Client 0, share 1
+```
+
+**Parameters:**
+- `client_id`: The ID of the client (0-indexed)
+- `share_index`: The index of the share from that client (0-indexed)
+
+**Critical Constraint:** Results from `ClientStore.take_share()` **must** be assigned to secret variables. The compiler enforces this requirement for security.
+
+**Valid usage patterns:**
+
+```
+# 1. Using 'secret var' keyword (type inferred)
+secret var share1 = ClientStore.take_share(0, 0)
+
+# 2. Using explicit secret type annotation
+var share2: secret int64 = ClientStore.take_share(1, 0)
+
+# 3. Using 'secret' keyword with explicit type
+secret var share3: int64 = ClientStore.take_share(0, 1)
+
+# 4. Reassigning to existing secret variable
+secret var mutable_share: int64 = ClientStore.take_share(0, 0)
+mutable_share = ClientStore.take_share(1, 0)  # Valid: target is secret
+```
+
+**Invalid usage (compiler errors):**
+
+```
+# ERROR: Cannot assign take_share result to non-secret variable
+var share: int64 = ClientStore.take_share(0, 0)
+
+# ERROR: Implicit type doesn't make it secret
+var share = ClientStore.take_share(0, 0)
+
+# ERROR: Reassigning to non-secret variable
+var regular_var: int64 = 42
+regular_var = ClientStore.take_share(0, 1)
+```
+
+**Error message:** `"ClientStore.take_share can only be assigned to secret variables"`
+
+**Hint:** Add `secret` keyword to the variable declaration or use `secret` type annotation.
 
 ## Working with Secret Types
 

@@ -22,6 +22,7 @@
 - [Language Overview](./stoffel-lang/overview.md)
 - [Syntax and Examples](./stoffel-lang/syntax.md)
 - [Compilation](./stoffel-lang/compilation.md)
+- [FFI / C Bindings](./stoffel-lang/ffi.md)
 
 # StoffelVM
 - [Implementation Details](./stoffel-vm/implementation.md)
@@ -40,6 +41,12 @@
 - [Installation](./python-sdk/installation.md)
 - [API Reference](./python-sdk/api.md)
 - [Examples](./python-sdk/examples.md)
+
+# Solidity SDK
+- [SDK Overview](./solidity-sdk/overview.md)
+- [StoffelCoordinator](./solidity-sdk/coordinator.md)
+- [Access Control](./solidity-sdk/access-control.md)
+- [Input Manager](./solidity-sdk/input-manager.md)
 
 # MPC Protocols
 - [Protocol Overview](./mpc-protocols/overview.md)

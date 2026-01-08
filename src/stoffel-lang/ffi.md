@@ -1,0 +1,375 @@
+# FFI / C Bindings
+
+StoffelLang provides a Foreign Function Interface (FFI) that allows non-Rust applications to use the compiler. This enables integration with C, C++, Python, and other languages that can call C functions.
+
+## Overview
+
+The FFI exposes the StoffelLang compiler through a C-compatible ABI, allowing you to:
+
+- Compile StoffelLang source code to bytecode
+- Compile directly to VM-compatible binary format
+- Configure compiler options (optimization level, debug output)
+- Access detailed error information
+
+## Header File
+
+The C interface is defined in `stoffellang.h`:
+
+```c
+#include "stoffellang.h"
+```
+
+## Data Structures
+
+### CCompilerOptions
+
+Configuration for the compiler:
+
+```c
+typedef struct {
+    bool optimize;           // Enable optimizations
+    uint8_t optimization_level;  // 0-3 (0=none, 3=aggressive)
+    bool print_ir;           // Print intermediate representation
+} CCompilerOptions;
+```
+
+### CCompilerError
+
+Structured error information:
+
+```c
+typedef struct {
+    CErrorSeverity severity;   // Warning, Error, or Fatal
+    CErrorCategory category;   // Syntax, Type, Semantic, or Internal
+    char* message;             // Error description
+    char* filename;            // Source file
+    uint32_t line;             // Line number
+    uint32_t column;           // Column number
+    char* hint;                // Suggested fix (may be NULL)
+} CCompilerError;
+
+typedef enum {
+    STOFFEL_SEVERITY_WARNING = 0,
+    STOFFEL_SEVERITY_ERROR = 1,
+    STOFFEL_SEVERITY_FATAL = 2
+} CErrorSeverity;
+
+typedef enum {
+    STOFFEL_CATEGORY_SYNTAX = 0,
+    STOFFEL_CATEGORY_TYPE = 1,
+    STOFFEL_CATEGORY_SEMANTIC = 2,
+    STOFFEL_CATEGORY_INTERNAL = 3
+} CErrorCategory;
+```
+
+### CCompiledProgram
+
+The compilation result:
+
+```c
+typedef struct {
+    CBytecodeChunk* main_chunk;      // Main program bytecode
+    CBytecodeChunk** function_chunks; // Function bytecode
+    size_t num_functions;             // Number of functions
+} CCompiledProgram;
+
+typedef struct {
+    CInstruction* instructions;  // Instruction array
+    size_t num_instructions;     // Instruction count
+    CConstant* constants;        // Constant pool
+    size_t num_constants;        // Constant count
+} CBytecodeChunk;
+```
+
+### CCompilationResult
+
+Result of a compilation attempt:
+
+```c
+typedef struct {
+    bool success;                    // Whether compilation succeeded
+    CCompiledProgram* program;       // Program (if success)
+    CCompilerError* errors;          // Error array
+    size_t num_errors;               // Number of errors
+} CCompilationResult;
+```
+
+## Functions
+
+### stoffel_compile
+
+Compiles StoffelLang source code to bytecode structures.
+
+```c
+CCompilationResult* stoffel_compile(
+    const char* source,      // Source code string
+    const char* filename,    // Filename for error messages
+    CCompilerOptions options // Compiler configuration
+);
+```
+
+**Example:**
+
+```c
+CCompilerOptions opts = {
+    .optimize = true,
+    .optimization_level = 2,
+    .print_ir = false
+};
+
+CCompilationResult* result = stoffel_compile(
+    "main main() -> int64:\n    return 42\n",
+    "example.stfl",
+    opts
+);
+
+if (result->success) {
+    printf("Compilation successful!\n");
+    printf("Main chunk has %zu instructions\n",
+           result->program->main_chunk->num_instructions);
+} else {
+    for (size_t i = 0; i < result->num_errors; i++) {
+        printf("Error: %s\n", result->errors[i].message);
+    }
+}
+
+stoffel_free_result(result);
+```
+
+### stoffel_compile_to_binary
+
+Compiles directly to VM-compatible binary format (.stfbin).
+
+```c
+CBinaryResult* stoffel_compile_to_binary(
+    const char* source,      // Source code string
+    const char* filename,    // Filename for error messages
+    CCompilerOptions options // Compiler configuration
+);
+
+typedef struct {
+    bool success;            // Whether compilation succeeded
+    uint8_t* binary_data;    // Binary bytecode data
+    size_t binary_len;       // Length of binary data
+    CCompilerError* errors;  // Error array
+    size_t num_errors;       // Number of errors
+} CBinaryResult;
+```
+
+**Example:**
+
+```c
+CBinaryResult* result = stoffel_compile_to_binary(
+    source_code,
+    "program.stfl",
+    opts
+);
+
+if (result->success) {
+    // Write to file
+    FILE* f = fopen("program.stfbin", "wb");
+    fwrite(result->binary_data, 1, result->binary_len, f);
+    fclose(f);
+}
+
+stoffel_free_binary_result(result);
+```
+
+### stoffel_get_version
+
+Returns the compiler version string.
+
+```c
+const char* stoffel_get_version(void);
+```
+
+**Example:**
+
+```c
+printf("StoffelLang Compiler %s\n", stoffel_get_version());
+```
+
+### Memory Management
+
+Free allocated resources when done:
+
+```c
+// Free compilation result
+void stoffel_free_result(CCompilationResult* result);
+
+// Free binary result
+void stoffel_free_binary_result(CBinaryResult* result);
+
+// Free a single program
+void stoffel_free_program(CCompiledProgram* program);
+```
+
+**Important:** Always call the appropriate free function to avoid memory leaks.
+
+## Complete Example
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include "stoffellang.h"
+
+int main(int argc, char** argv) {
+    // Source code to compile
+    const char* source =
+        "def add(a: int64, b: int64) -> int64:\n"
+        "    return a + b\n"
+        "\n"
+        "main main() -> int64:\n"
+        "    var result = add(10, 20)\n"
+        "    print(\"Result computed\")\n"
+        "    return result\n";
+
+    // Configure compiler
+    CCompilerOptions opts = {
+        .optimize = true,
+        .optimization_level = 2,
+        .print_ir = false
+    };
+
+    // Compile to binary
+    CBinaryResult* result = stoffel_compile_to_binary(
+        source,
+        "example.stfl",
+        opts
+    );
+
+    if (!result->success) {
+        fprintf(stderr, "Compilation failed:\n");
+        for (size_t i = 0; i < result->num_errors; i++) {
+            CCompilerError* err = &result->errors[i];
+            fprintf(stderr, "%s:%u:%u: %s\n",
+                    err->filename,
+                    err->line,
+                    err->column,
+                    err->message);
+            if (err->hint) {
+                fprintf(stderr, "  Hint: %s\n", err->hint);
+            }
+        }
+        stoffel_free_binary_result(result);
+        return 1;
+    }
+
+    printf("Compilation successful!\n");
+    printf("Binary size: %zu bytes\n", result->binary_len);
+
+    // Write to file
+    FILE* f = fopen("example.stfbin", "wb");
+    if (f) {
+        fwrite(result->binary_data, 1, result->binary_len, f);
+        fclose(f);
+        printf("Written to example.stfbin\n");
+    }
+
+    stoffel_free_binary_result(result);
+    return 0;
+}
+```
+
+## Building with FFI
+
+### Linking
+
+Link against the StoffelLang library:
+
+```bash
+# Compile C code
+gcc -c example.c -o example.o
+
+# Link with StoffelLang
+gcc example.o -L/path/to/stoffellang/lib -lstoffellang -o example
+```
+
+### CMake
+
+```cmake
+find_library(STOFFELLANG stoffellang HINTS /path/to/stoffellang/lib)
+
+add_executable(myapp main.c)
+target_link_libraries(myapp ${STOFFELLANG})
+target_include_directories(myapp PRIVATE /path/to/stoffellang/include)
+```
+
+## Constant Types
+
+The FFI exposes constant types for value representation:
+
+```c
+typedef enum {
+    STOFFEL_CONST_NIL = 0,
+    STOFFEL_CONST_BOOL = 1,
+    STOFFEL_CONST_INT64 = 2,
+    STOFFEL_CONST_UINT64 = 3,
+    STOFFEL_CONST_FLOAT64 = 4,
+    STOFFEL_CONST_STRING = 5,
+    // ... other types
+    STOFFEL_CONST_SHARE = 16,  // Secret share type
+} CConstantType;
+
+typedef struct {
+    CConstantType type;
+    union {
+        bool bool_val;
+        int64_t int64_val;
+        uint64_t uint64_val;
+        double float64_val;
+        char* string_val;
+        // ... other values
+    } data;
+} CConstant;
+```
+
+## Error Handling Best Practices
+
+1. **Always check `success`** before accessing program data
+2. **Always free results** using the appropriate free function
+3. **Copy strings** if you need them after freeing results
+4. **Handle hints** - they may be NULL
+
+```c
+CCompilationResult* result = stoffel_compile(source, filename, opts);
+
+if (!result->success) {
+    // Handle errors
+    for (size_t i = 0; i < result->num_errors; i++) {
+        CCompilerError* err = &result->errors[i];
+
+        // Copy message if needed later
+        char* msg_copy = strdup(err->message);
+
+        // Check for hint
+        if (err->hint != NULL) {
+            printf("Hint: %s\n", err->hint);
+        }
+    }
+}
+
+// Must free even on error
+stoffel_free_result(result);
+```
+
+## Thread Safety
+
+The FFI functions are thread-safe for independent compilations. Each compilation operates on its own state.
+
+```c
+// Safe: parallel compilations
+#pragma omp parallel for
+for (int i = 0; i < num_files; i++) {
+    CCompilationResult* result = stoffel_compile(
+        sources[i], filenames[i], opts
+    );
+    results[i] = result;
+}
+```
+
+## Next Steps
+
+- [Syntax Guide](./syntax.md): StoffelLang language reference
+- [Compilation](./compilation.md): Detailed compilation process
+- [Rust SDK](../rust-sdk/overview.md): Native Rust integration

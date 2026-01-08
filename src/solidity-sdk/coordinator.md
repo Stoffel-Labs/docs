@@ -1,0 +1,390 @@
+# StoffelCoordinator
+
+The `StoffelCoordinator` is an abstract contract that implements a 7-phase state machine for orchestrating MPC computations on-chain.
+
+## Overview
+
+```solidity
+abstract contract StoffelCoordinator is StoffelAccessControl, StoffelInputManager, Ownable {
+    // State machine for MPC coordination
+}
+```
+
+**Inheritance:**
+- `StoffelAccessControl`: Role-based permissions
+- `StoffelInputManager`: Client input handling
+- `Ownable`: OpenZeppelin ownership
+
+## State Machine
+
+### Round Enum
+
+```solidity
+enum Round {
+    PreprocessingRound,              // 0
+    ClientInputMaskReservationRound, // 1
+    CollectingClientInputRound,      // 2
+    ClientInputsCollectionEndRound,  // 3
+    MPCTaskExecutionRound,           // 4
+    MPCTaskExecutionEndRound,        // 5
+    ClientOutputCollectionRound      // 6
+}
+```
+
+### Round Descriptions
+
+| Round | Purpose | Who Acts |
+|-------|---------|----------|
+| **PreprocessingRound** | Initialize input mask buffer | Designated Party |
+| **ClientInputMaskReservationRound** | Clients reserve mask indices | Clients |
+| **CollectingClientInputRound** | Clients submit masked inputs | Clients |
+| **ClientInputsCollectionEndRound** | Finalize input collection | Coordinator |
+| **MPCTaskExecutionRound** | Off-chain MPC computation | MPC Nodes |
+| **MPCTaskExecutionEndRound** | Signal computation complete | MPC Nodes |
+| **ClientOutputCollectionRound** | Distribute results to clients | MPC Nodes |
+
+### State Transitions
+
+```
+PreprocessingRound
+        │
+        │ startPreprocessing()
+        │ [Designated Party]
+        ▼
+ClientInputMaskReservationRound
+        │
+        │ gatherInputs() or timeout
+        │ [Designated Party]
+        ▼
+CollectingClientInputRound
+        │
+        │ All inputs received or timeout
+        │
+        ▼
+ClientInputsCollectionEndRound
+        │
+        │ initiateMPCComputation()
+        │ [Designated Party]
+        ▼
+MPCTaskExecutionRound
+        │
+        │ Off-chain computation
+        │ [MPC Nodes]
+        ▼
+MPCTaskExecutionEndRound
+        │
+        │ publishOutputs()
+        │ [Designated Party]
+        ▼
+ClientOutputCollectionRound
+        │
+        │ Clients collect outputs
+        ▼
+        Done
+```
+
+## Constructor
+
+```solidity
+constructor(
+    bytes32 stoffelProgramHash,
+    uint256 n,
+    uint256 t,
+    address designatedParty,
+    address[] memory initialMPCNodes
+)
+```
+
+**Parameters:**
+- `stoffelProgramHash`: Keccak256 hash of the compiled Stoffel program
+- `n`: Number of MPC parties
+- `t`: Fault tolerance threshold
+- `designatedParty`: Address with elevated privileges
+- `initialMPCNodes`: Array of addresses to grant PARTY_ROLE
+
+**Validation:**
+- Checks `n >= 3t + 1` (HoneyBadger requirement)
+
+**Initialization:**
+- Stores `_stoffelProgramHash`
+- Records `creationTime`
+- Grants roles to parties and designated party
+- Emits `CoordinatorInitialized` event
+
+## Round Modifiers
+
+### atRound
+
+Enforces the current round matches the expected round.
+
+```solidity
+modifier atRound(Round _round) {
+    require(currentRound == _round, "Invalid round");
+    _;
+}
+
+// Usage
+function startPreprocessing() external atRound(Round.PreprocessingRound) {
+    // Only executes in PreprocessingRound
+}
+```
+
+### nextRound
+
+Advances to the next round.
+
+```solidity
+modifier nextRound() {
+    _;
+    currentRound = Round(uint(currentRound) + 1);
+}
+
+// Usage
+function completePhase() external atRound(Round.CollectingClientInputRound) nextRound {
+    // Advances to ClientInputsCollectionEndRound
+}
+```
+
+### goToRound
+
+Jumps to a specific round (for skipping phases).
+
+```solidity
+modifier goToRound(Round _round) {
+    _;
+    currentRound = _round;
+}
+```
+
+### timedRoundTransition
+
+Automatically advances if timeout elapsed since contract creation.
+
+```solidity
+modifier timedRoundTransition(Round transitionRound, uint whenToTransition) {
+    if (currentRound == transitionRound &&
+        block.timestamp >= creationTime + whenToTransition) {
+        currentRound = Round(uint(currentRound) + 1);
+    }
+    _;
+}
+```
+
+### timedRoundTransitionGoto
+
+Timeout-based jump to specific round.
+
+```solidity
+modifier timedRoundTransitionGoto(
+    Round transitionRound,
+    Round gotoRound,
+    uint whenToTransition
+) {
+    if (currentRound == transitionRound &&
+        block.timestamp >= creationTime + whenToTransition) {
+        currentRound = gotoRound;
+    }
+    _;
+}
+```
+
+## Virtual Functions
+
+Subclasses must implement these:
+
+```solidity
+// Start the preprocessing phase
+function startPreprocessing() external virtual;
+
+// Move from mask reservation to input collection
+function gatherInputs() external virtual;
+
+// Initiate the MPC computation
+function initiateMPCComputation() external virtual;
+
+// Publish computation outputs
+function publishOutputs() external virtual;
+```
+
+### Example Implementation
+
+```solidity
+function startPreprocessing()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.PreprocessingRound)
+    nextRound
+{
+    // Initialize input mask buffer
+    initializeInputMaskBuffer(expectedClientCount);
+
+    emit PreprocessingRoundExecuted(msg.sender, block.timestamp);
+}
+
+function gatherInputs()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.ClientInputMaskReservationRound)
+    nextRound
+{
+    // Move to input collection phase
+}
+
+function initiateMPCComputation()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.ClientInputsCollectionEndRound)
+    nextRound
+{
+    emit MPCTaskExecuted(_stoffelProgramHash, msg.sender, block.timestamp);
+}
+
+function publishOutputs()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.MPCTaskExecutionEndRound)
+    nextRound
+{
+    // Make outputs available to clients
+}
+```
+
+## Events
+
+```solidity
+// Emitted when coordinator is initialized
+event CoordinatorInitialized(
+    address indexed coordinator,
+    uint256 timeOfInitialization,
+    address indexed designatedParty
+);
+
+// Emitted after preprocessing completes
+event PreprocessingRoundExecuted(
+    address indexed designatedParty,
+    uint256 timeOfExecution
+);
+
+// Emitted when mask reservation occurs
+event ClientInputMaskReservationEvent(
+    address indexed executor,
+    uint256 timeOfExecution
+);
+
+// Emitted when MPC task is executed
+event MPCTaskExecuted(
+    bytes32 indexed stoffelProgramHash,
+    address indexed executor,
+    uint256 timeOfExecution
+);
+```
+
+## Storage
+
+```solidity
+// Hash of the compiled Stoffel program
+bytes32 internal _stoffelProgramHash;
+
+// Timestamp of contract deployment
+uint256 public creationTime;
+
+// Current round in the state machine
+Round public currentRound;
+```
+
+## Example: Complete Coordinator
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {StoffelCoordinator} from "stoffel-solidity-sdk/StoffelCoordinator.sol";
+
+contract SecureAuction is StoffelCoordinator {
+    uint256 public constant RESERVATION_TIMEOUT = 1 hours;
+    uint256 public constant COLLECTION_TIMEOUT = 2 hours;
+
+    mapping(address => uint256) public clientOutputs;
+
+    constructor(
+        bytes32 programHash,
+        address[] memory mpcNodes
+    ) StoffelCoordinator(
+        programHash,
+        mpcNodes.length,  // n = number of nodes
+        1,                 // t = 1
+        msg.sender,        // deployer is designated party
+        mpcNodes
+    ) {}
+
+    function startPreprocessing()
+        external
+        override
+        onlyDesignatedParty
+        atRound(Round.PreprocessingRound)
+        nextRound
+    {
+        initializeInputMaskBuffer(100);  // Support up to 100 clients
+        emit PreprocessingRoundExecuted(msg.sender, block.timestamp);
+    }
+
+    function gatherInputs()
+        external
+        override
+        onlyDesignatedParty
+        timedRoundTransition(Round.ClientInputMaskReservationRound, RESERVATION_TIMEOUT)
+        atRound(Round.ClientInputMaskReservationRound)
+        nextRound
+    {
+        emit ClientInputMaskReservationEvent(msg.sender, block.timestamp);
+    }
+
+    function initiateMPCComputation()
+        external
+        override
+        onlyDesignatedParty
+        timedRoundTransition(Round.CollectingClientInputRound, COLLECTION_TIMEOUT)
+        atRound(Round.ClientInputsCollectionEndRound)
+        nextRound
+    {
+        emit MPCTaskExecuted(_stoffelProgramHash, msg.sender, block.timestamp);
+    }
+
+    function publishOutputs()
+        external
+        override
+        onlyDesignatedParty
+        atRound(Round.MPCTaskExecutionEndRound)
+        nextRound
+    {
+        // Implementation specific to your use case
+    }
+
+    // Allow clients to collect their outputs
+    function collectOutput()
+        external
+        atRound(Round.ClientOutputCollectionRound)
+    {
+        uint256 output = clientOutputs[msg.sender];
+        require(output != 0, "No output for client");
+        // Return output to client
+    }
+}
+```
+
+## Best Practices
+
+1. **Use timeouts**: Prevent deadlock with `timedRoundTransition`
+2. **Emit events**: Enable off-chain monitoring of round transitions
+3. **Validate inputs**: Check constraints before round transitions
+4. **Test thoroughly**: Use Foundry's fuzzing for edge cases
+
+## Next Steps
+
+- [Access Control](./access-control.md): Managing party roles
+- [Input Manager](./input-manager.md): Client input handling
+- [Overview](./overview.md): High-level architecture

@@ -57,7 +57,7 @@ let age: int64 = 42    # OK: Types match
 
 **Symbol Resolution:**
 ```
-proc add(a: int64, b: int64): int64 =
+def add(a: int64, b: int64) -> int64:
   return a + b  # Resolves 'a' and 'b' to parameters
 
 let result = add(10, 20)  # Resolves 'add' to function definition
@@ -72,11 +72,11 @@ StoffelLang:           Bytecode:
 let x: int64 = 42      LDI R0, 42
                       STORE x, R0
 
-proc add(a, b):        FUNCTION add:
-  return a + b           LOAD R0, a
-                        LOAD R1, b
-                        ADD R0, R0, R1
-                        RET R0
+def add(a: int64, b: int64) -> int64:   FUNCTION add:
+  return a + b                            LOAD R0, a
+                                          LOAD R1, b
+                                          ADD R0, R0, R1
+                                          RET R0
 ```
 
 ## Using the Compiler
@@ -158,14 +158,14 @@ Removes unreachable code:
 
 ```
 # Source code
-proc example(flag: bool) =
+def example(flag: bool) -> nil:
   if true:
     print("Always executed")
   else:
     print("Never executed")  # Removed by optimizer
 
 # Optimized to
-proc example(flag: bool) =
+def example(flag: bool) -> nil:
   print("Always executed")
 ```
 
@@ -175,7 +175,7 @@ Small functions may be inlined at call sites:
 
 ```
 # Source code
-proc square(x: int64): int64 =
+def square(x: int64) -> int64:
   return x * x
 
 let result = square(5)
@@ -392,14 +392,14 @@ Special considerations for MPC operations:
 
 ```
 # Expensive: Many individual secret operations
-proc inefficient(a: secret int64, b: secret int64): secret int64 =
+def inefficient(a: secret int64, b: secret int64) -> secret int64:
   let temp1 = a + 1
   let temp2 = b + 1
   let temp3 = temp1 + temp2
   return temp3 + 1
 
 # Better: Batched operations where possible
-proc efficient(a: secret int64, b: secret int64): secret int64 =
+def efficient(a: secret int64, b: secret int64) -> secret int64:
   return a + b + 2  # Compiler can optimize this
 ```
 
@@ -419,7 +419,7 @@ proc efficient(a: secret int64, b: secret int64): secret int64 =
 **"Indentation error"**
 ```bash
 # Fix: Consistent 2-space indentation
-proc example() =
+def example() -> nil:
   if true:
     print("Correct indentation")
 ```

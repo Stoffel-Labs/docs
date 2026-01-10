@@ -97,18 +97,18 @@ let factorial_function = VMFunction {
     register_count: 5,
     instructions: vec![
         // Check if n <= 1
-        Instruction::LDI(1, Value::Int(1)),               // r1 = 1
+        Instruction::LDI(1, Value::I64(1)),               // r1 = 1
         Instruction::CMP(0, 1),                           // Compare n with 1
         Instruction::JMPEQ("base_case".to_string()),      // If n == 1, go to base case
         Instruction::CMP(1, 0),                           // Compare 1 with n
         Instruction::JMPNEQ("recursive_case".to_string()), // If not equal, go to recursive case
         Instruction::JMP("base_case".to_string()),
         // base_case: (n <= 1)
-        Instruction::LDI(0, Value::Int(1)),               // Return 1
+        Instruction::LDI(0, Value::I64(1)),               // Return 1
         Instruction::RET(0),
         // recursive_case: (n > 1)
         Instruction::MOV(3, 0),                           // r3 = n
-        Instruction::LDI(1, Value::Int(1)),               // r1 = 1
+        Instruction::LDI(1, Value::I64(1)),               // r1 = 1
         Instruction::SUB(2, 0, 1),                        // r2 = n - 1
         Instruction::PUSHARG(2),
         Instruction::CALL("factorial".to_string()),

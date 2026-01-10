@@ -75,8 +75,15 @@ The VM is designed with MPC in mind:
 ### Primitive Types
 
 ```rust
-Value::Int(i64)           // 64-bit signed integers
-Value::Float(i64)         // Fixed-point float representation
+Value::I64(i64)           // 64-bit signed integers
+Value::I32(i32)           // 32-bit signed integers
+Value::I16(i16)           // 16-bit signed integers
+Value::I8(i8)             // 8-bit signed integers
+Value::U8(u8)             // 8-bit unsigned integers
+Value::U16(u16)           // 16-bit unsigned integers
+Value::U32(u32)           // 32-bit unsigned integers
+Value::U64(u64)           // 64-bit unsigned integers
+Value::Float(F64)         // 64-bit floating point (F64 wrapper)
 Value::Bool(bool)         // Boolean values
 Value::String(String)     // UTF-8 strings
 Value::Unit               // Unit/void type
@@ -89,6 +96,7 @@ Value::Object(usize)      // Object reference (key-value pairs)
 Value::Array(usize)       // Array reference (indexed values)
 Value::Closure(Arc<Closure>) // Function closure with captured variables
 Value::Foreign(usize)     // Foreign object from host language
+Value::Share(ShareType, Vec<u8>) // Secret shared value for MPC
 ```
 
 ## Instruction Set

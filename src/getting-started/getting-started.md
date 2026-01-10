@@ -197,7 +197,7 @@ Integrate Rust functions:
 ```rust
 vm.register_foreign_function("double", |ctx| {
     match &ctx.args[0] {
-        Value::Int(n) => Ok(Value::Int(n * 2)),
+        Value::I64(n) => Ok(Value::I64(n * 2)),
         _ => Err("Expected integer".to_string()),
     }
 });
@@ -214,7 +214,7 @@ labels.insert("loop_end".to_string(), 6);
 
 vec![
     // Initialize counter
-    Instruction::LDI(0, Value::Int(0)),
+    Instruction::LDI(0, Value::I64(0)),
     // Compare
     Instruction::CMP(0, 1),
     Instruction::JMPEQ("loop_end".to_string()),

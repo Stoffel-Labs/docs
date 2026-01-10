@@ -152,12 +152,12 @@ Create `src/stats.stfl`:
 # Simple statistical functions for salary benchmarking
 
 # Calculate comprehensive salary statistics
-proc calculate_salary_stats(
+def calculate_salary_stats(
     salary_data: SalaryData,
     role_filter: int64,
     experience_filter: int64,
     location_filter: int64
-): SalaryStats =
+) -> SalaryStats:
   # Filter data for the specific role/experience/location
   let filtered_salaries: secret int64 = salary_data.salary
   let count: int64 = 1
@@ -183,7 +183,7 @@ proc calculate_salary_stats(
   )
 
 # Safely reveal statistics (with privacy protection)
-proc reveal_safe_stats(stats: SalaryStats): PublicStats =
+def reveal_safe_stats(stats: SalaryStats) -> PublicStats:
   # Only reveal if we have enough data points for statistical significance
   if stats.count < 5:
     return PublicStats(
@@ -223,7 +223,7 @@ Edit `src/main.stfl`:
 
 ```
 # Main entry point for salary benchmarking
-proc main() =
+main main() -> nil:
   print("🔒 Starting Secure Salary Benchmarking System")
   print("📊 Collecting data from participating companies...")
 
@@ -255,7 +255,7 @@ proc main() =
   print("✅ Benchmarking complete! No individual data was exposed.")
 
 # Generate a simple salary report for a specific role
-proc generate_salary_report(data: SalaryData, role_id: int64, role_name: string) =
+def generate_salary_report(data: SalaryData, role_id: int64, role_name: string) -> nil:
   print("📈 Analyzing " + role_name + " positions...")
 
   let stats = calculate_salary_stats(data, role_id, mid, high_cost)
@@ -268,7 +268,7 @@ proc generate_salary_report(data: SalaryData, role_id: int64, role_name: string)
   print("     Range: $" + $public_stats.salary_range_min + " - $" + $public_stats.salary_range_max)
 
 # Load salary data (in reality, this comes from multiple companies)
-proc load_salary_data(): SalaryData =
+def load_salary_data() -> SalaryData:
   # This would be replaced with actual data submission from companies
   # For demo purposes, we'll create some sample data
 
@@ -293,7 +293,7 @@ Create `tests/unit.stfl`:
 # Note: Testing framework syntax is simplified for demonstration
 # In practice, StoffelLang would have a proper testing framework
 
-proc test_salary_calculation() =
+def test_salary_calculation() -> nil:
   print("Testing salary statistics calculation...")
 
   # Create test data
@@ -314,7 +314,7 @@ proc test_salary_calculation() =
   else:
     print("❌ Test failed: Incorrect count")
 
-proc test_insufficient_data_protection() =
+def test_insufficient_data_protection() -> nil:
   print("Testing privacy protection...")
 
   let test_data = SalaryData(
@@ -334,7 +334,7 @@ proc test_insufficient_data_protection() =
   else:
     print("❌ Test failed: Privacy protection failed")
 
-proc main() =
+main main() -> nil:
   test_salary_calculation()
   test_insufficient_data_protection()
   print("All tests completed")

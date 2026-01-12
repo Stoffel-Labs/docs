@@ -1,0 +1,249 @@
+# Access Control
+
+The `StoffelAccessControl` contract provides role-based access control for MPC parties, ensuring only authorized addresses can participate in the computation.
+
+## Overview
+
+```solidity
+abstract contract StoffelAccessControl is AccessControl {
+    bytes32 public constant PARTY_ROLE = keccak256("PARTY_ROLE");
+    bytes32 public constant DESIGNATED_PARTY_ROLE = keccak256("DESIGNATED_PARTY_ROLE");
+}
+```
+
+**Inheritance:** OpenZeppelin's `AccessControl`
+
+## Roles
+
+### PARTY_ROLE
+
+Assigned to MPC compute nodes (servers). Parties can:
+- Participate in MPC protocol execution
+- Submit computation results
+- Access party-restricted functions
+
+### DESIGNATED_PARTY_ROLE
+
+Elevated role for orchestration. The designated party can:
+- Trigger round transitions
+- Initialize input mask buffers
+- Coordinate preprocessing and output phases
+- All permissions of PARTY_ROLE
+
+## Storage
+
+```solidity
+// Number of parties (n)
+uint256 public nParties;
+
+// Fault tolerance threshold (t)
+uint256 public threshold;
+```
+
+## Constructor
+
+```solidity
+constructor(
+    uint256 n,
+    uint256 t,
+    address designatedParty,
+    address[] memory initialMPCNodes
+) {
+    require(n >= 3 * t + 1, "Invalid n/t configuration");
+    require(initialMPCNodes.length <= n, "Too many initial nodes");
+
+    nParties = n;
+    threshold = t;
+
+    // Grant designated party role
+    _grantRole(DESIGNATED_PARTY_ROLE, designatedParty);
+    _grantRole(PARTY_ROLE, designatedParty);
+
+    // Grant party role to all MPC nodes
+    for (uint i = 0; i < initialMPCNodes.length; i++) {
+        _grantRole(PARTY_ROLE, initialMPCNodes[i]);
+    }
+}
+```
+
+## Modifiers
+
+### onlyParty
+
+Restricts function to addresses with PARTY_ROLE.
+
+```solidity
+modifier onlyParty() {
+    require(hasRole(PARTY_ROLE, msg.sender), "Caller is not a party");
+    _;
+}
+
+// Usage
+function submitShare(bytes calldata share) external onlyParty {
+    // Only MPC nodes can submit shares
+}
+```
+
+### onlyDesignatedParty
+
+Restricts function to the designated party.
+
+```solidity
+modifier onlyDesignatedParty() {
+    require(hasRole(DESIGNATED_PARTY_ROLE, msg.sender), "Caller is not designated party");
+    _;
+}
+
+// Usage
+function startPreprocessing() external onlyDesignatedParty {
+    // Only designated party can start preprocessing
+}
+```
+
+## Party Management
+
+### Adding Parties
+
+```solidity
+function addParty(address party) external onlyDesignatedParty {
+    require(!hasRole(PARTY_ROLE, party), "Already a party");
+    require(getPartyCount() < nParties, "Max parties reached");
+
+    _grantRole(PARTY_ROLE, party);
+}
+```
+
+### Removing Parties
+
+```solidity
+function removeParty(address party) external onlyDesignatedParty {
+    require(hasRole(PARTY_ROLE, party), "Not a party");
+    require(getPartyCount() > threshold + 1, "Cannot go below threshold");
+
+    _revokeRole(PARTY_ROLE, party);
+}
+```
+
+### Querying Party Status
+
+```solidity
+function isParty(address account) public view returns (bool) {
+    return hasRole(PARTY_ROLE, account);
+}
+
+function isDesignatedParty(address account) public view returns (bool) {
+    return hasRole(DESIGNATED_PARTY_ROLE, account);
+}
+
+function getPartyCount() public view returns (uint256) {
+    return getRoleMemberCount(PARTY_ROLE);
+}
+```
+
+## Constraints
+
+### n >= 3t + 1
+
+The HoneyBadger protocol requires `n >= 3t + 1`:
+
+```solidity
+function validateConfiguration(uint256 n, uint256 t) internal pure {
+    require(n >= 3 * t + 1, "n must be >= 3t + 1 for Byzantine fault tolerance");
+}
+```
+
+### Minimum Party Threshold
+
+Parties cannot be removed if it would violate the threshold:
+
+```solidity
+function canRemoveParty() public view returns (bool) {
+    return getPartyCount() > threshold + 1;
+}
+```
+
+## Designated Party Transfer
+
+```solidity
+function transferDesignatedParty(address newDesignatedParty) external onlyDesignatedParty {
+    require(newDesignatedParty != address(0), "Invalid address");
+
+    _revokeRole(DESIGNATED_PARTY_ROLE, msg.sender);
+    _grantRole(DESIGNATED_PARTY_ROLE, newDesignatedParty);
+
+    // New designated party also gets PARTY_ROLE
+    if (!hasRole(PARTY_ROLE, newDesignatedParty)) {
+        _grantRole(PARTY_ROLE, newDesignatedParty);
+    }
+}
+```
+
+## Events
+
+```solidity
+// Inherited from OpenZeppelin AccessControl
+event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
+event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
+```
+
+## Example Usage
+
+### Deploy with Initial Parties
+
+```solidity
+address[] memory mpcNodes = new address[](5);
+mpcNodes[0] = 0x1111...;
+mpcNodes[1] = 0x2222...;
+mpcNodes[2] = 0x3333...;
+mpcNodes[3] = 0x4444...;
+mpcNodes[4] = 0x5555...;
+
+MyCoordinator coordinator = new MyCoordinator(
+    programHash,
+    5,                    // n = 5 parties
+    1,                    // t = 1 (tolerates 1 faulty)
+    designatedPartyAddr,
+    mpcNodes
+);
+```
+
+### Check Permissions
+
+```solidity
+// Check if address is a party
+bool canCompute = coordinator.isParty(someAddress);
+
+// Check if designated party
+bool canOrchestrate = coordinator.isDesignatedParty(someAddress);
+
+// Get current party count
+uint256 activeParties = coordinator.getPartyCount();
+```
+
+### Dynamic Party Management
+
+```solidity
+// Add a new MPC node (designated party only)
+coordinator.addParty(newNodeAddress);
+
+// Remove an MPC node (must maintain threshold)
+if (coordinator.canRemoveParty()) {
+    coordinator.removeParty(oldNodeAddress);
+}
+
+// Transfer designated party role
+coordinator.transferDesignatedParty(newDesignatedPartyAddress);
+```
+
+## Security Considerations
+
+1. **Threshold maintenance**: Never allow party count to drop below `t + 1`
+2. **Designated party security**: Protect the designated party key
+3. **Role separation**: Use separate addresses for different roles when possible
+4. **Multi-sig**: Consider using a multi-sig for designated party role in production
+
+## Next Steps
+
+- [StoffelCoordinator](./coordinator): State machine details
+- [Input Manager](./input-manager): Client input handling
+- [Overview](./overview): Architecture overview

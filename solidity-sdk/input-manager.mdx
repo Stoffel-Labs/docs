@@ -1,0 +1,299 @@
+# Input Manager
+
+The `StoffelInputManager` contract handles client input submission for MPC computations, including mask reservation and ECDSA authentication.
+
+## Overview
+
+```solidity
+abstract contract StoffelInputManager {
+    // Manages client inputs with privacy-preserving masking
+}
+```
+
+## How Input Masking Works
+
+Clients don't submit raw inputs on-chain (that would reveal them). Instead:
+
+1. **MPC nodes generate input masks** during preprocessing
+2. **Clients reserve mask indices** on-chain
+3. **Clients submit masked inputs**: `masked = input + mask`
+4. **MPC nodes unmask** during computation using their mask shares
+
+```
+Client Input: 42
+Mask:         17
+Masked Input: 59  ← This goes on-chain (reveals nothing about 42)
+```
+
+## Data Structures
+
+### MaskedInput
+
+```solidity
+struct MaskedInput {
+    uint256 index;        // Reserved mask index
+    uint256 maskedInput;  // Input XOR/+ mask
+}
+```
+
+### Inputs
+
+```solidity
+struct Inputs {
+    bytes publicInputs;           // Optional public parameters
+    MaskedInput[] maskedInputs;   // Array of masked secret inputs
+}
+```
+
+### Outputs
+
+```solidity
+struct Outputs {
+    bytes publicOutputs;          // Computation results
+    mapping(address => mapping(address => bool)) sharesReceived;
+    // Tracks: client => party => received
+}
+```
+
+## Storage
+
+```solidity
+// Maps index to reserving client
+mapping(uint256 => address) public reservedInputIndices;
+
+// Total indices available
+uint256 public nTotalIndices;
+
+// Remaining unreserved indices
+uint256 public nIndicesLeft;
+
+// Client inputs storage
+mapping(address => MaskedInput) public clientInputs;
+```
+
+## Functions
+
+### initializeInputMaskBuffer
+
+Sets up the input mask buffer. Called by designated party during preprocessing.
+
+```solidity
+function initializeInputMaskBuffer(uint256 nIndicesToReserve)
+    external
+    onlyDesignatedParty
+{
+    nTotalIndices = nIndicesToReserve;
+    nIndicesLeft = nIndicesToReserve;
+}
+```
+
+### reserveInputMask
+
+Clients call this to reserve an input mask index.
+
+```solidity
+function reserveInputMask(uint256 indexToReserve) external {
+    require(indexToReserve < nTotalIndices, "Index out of bounds");
+    require(reservedInputIndices[indexToReserve] == address(0), "Index already reserved");
+    require(nIndicesLeft > 0, "No indices left");
+
+    reservedInputIndices[indexToReserve] = msg.sender;
+    nIndicesLeft--;
+
+    emit InputMaskReserved(msg.sender, indexToReserve);
+}
+```
+
+### submitMaskedInput
+
+Clients submit their masked input using a reserved index.
+
+```solidity
+function submitMaskedInput(uint256 maskedInput, uint256 reservedIndex) external {
+    require(reservedInputIndices[reservedIndex] == msg.sender, "Not your reserved index");
+
+    clientInputs[msg.sender] = MaskedInput({
+        index: reservedIndex,
+        maskedInput: maskedInput
+    });
+
+    // Unreserve the index (one-time use)
+    reservedInputIndices[reservedIndex] = address(0);
+
+    emit MaskedInputSubmitted(msg.sender, reservedIndex);
+}
+```
+
+### authenticateClient
+
+MPC nodes use this for off-chain client authentication via ECDSA.
+
+```solidity
+function authenticateClient(
+    uint256 requestIndex,
+    address clientAddr,
+    bytes calldata signature
+) external view returns (bool) {
+    // Construct the message hash
+    bytes32 messageHash = keccak256(abi.encode(requestIndex));
+    bytes32 ethSignedHash = keccak256(
+        abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
+    );
+
+    // Recover signer from signature
+    address recovered = recoverSigner(ethSignedHash, signature);
+
+    return recovered == clientAddr;
+}
+```
+
+### getClientInput
+
+Retrieve a client's submitted input.
+
+```solidity
+function getClientInput(address client)
+    external
+    view
+    returns (MaskedInput memory)
+{
+    return clientInputs[client];
+}
+```
+
+### hasClientSubmitted
+
+Check if a client has submitted their input.
+
+```solidity
+function hasClientSubmitted(address client) external view returns (bool) {
+    return clientInputs[client].maskedInput != 0 ||
+           clientInputs[client].index != 0;
+}
+```
+
+## Events
+
+```solidity
+event InputMaskReserved(address indexed client, uint256 indexed index);
+event MaskedInputSubmitted(address indexed client, uint256 indexed index);
+event ClientAuthenticated(address indexed client, uint256 indexed requestIndex);
+```
+
+## Client Workflow
+
+### 1. Reserve a Mask Index
+
+```javascript
+// Client reserves index 5
+await coordinator.reserveInputMask(5);
+```
+
+### 2. Get the Mask (Off-Chain)
+
+```javascript
+// Client contacts MPC nodes to get their mask
+// This happens off-chain via the Rust SDK
+const mask = await mpcClient.getInputMask(5);
+```
+
+### 3. Compute Masked Input
+
+```javascript
+// Client masks their secret input
+const secretInput = 42n;
+const maskedInput = secretInput + mask;  // or XOR depending on protocol
+```
+
+### 4. Submit Masked Input
+
+```javascript
+// Client submits on-chain
+await coordinator.submitMaskedInput(maskedInput, 5);
+```
+
+### 5. MPC Nodes Unmask
+
+During computation, MPC nodes:
+1. Read `maskedInput` from contract
+2. Subtract their mask share
+3. Proceed with MPC on the unmasked value
+
+## Authentication Flow
+
+For off-chain operations, clients prove their identity:
+
+```javascript
+// Client signs a request
+const requestIndex = 12345;
+const messageHash = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(['uint256'], [requestIndex])
+);
+const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash));
+
+// MPC node verifies on-chain
+const isValid = await coordinator.authenticateClient(
+    requestIndex,
+    clientAddress,
+    signature
+);
+```
+
+## Example: Complete Input Flow
+
+```solidity
+contract SecureVoting is StoffelCoordinator {
+    mapping(address => bool) public hasVoted;
+
+    function vote(uint256 maskedVote, uint256 maskIndex) external {
+        require(!hasVoted[msg.sender], "Already voted");
+        require(currentRound == Round.CollectingClientInputRound, "Not collecting");
+
+        // Verify client reserved this index
+        require(reservedInputIndices[maskIndex] == msg.sender, "Wrong index");
+
+        // Submit the masked vote
+        clientInputs[msg.sender] = MaskedInput({
+            index: maskIndex,
+            maskedInput: maskedVote
+        });
+
+        hasVoted[msg.sender] = true;
+        reservedInputIndices[maskIndex] = address(0);
+
+        emit MaskedInputSubmitted(msg.sender, maskIndex);
+    }
+}
+```
+
+## Security Considerations
+
+### Index Reservation
+
+- Each index can only be reserved once
+- Prevents double-spending of masks
+- Clients should reserve early to ensure availability
+
+### Mask Uniqueness
+
+- Each mask is used exactly once
+- After submission, the index is unreserved
+- Prevents mask reuse attacks
+
+### Authentication
+
+- ECDSA signatures verify client identity
+- Prevents impersonation in off-chain communications
+- Message includes unique `requestIndex` to prevent replay
+
+### Input Privacy
+
+- Only masked values appear on-chain
+- Raw inputs never touch the blockchain
+- Privacy depends on MPC node security (threshold trust)
+
+## Next Steps
+
+- [StoffelCoordinator](./coordinator): State machine details
+- [Access Control](./access-control): Role management
+- [Overview](./overview): Architecture overview

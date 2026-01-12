@@ -1,0 +1,311 @@
+# Quick Start
+
+Get up and running with Stoffel in just a few minutes! This guide will walk you through creating your first privacy-preserving application using Multi-Party Computation.
+
+## Prerequisites
+
+Make sure you have Stoffel installed on your system. If not, follow the [Installation](./installation) guide first.
+
+```bash
+# Verify Stoffel is installed
+stoffel --version
+```
+
+## 5-Minute MPC Application
+
+Let's create a simple secure addition application where two parties can compute the sum of their private numbers without revealing them to each other.
+
+### Step 1: Create a New Project
+
+```bash
+# Create a new Stoffel project
+stoffel init secure-addition
+
+# Navigate to the project directory
+cd secure-addition
+```
+
+This creates a basic project structure:
+```
+secure-addition/
+├── Stoffel.toml          # Project configuration
+├── src/
+│   └── main.stfl         # Main StoffelLang source file
+├── tests/
+└── README.md
+```
+
+### Step 2: Write Your First StoffelLang Program
+
+Open `src/main.stfl` and replace the contents with:
+
+```python
+# Secure addition function
+def secure_add(a: secret int64, b: secret int64) -> secret int64:
+    return a + b
+
+# Main function - entry point for execution
+main main() -> nil:
+    # Get secret inputs from MPC clients
+    secret var secret_value_a = ClientStore.take_share(0, 0)
+    secret var secret_value_b = ClientStore.take_share(1, 0)
+
+    # Perform secure computation
+    secret var secure_result = secure_add(secret_value_a, secret_value_b)
+
+    # Print completion message
+    print("Secure addition complete")
+```
+
+### Step 3: Compile Your Program
+
+```bash
+# Compile the StoffelLang program to VM bytecode
+stoffel compile src/main.stfl --binary --output secure-addition.stfbin
+```
+
+This will:
+- Parse and compile your StoffelLang code
+- Generate optimized VM bytecode
+- Create a compiled `.stfbin` file ready for execution
+
+You should see output like:
+```
+Compiling src/main.stfl...
+Compilation successful!
+Generating VM-compatible binary...
+Binary saved to secure-addition.stfbin
+```
+
+### Step 4: Run Your Application
+
+```bash
+# Execute the compiled program using StoffelVM
+stoffel-run secure-addition.stfbin main
+```
+
+This runs your secure computation and you should see:
+```
+Program returned: Unit
+```
+
+The program executes successfully! For more detailed execution tracing, you can use debug flags:
+
+```bash
+# Trace instruction execution
+stoffel-run secure-addition.stfbin main --trace-instr
+
+# Trace register operations
+stoffel-run secure-addition.stfbin main --trace-regs
+
+# Trace function calls and stack operations
+stoffel-run secure-addition.stfbin main --trace-stack
+```
+
+### Step 5: Development Workflow
+
+<Note>
+The integrated `stoffel run` command is currently under development. For now, use this workflow:
+</Note>
+
+```bash
+# 1. Edit your .stfl file
+# 2. Recompile when you make changes
+stoffel compile src/main.stfl --binary --output secure-addition.stfbin
+
+# 3. Test the changes
+stoffel-run secure-addition.stfbin main
+
+# 4. For debugging, enable tracing
+stoffel-run secure-addition.stfbin main --trace-instr --trace-regs
+```
+
+## Understanding What Happened
+
+### The Magic of MPC
+
+In your secure addition example:
+
+1. **Secret Sharing**: The inputs from each client are automatically split into shares
+2. **Distributed Computation**: Each party computes on shares without seeing the original values
+3. **Result Reconstruction**: The final result is reconstructed from the output shares
+
+```
+Party 1: Receives shares [8, 23] → Computes 8 + 23 = 31
+Party 2: Receives shares [5, 12] → Computes 5 + 12 = 17
+Party 3: Receives shares [12, -18] → Computes 12 + (-18) = -6
+...
+Result: Reconstruct 31 + 17 + (-6) + ... = 42
+```
+
+No single party ever sees the original input values!
+
+### StoffelLang Features
+
+Your simple program demonstrated several key features:
+
+- **Secret Types**: `secret int64` for private data
+- **Automatic Operations**: `+` works on secret values
+- **ClientStore**: `ClientStore.take_share()` retrieves secret inputs from MPC clients
+- **Built-in Functions**: `print()` for output
+
+## Next Steps
+
+### Try Different Examples
+
+Experiment with different StoffelLang programs by modifying `src/main.stfl`:
+
+```bash
+# After editing, recompile and run
+stoffel compile src/main.stfl --binary --output example.stfbin
+stoffel-run example.stfbin main
+```
+
+### Future Features
+
+<Info>
+**Coming Soon**: The following features are currently under development:
+
+- **Templates**: `stoffel init --template <name>` for common use cases
+- **Python SDK Integration**: Seamless Python bindings
+- **Development Server**: `stoffel dev` with hot reloading and web interface
+- **Advanced CLI**: Testing, deployment, and protocol management commands
+</Info>
+
+## Common Commands
+
+Here are the essential commands you'll use regularly:
+
+```bash
+# Project creation
+stoffel init <name>                 # Create new project structure
+
+# Compilation
+stoffel compile <source.stfl>       # Compile to bytecode
+stoffel compile <source.stfl> --binary --output <file.stfbin>
+
+# Compilation options
+--binary            # Generate VM-compatible binary format
+--output/-o         # Specify output file path
+--print-ir          # Show intermediate representations
+-O0 to -O3          # Optimization levels (0=none, 3=maximum)
+--disassemble       # Disassemble compiled binary
+
+# Execution (using StoffelVM)
+stoffel-run <program.stfbin> [entry_function] [flags]
+
+# Execution debugging flags:
+--trace-instr       # Trace instructions before/after execution
+--trace-regs        # Trace register reads/writes
+--trace-stack       # Trace function calls and stack operations
+
+# Help and information
+stoffel --help                      # Show CLI help
+stoffel compile --help              # Show compiler help
+stoffel-run --help                  # Show VM runner help
+```
+
+<Note>
+**Development Note**: Advanced CLI features like `stoffel run`, `stoffel dev`, `stoffel test`, and `stoffel deploy` are currently under development. The core workflow using `stoffel compile` and `stoffel-run` is fully functional.
+</Note>
+
+## What's Next?
+
+Now that you've created your first MPC application:
+
+1. **[Basic Usage](./basic-usage)**: Learn all the essential Stoffel CLI commands
+2. **[Your First MPC Project](./first-project)**: Build a more complex privacy-preserving application
+3. **[StoffelLang Overview](../stoffel-lang/overview)**: Deep dive into the programming language
+4. **[Rust SDK](../rust-sdk/overview)**: Integrate Stoffel with Rust applications
+
+## Troubleshooting
+
+### Compilation Errors
+
+```bash
+# Check detailed compiler output
+stoffel compile src/main.stfl --print-ir --binary --output debug.stfbin
+
+# The --print-ir flag shows intermediate representations including:
+# - Generated bytecode
+# - Constants and labels
+# - Function chunks
+```
+
+### Runtime Errors
+
+```bash
+# Use tracing flags to debug execution
+stoffel-run program.stfbin main --trace-instr --trace-regs --trace-stack
+
+# This provides detailed execution traces showing:
+# - Instruction execution order
+# - Register read/write operations
+# - Function call stack operations
+```
+
+### Common Issues
+
+**"Error loading binary"**: Ensure the `.stfbin` file was compiled successfully and the path is correct.
+
+**"Execution error"**: Check that the entry function exists and has the correct signature using `--trace-instr` for debugging.
+
+**"ClientStore.take_share can only be assigned to secret variables"**: Ensure you use `secret var` when receiving values from `ClientStore.take_share()`.
+
+## Example Variations
+
+Try these variations of the secure addition example:
+
+### Secure Comparison
+
+```python
+def secure_compare(a: secret int64, b: secret int64) -> secret int64:
+    # Returns 1 if a > b, 0 otherwise (secret result)
+    if a > b:
+        return 1
+    return 0
+
+main main() -> nil:
+    secret var alice_value = ClientStore.take_share(0, 0)
+    secret var bob_value = ClientStore.take_share(1, 0)
+
+    secret var result = secure_compare(alice_value, bob_value)
+    print("Comparison complete")
+```
+
+### Secure Average
+
+```python
+def secure_sum(a: secret int64, b: secret int64, c: secret int64) -> secret int64:
+    return a + b + c
+
+main main() -> nil:
+    # Get inputs from three clients
+    secret var input1 = ClientStore.take_share(0, 0)
+    secret var input2 = ClientStore.take_share(1, 0)
+    secret var input3 = ClientStore.take_share(2, 0)
+
+    # Compute secure sum
+    secret var total = secure_sum(input1, input2, input3)
+
+    # Note: Division for average would require additional MPC support
+    print("Sum computed")
+```
+
+### Using get_number_clients
+
+```python
+main main() -> nil:
+    # Query the number of connected clients
+    var num_clients: int64 = ClientStore.get_number_clients()
+    print("Number of clients connected")
+
+    # Process inputs from first two clients
+    secret var input1 = ClientStore.take_share(0, 0)
+    secret var input2 = ClientStore.take_share(1, 0)
+
+    secret var result = input1 + input2
+    print("Computation complete")
+```
+
+You're now ready to build privacy-preserving applications with Stoffel! The framework handles all the complex cryptography while you focus on your application logic.

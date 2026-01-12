@@ -1,0 +1,107 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Stoffel Documentation",
+  "colors": {
+    "primary": "#6366F1"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": [
+    {
+      "group": "Introduction",
+      "pages": [
+        "introduction",
+        "introduction/what-is-mpc",
+        "introduction/why-stoffel",
+        "introduction/ecosystem"
+      ]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "getting-started/installation",
+        "getting-started/quick-start",
+        "getting-started/basic-usage",
+        "getting-started/first-project"
+      ]
+    },
+    {
+      "group": "The Stoffel CLI",
+      "pages": [
+        "cli/overview"
+      ]
+    },
+    {
+      "group": "StoffelLang",
+      "pages": [
+        "stoffel-lang/overview",
+        "stoffel-lang/syntax",
+        "stoffel-lang/compilation",
+        "stoffel-lang/ffi"
+      ]
+    },
+    {
+      "group": "StoffelVM",
+      "pages": [
+        "stoffel-vm/implementation",
+        "stoffel-vm/instructions",
+        "stoffel-vm/usage",
+        "stoffel-vm/builtins"
+      ]
+    },
+    {
+      "group": "Rust SDK",
+      "pages": [
+        "rust-sdk/overview",
+        "rust-sdk/installation",
+        "rust-sdk/api",
+        "rust-sdk/examples"
+      ]
+    },
+    {
+      "group": "Python SDK",
+      "pages": [
+        "python-sdk/overview",
+        "python-sdk/installation",
+        "python-sdk/api",
+        "python-sdk/examples"
+      ]
+    },
+    {
+      "group": "Solidity SDK",
+      "pages": [
+        "solidity-sdk/overview",
+        "solidity-sdk/coordinator",
+        "solidity-sdk/access-control",
+        "solidity-sdk/input-manager"
+      ]
+    },
+    {
+      "group": "MPC Protocols",
+      "pages": [
+        "mpc-protocols/overview",
+        "mpc-protocols/implementation"
+      ]
+    },
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/system",
+        "architecture/rationale",
+        "architecture/architecture",
+        "architecture/vm",
+        "architecture/mpc",
+        "architecture/sources"
+      ]
+    }
+  ],
+  "codeBlocks": {
+    "languages": [
+      {
+        "language": "stoffel",
+        "aliases": ["stfl", "stoffellang"],
+        "grammar": "source.rust"
+      }
+    ]
+  }
+}

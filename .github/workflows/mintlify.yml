@@ -45,10 +45,10 @@ jobs:
           node-version: '20'
 
       - name: Install Mintlify CLI
-        run: npm install -g mintlify
+        run: npm install -g mint
 
       - name: Build documentation
-        run: mintlify build
+        run: mint build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

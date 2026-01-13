@@ -1,0 +1,70 @@
+# Mintlify Documentation Deployment
+#
+# This workflow builds and deploys the Stoffel documentation using Mintlify.
+# Choose one of the deployment options below based on your setup.
+#
+name: Deploy Mintlify Docs
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+# Option A: Mintlify Managed Hosting
+# Uncomment this job and add MINTLIFY_API_KEY to repository secrets
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: mintlify/docs-action@v1
+#         with:
+#           api-key: ${{ secrets.MINTLIFY_API_KEY }}
+
+# Option B: Self-hosted (GitHub Pages)
+# This is the default - builds locally and deploys to GitHub Pages
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Mintlify CLI
+        run: npm install -g mint
+
+      - name: Build documentation
+        run: mint build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./.mintlify/output
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

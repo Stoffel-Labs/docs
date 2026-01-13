@@ -1,0 +1,162 @@
+# API Reference
+
+<Warning>
+**Status: Work in Progress**
+
+This page documents the target API design for the Python SDK. The API is subject to change as development progresses.
+</Warning>
+
+## StoffelProgram
+
+Handles StoffelLang compilation and VM operations.
+
+```python
+class StoffelProgram:
+    def __init__(self, source_file: Optional[str] = None)
+
+    # Compilation
+    def compile(self, optimize: bool = True) -> str
+    def load_program(self) -> None
+
+    # Configuration
+    def set_execution_params(self, params: Dict[str, Any]) -> None
+    def get_computation_id(self) -> str
+    def get_program_info(self) -> Dict[str, Any]
+
+    # Local execution
+    def execute_locally(self, inputs: Dict[str, Any]) -> Any
+```
+
+### Usage Example
+
+```python
+from stoffel import StoffelProgram
+
+program = StoffelProgram("my_program.stfl")
+program.compile(optimize=True)
+program.set_execution_params({
+    "computation_id": "my_computation",
+    "function_name": "main"
+})
+
+# Test locally
+result = program.execute_locally({"a": 10, "b": 20})
+```
+
+## StoffelClient
+
+Manages MPC network communication.
+
+```python
+class StoffelClient:
+    def __init__(self, network_config: Dict[str, Any])
+
+    # Primary API
+    async def execute_with_inputs(
+        self,
+        secret_inputs: Optional[Dict[str, Any]] = None,
+        public_inputs: Optional[Dict[str, Any]] = None
+    ) -> Any
+
+    # Input management
+    def set_secret_input(self, name: str, value: Any) -> None
+    def set_public_input(self, name: str, value: Any) -> None
+    def set_inputs(
+        self,
+        secret_inputs: Optional[Dict[str, Any]] = None,
+        public_inputs: Optional[Dict[str, Any]] = None
+    ) -> None
+
+    # Connection management
+    async def connect(self) -> None
+    async def disconnect(self) -> None
+    def is_ready(self) -> bool
+    def get_connection_status(self) -> Dict[str, Any]
+```
+
+### Usage Example
+
+```python
+from stoffel import StoffelClient
+
+client = StoffelClient({
+    "nodes": ["http://node1:9000", "http://node2:9000"],
+    "client_id": "my_client",
+    "program_id": "my_computation"
+})
+
+result = await client.execute_with_inputs(
+    secret_inputs={"private_value": 42},
+    public_inputs={"config": "standard"}
+)
+
+await client.disconnect()
+```
+
+## Network Configuration
+
+```python
+config = {
+    "nodes": [
+        "http://mpc-node1:9000",
+        "http://mpc-node2:9000",
+        "http://mpc-node3:9000"
+    ],
+    "client_id": "unique_client_id",
+    "program_id": "computation_identifier",
+    "coordinator_url": "http://coordinator:8080"  # Optional
+}
+```
+
+## Error Types
+
+```python
+from stoffel.errors import (
+    StoffelError,        # Base exception
+    CompilationError,    # StoffelLang compilation failures
+    RuntimeError,        # VM execution errors
+    NetworkError,        # Connection failures
+    MPCError,            # Protocol-level errors
+    ConfigurationError   # Invalid parameters
+)
+```
+
+## Low-Level VM Access (Advanced)
+
+For direct VM control:
+
+```python
+from stoffel.vm import VirtualMachine, StoffelValue
+
+vm = VirtualMachine()
+
+# Register custom functions
+def custom_op(a, b):
+    return a * b + 42
+
+vm.register_foreign_function("custom_op", custom_op)
+
+# Execute with typed arguments
+result = vm.execute_with_args("main", [
+    StoffelValue.integer(100),
+    StoffelValue.string("test")
+])
+```
+
+## Type Conversions
+
+| Python Type | StoffelLang Type |
+|-------------|------------------|
+| `int` | `int64` |
+| `float` | `float` (fixed-point) |
+| `str` | `string` |
+| `bool` | `bool` |
+| `None` | `nil` |
+| `list` | `array` |
+| `dict` | `object` |
+
+## See Also
+
+- **[Rust SDK API](../rust-sdk/api)**: Production-ready API reference
+- **[SDK Overview](./overview)**: Architecture and design
+- **[Examples](./examples)**: Usage patterns

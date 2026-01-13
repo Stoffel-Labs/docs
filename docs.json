@@ -106,6 +106,12 @@
               "architecture/mpc",
               "architecture/sources"
             ]
+          },
+          {
+            "group": "RFCs",
+            "pages": [
+              "rfcs/0001-preprocessing-configuration"
+            ]
           }
         ]
       }

@@ -1,0 +1,579 @@
+---
+title: "RFC-0001: MPC Preprocessing Configuration"
+description: "Program-aware bytecode analysis for automatic preprocessing configuration"
+---
+
+# PRD: MPC Preprocessing Configuration
+
+**Status:** Ready for Review
+**Author:** Claude Code
+**Created:** 2026-01-12
+**Related PRs:** [stoffel-rust-sdk#1](https://github.com/Stoffel-Labs/stoffel-rust-sdk/pull/1)
+
+---
+
+## Executive Summary
+
+This PRD defines requirements for MPC preprocessing configuration across the Stoffel stack (CLI, Rust SDK, and future SDKs). The goal is to provide a consistent, user-friendly, and safe way to configure Beaver triples and random shares for HoneyBadger MPC preprocessing.
+
+---
+
+## Problem Statement
+
+### Current State
+
+1. **Rust SDK**: Has hardcoded defaults (`n_triples=10`, `n_random_shares=20`) that are arbitrary and may cause silent runtime failures if insufficient for the program being executed.
+
+2. **CLI**: Supports MPC parameters (`--parties`, `--threshold`, `--protocol`, `--field`) but has **no preprocessing configuration**. Preprocessing values are only hardcoded in generated templates.
+
+3. **Configuration Gap**: No way to persist preprocessing settings in `Stoffel.toml` or pass them via CLI flags.
+
+### Consequences
+
+- **Silent failures**: Programs run out of preprocessing material mid-execution
+- **Inconsistent UX**: Users must manually edit generated code to change preprocessing
+- **No guidance**: Users don't know what values to use for their workload
+- **Poor defaults**: Arbitrary values don't scale with threshold or program complexity
+
+---
+
+## Goals
+
+| Goal | Description | Priority |
+|------|-------------|----------|
+| **Safety** | Prevent silent runtime failures from insufficient preprocessing | P0 |
+| **Usability** | Provide sensible defaults with clear override mechanisms | P0 |
+| **Consistency** | Unified configuration across CLI, SDK, and config files | P1 |
+| **Flexibility** | Support minimal testing through production workloads | P1 |
+| **Education** | Help users understand preprocessing requirements | P2 |
+
+### Non-Goals
+
+- Dynamic preprocessing replenishment during execution (protocol limitation)
+- Support for protocols other than HoneyBadger (only protocol currently)
+
+---
+
+## User Stories
+
+### US1: App Developer (Client-side)
+> As an app developer using `StoffelClient`, I don't want to think about preprocessing at all. The servers I connect to should handle it.
+
+**Requirement**: Client API requires no preprocessing configuration.
+
+### US2: Infrastructure Operator (Server-side, Development)
+> As an infrastructure operator setting up a dev/test MPC network, I want quick defaults that work for simple programs without configuration.
+
+**Requirement**: Named presets like `--preprocessing=minimal` or `.with_minimal_preprocessing()`.
+
+### US3: Infrastructure Operator (Server-side, Production)
+> As an infrastructure operator running production MPC servers, I need explicit control over preprocessing to match my workload and avoid resource waste.
+
+**Requirement**: Explicit configuration via `--beaver-triples=N --random-shares=M` or `.with_preprocessing(n, m)`.
+
+### US4: Project Maintainer
+> As a project maintainer, I want preprocessing settings persisted in `Stoffel.toml` so my team uses consistent values.
+
+**Requirement**: Configuration file support with CLI override capability.
+
+### US5: New User
+> As a new user, I want clear errors if I misconfigure preprocessing, not silent failures during computation.
+
+**Requirement**: Validation at build/startup time with actionable error messages.
+
+---
+
+## Technical Requirements
+
+### TR1: Preprocessing Parameters
+
+| Parameter | Type | Description | Constraints |
+|-----------|------|-------------|-------------|
+| `n_triples` | `usize` | Beaver triples for secure multiplication | > 0, typically ≥ 2t+1 |
+| `n_random_shares` | `usize` | Random shares for input masking | > 0, typically ≥ 2 + 2*n_triples |
+
+**Relationship Formula** (from StoffelVM tests):
+```
+n_triples_minimal = 2 * threshold + 1
+n_random_shares_minimal = 2 + 2 * n_triples
+```
+
+### TR2: Program-Aware Bytecode Analysis (Primary Approach)
+
+The SDK automatically analyzes compiled bytecode to determine preprocessing requirements:
+
+**Analysis Algorithm:**
+```
+1. Parse bytecode to extract instruction stream
+2. Count MUL (multiplication) instructions → mul_count
+3. Count instructions that consume random shares → rand_count
+4. Detect loops → has_loops (for warning)
+5. Calculate requirements:
+   - n_triples = mul_count + 2  (fixed safety margin)
+   - n_random_shares = rand_count + 2 + 2 * n_triples
+6. Apply minimum floor based on threshold: max(calculated, 2t+1)
+7. If has_loops: emit warning suggesting explicit override
+```
+
+**When Analysis Occurs:**
+- Automatically when `.with_program(program)` is called on `StoffelServerBuilder`
+- Cached in the `Program` struct after first analysis
+- Can be manually triggered via `program.analyze_preprocessing()`
+
+**Override Mechanism:**
+- If user calls `.with_preprocessing(n, m)` AFTER `.with_program()`, explicit values override analysis
+- If user calls `.with_preprocessing(n, m)` BEFORE `.with_program()`, explicit values are preserved
+
+### TR3: Preprocessing Presets (Fallback/Override)
+
+For cases where bytecode analysis isn't available or user wants explicit control:
+
+| Preset | n_triples | n_random_shares | Use Case |
+|--------|-----------|-----------------|----------|
+| `minimal` | `2t + 1` | `2 + 2 * n_triples` | Testing, simple programs |
+| `standard` | `32` | `66` | Development, moderate workloads |
+| `production` | `128` | `258` | Production, high throughput |
+| `custom` | User-specified | User-specified | Explicit control |
+
+### TR4: Configuration Hierarchy
+
+Priority (highest to lowest):
+1. Explicit SDK calls (`.with_preprocessing(n, m)`)
+2. CLI flags (`--beaver-triples`, `--random-shares`, `--preprocessing`)
+3. Environment variables (`STOFFEL_BEAVER_TRIPLES`, `STOFFEL_RANDOM_SHARES`)
+4. Project config (`Stoffel.toml` → `[mpc.preprocessing]`)
+5. **Automatic bytecode analysis** (when `.with_program()` is called)
+6. Error if no program and no explicit configuration
+
+### TR5: Validation Rules
+
+1. `n_triples > 0`
+2. `n_random_shares > 0`
+3. `n_random_shares >= 2 + 2 * n_triples` (warning if violated, not error)
+4. All servers in MPC network must use identical preprocessing values
+
+---
+
+## Interface Design
+
+### CLI Interface
+
+```bash
+# Using presets
+stoffel dev --preprocessing=minimal
+stoffel dev --preprocessing=standard
+stoffel dev --preprocessing=production
+
+# Explicit values (override preset)
+stoffel dev --beaver-triples=64 --random-shares=130
+
+# Combined with existing MPC flags
+stoffel dev --parties=5 --threshold=1 --preprocessing=minimal
+
+# Show calculated values
+stoffel dev --preprocessing=minimal --dry-run
+# Output: Using preprocessing: 3 Beaver triples, 8 random shares (minimal preset for t=1)
+```
+
+**New CLI Flags:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--preprocessing` | enum | None | Preset: `minimal`, `standard`, `production` |
+| `--beaver-triples` | int | None | Explicit Beaver triple count |
+| `--random-shares` | int | None | Explicit random share count |
+
+**Validation:**
+- If neither preset nor explicit values provided: **Error with guidance**
+- If only one of `--beaver-triples`/`--random-shares` provided: **Error** (must specify both)
+- If preset AND explicit values: Explicit values override preset
+
+### Rust SDK Interface
+
+```rust
+// RECOMMENDED: Automatic program-aware defaults
+// When .with_program() is called, bytecode is analyzed automatically
+let server = Stoffel::server(0)
+    .bind("0.0.0.0:19200")
+    .with_peers(&[(1, "..."), (2, "...")])
+    .with_program(program)  // Analyzes bytecode, calculates n_triples/n_random_shares
+    .build()?;
+// Result: Uses calculated values based on MUL instruction count
+
+// Override automatic analysis with explicit values
+let server = Stoffel::server(0)
+    .bind("0.0.0.0:19200")
+    .with_peers(&[(1, "..."), (2, "...")])
+    .with_program(program)        // Calculates defaults
+    .with_preprocessing(128, 258) // Overrides with explicit values
+    .build()?;
+
+// Use preset instead of automatic analysis
+let server = Stoffel::server(0)
+    .bind("0.0.0.0:19200")
+    .with_peers(&[(1, "..."), (2, "...")])
+    .with_program(program)
+    .with_preprocessing_preset(PreprocessingPreset::Production) // Overrides analysis
+    .build()?;
+
+// Query program's preprocessing requirements
+let program = Stoffel::compile(source)?.build()?.program().clone();
+let (triples, shares) = program.preprocessing_requirements(threshold);
+println!("Program needs {} triples, {} shares", triples, shares);
+
+// Error case: No program specified (no way to calculate defaults)
+let server = Stoffel::server(0)
+    .bind("0.0.0.0:19200")
+    .with_peers(&[(1, "...")])
+    // No .with_program() and no .with_preprocessing()
+    .build()?;  // ERROR: "Program or explicit preprocessing must be specified"
+```
+
+**New SDK Methods:**
+
+```rust
+impl Program {
+    /// Analyze bytecode and return preprocessing requirements
+    /// Returns (n_triples, n_random_shares) based on instruction analysis
+    pub fn preprocessing_requirements(&self, threshold: usize) -> (usize, usize);
+
+    /// Count MUL instructions in bytecode
+    pub fn count_multiplications(&self) -> usize;
+
+    /// Count instructions that consume random shares
+    pub fn count_random_share_consumers(&self) -> usize;
+}
+
+impl StoffelServerBuilder {
+    /// Set program (triggers automatic preprocessing analysis)
+    /// Calculated values become defaults, can be overridden
+    pub fn with_program(self, program: Program) -> Self;
+
+    /// Override with preset (ignores program analysis)
+    pub fn with_preprocessing_preset(self, preset: PreprocessingPreset) -> Self;
+
+    /// Override with explicit values (ignores program analysis and presets)
+    pub fn with_preprocessing(self, n_triples: usize, n_random_shares: usize) -> Self;
+}
+
+pub enum PreprocessingPreset {
+    /// Uses formula: 2t+1 triples (requires threshold to be known)
+    Minimal,
+    /// 32 triples, 66 random shares
+    Standard,
+    /// 128 triples, 258 random shares
+    Production,
+}
+```
+
+### Configuration File Interface
+
+**Stoffel.toml:**
+
+```toml
+[project]
+name = "my-mpc-app"
+version = "0.1.0"
+
+[mpc]
+protocol = "honeybadger"
+parties = 5
+threshold = 1
+field = "bls12-381"
+
+[mpc.preprocessing]
+# Option 1: Use a preset
+preset = "minimal"  # or "standard", "production"
+
+# Option 2: Explicit values (overrides preset if both specified)
+# beaver_triples = 64
+# random_shares = 130
+```
+
+**Validation on load:**
+- If `[mpc.preprocessing]` section missing: **Error with guidance**
+- If `preset` specified: Calculate values from preset
+- If explicit values specified: Use those (override preset)
+
+---
+
+## Migration & Compatibility
+
+### Breaking Changes
+
+**None expected.** The new behavior is additive and backward-compatible:
+
+1. **SDK**: Existing code with `.with_preprocessing(n, m)` continues to work unchanged
+2. **SDK**: Code with `.with_program()` but no preprocessing now gets smart defaults (improvement)
+3. **CLI**: Existing commands work; new flags are optional overrides
+
+### Behavioral Changes
+
+1. **Before**: Hardcoded defaults `n_triples=10, n_random_shares=20` regardless of program
+2. **After**: Calculated from program bytecode analysis when `.with_program()` is called
+
+### Migration Path
+
+**Phase 1: Add Smart Defaults (v0.x.y)**
+- Add bytecode analysis to `Program`
+- Modify `with_program()` to trigger analysis
+- Keep explicit `.with_preprocessing()` working as override
+- Emit INFO log showing calculated values
+
+**Phase 2: Update Examples (v0.x.y)**
+- Remove explicit preprocessing from examples where automatic is sufficient
+- Document override patterns for production use cases
+
+**Phase 3: Deprecate Arbitrary Defaults (v1.0)**
+- If program is provided but preprocessing is explicitly set to old defaults (10, 20), emit deprecation warning suggesting removal of explicit values
+
+### Template Updates
+
+Update generated code in `stoffel init`:
+
+```rust
+// Before (hardcoded)
+.with_preprocessing(3, 8)
+
+// After (uses config)
+.with_preprocessing_preset(PreprocessingPreset::from_config()?)
+// or
+.with_minimal_preprocessing()  // For template simplicity
+```
+
+---
+
+## Error Messages
+
+### SDK Errors
+
+**When no program and no explicit preprocessing:**
+```
+Error: Cannot determine preprocessing requirements.
+
+Either:
+  1. Provide a program with .with_program(program) for automatic analysis
+  2. Specify preprocessing explicitly:
+     .with_preprocessing(n_triples, n_random_shares)
+     .with_preprocessing_preset(PreprocessingPreset::Standard)
+
+See: https://docs.stoffel.dev/sdk/preprocessing
+```
+
+**When user override is less than calculated:**
+```
+Warning: Explicit preprocessing (32 triples) is less than program requires (45 triples).
+         Computation may fail at runtime. Consider removing .with_preprocessing() to use automatic values.
+```
+
+### CLI Errors
+
+**Normal operation (informational):**
+```
+Compiling program.stfl...
+Analyzing bytecode for preprocessing requirements...
+  MUL instructions: 12
+  Random share consumers: 24
+  Calculated: 14 Beaver triples, 52 random shares
+
+Starting MPC servers with automatic preprocessing...
+```
+
+**When override is less than calculated:**
+```
+Warning: Specified preprocessing (--beaver-triples=10) is less than program requires (14).
+         Computation may fail at runtime.
+
+Proceed anyway? [y/N]
+```
+
+**When using preset:**
+```
+Using preprocessing preset 'production': 128 Beaver triples, 258 random shares
+Note: Program analysis suggests 14 triples would be sufficient.
+```
+
+---
+
+## Documentation Requirements
+
+1. **CLI Reference**: Document new flags in `stoffel help dev/run/test`
+2. **SDK Guide**: Add preprocessing section to Rust SDK documentation
+3. **Conceptual Guide**: Explain what Beaver triples and random shares are
+4. **Migration Guide**: Document upgrade path from implicit defaults
+5. **Troubleshooting**: Common errors and solutions
+
+---
+
+## Testing Requirements
+
+### Unit Tests
+
+- [ ] SDK: `Program::count_multiplications()` correctly counts MUL instructions
+- [ ] SDK: `Program::preprocessing_requirements()` calculates correct values
+- [ ] SDK: `with_program()` triggers automatic analysis and sets defaults
+- [ ] SDK: `with_preprocessing()` overrides automatic analysis
+- [ ] SDK: `with_preprocessing_preset()` applies correct values
+- [ ] SDK: Build fails when no program AND no explicit preprocessing
+- [ ] SDK: Warning emitted when user override < calculated requirements
+- [ ] SDK: Validation rejects invalid values (0, negative)
+
+### Integration Tests
+
+- [ ] CLI: `stoffel dev` automatically analyzes program and displays calculated values
+- [ ] CLI: `--preprocessing=minimal` overrides automatic analysis
+- [ ] CLI: `--beaver-triples` and `--random-shares` override automatic analysis
+- [ ] CLI: Config file values override automatic analysis
+- [ ] CLI: Warning shown when override < calculated
+- [ ] SDK: Server starts successfully with only `.with_program()` (automatic analysis)
+
+### E2E Tests
+
+- [ ] Full MPC computation succeeds with minimal preprocessing
+- [ ] Full MPC computation succeeds with production preprocessing
+- [ ] Computation fails gracefully when preprocessing exhausted (clear error)
+
+---
+
+## Implementation Plan
+
+### Phase 1: SDK Changes (stoffel-rust-sdk)
+
+**Step 1.1: Bytecode Analysis in Program**
+1. Add `preprocessing_requirements()` method to `Program` struct
+2. Add `count_multiplications()` to parse bytecode and count MUL instructions
+3. Add `count_random_share_consumers()` for other preprocessing-consuming ops
+4. Cache analysis results in `Program` struct
+
+**Step 1.2: Server Builder Integration**
+1. Modify `with_program()` to trigger automatic analysis
+2. Store calculated preprocessing values in builder
+3. Add `with_preprocessing_preset()` for override with presets
+4. Modify `with_preprocessing()` to override calculated values
+5. Add `PreprocessingPreset` enum
+
+**Step 1.3: Validation & Error Handling**
+1. In `build()`: If no program AND no explicit preprocessing → error
+2. Log calculated values at INFO level for visibility
+3. Warn if user override is less than calculated (potential runtime failure)
+
+**Files to modify:**
+- `src/program.rs` (bytecode analysis methods)
+- `src/mpcaas/server.rs` (builder integration)
+- `src/lib.rs` (re-exports)
+- `src/prelude.rs` (PreprocessingPreset export)
+- `examples/honeybadger_mpc_demo.rs` (remove explicit preprocessing)
+- `examples/README.md` (document automatic behavior)
+
+### Phase 2: CLI Changes (Stoffel)
+
+**Step 2.1: Default Behavior (Program-Aware)**
+1. When `stoffel dev` compiles a program, analyze bytecode automatically
+2. Display calculated preprocessing values in output
+3. Use calculated values by default for MPC execution
+
+**Step 2.2: Override Flags**
+1. Add `--preprocessing` flag for presets (minimal/standard/production)
+2. Add `--beaver-triples` and `--random-shares` for explicit override
+3. Override flags take precedence over automatic analysis
+
+**Step 2.3: Configuration Persistence**
+1. Extend `MpcConfig` struct with optional preprocessing section
+2. Update `Stoffel.toml` schema to include `[mpc.preprocessing]`
+3. CLI flags override config file, config file overrides automatic analysis
+
+**Step 2.4: Template Updates**
+1. Update `stoffel init` templates to NOT specify explicit preprocessing
+2. Add comments explaining automatic behavior
+3. Show how to override if needed
+
+**Files to modify:**
+- `src/main.rs` (CLI flags, program analysis integration)
+- `src/init.rs` (config struct, templates)
+- `src/templates/rust/main.rs` (remove hardcoded values)
+- `src/templates/stoffel.toml.template` (add preprocessing section)
+
+### Phase 3: Documentation (docs)
+
+1. Add preprocessing conceptual guide
+2. Update CLI reference
+3. Update SDK reference
+4. Add migration guide
+
+**Files to modify:**
+- `docs/src/cli/overview.md`
+- `docs/src/mpc-protocols/overview.md`
+- New: `docs/src/guides/preprocessing.md`
+
+---
+
+## Open Questions
+
+1. **Q: Should `minimal` preset be calculated at build time or runtime?**
+   - Build time: Requires threshold to be known when calling preset method
+   - Runtime: More flexible but delayed validation
+   - **Decision**: Build time (fail fast)
+
+2. **Q: Should we support per-program preprocessing analysis?**
+   - **Decision**: Yes, this is now the PRIMARY approach. Bytecode analysis at `.with_program()` time.
+
+3. **Q: Should preprocessing be refreshable during long-running servers?**
+   - Protocol limitation: preprocessing is done once at startup
+   - **Decision**: Out of scope. Document limitation.
+
+4. **Q: Default preset for `stoffel init` generated projects?**
+   - **Decision**: Use automatic program analysis (no explicit preset needed in templates)
+
+5. **Q: Safety margin for bytecode analysis?**
+   - Should we add extra triples beyond the counted MUL instructions?
+   - Options: +0 (exact), +2 (small margin), +10% (proportional)
+   - **Decision**: +2 fixed margin for safety
+
+6. **Q: How to handle loops in bytecode analysis?**
+   - Static analysis cannot determine loop iteration count
+   - Options: Assume 1 iteration, require user override, emit warning
+   - **Decision**: Assume 1 iteration, emit warning suggesting explicit override for loops
+
+---
+
+## Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| No silent preprocessing failures in production | 100% |
+| Users understand preprocessing errors | >90% (survey) |
+| Migration completed without support tickets | >95% |
+| Documentation covers all use cases | 100% |
+
+---
+
+## Appendix: Preprocessing Formula Derivation
+
+From `external/stoffel-vm/crates/stoffel-vm/src/tests/mpc_multiplication_integration.rs`:
+
+```rust
+// Minimal formula for HoneyBadger with threshold t
+let n_triples = 2 * threshold + 1;
+let n_random_shares = 2 + 2 * n_triples;
+
+// Example calculations:
+// t=1: triples=3, shares=8
+// t=2: triples=5, shares=12
+// t=3: triples=7, shares=16
+```
+
+**Why these formulas?**
+- Beaver triples: Need enough for worst-case multiplication depth in preprocessing
+- Random shares: Need shares for each triple generation plus input masking overhead
+
+---
+
+## Next Steps (Post-Approval)
+
+1. **Store PRD**: Move this document to `docs/rfcs/0001-preprocessing-configuration.md` on a new branch
+2. **Create Linear Issues**: Create implementation issues for each phase:
+   - SDK: Bytecode analysis and builder integration
+   - CLI: Flag additions and program analysis integration
+   - Docs: Preprocessing guide and CLI reference updates
+3. **Address PR #1 Comment**: Update PR #1 with link to this PRD and implementation plan
+4. **Begin Implementation**: Start with Phase 1 (SDK changes) as foundation for CLI and docs

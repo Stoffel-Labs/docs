@@ -79,6 +79,8 @@
             "group": "Solidity SDK",
             "pages": [
               "solidity-sdk/overview",
+              "solidity-sdk/template-guide",
+              "solidity-sdk/security",
               "solidity-sdk/coordinator",
               "solidity-sdk/access-control",
               "solidity-sdk/input-manager"

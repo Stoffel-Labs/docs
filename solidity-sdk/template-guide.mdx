@@ -374,6 +374,95 @@ Here's the complete flow for running an MPC computation:
    └─ Computation complete!
 ```
 
+## Handling Optional Public State
+
+When clients submit masked inputs via `submitMaskedInput`, your application may also need to track associated **public state** - data that doesn't need privacy protection but is logically tied to the input.
+
+<Note>
+This pattern is optional. Many applications only need the masked input itself and can skip this section entirely.
+</Note>
+
+### When You Need Public State
+
+| Use Case | Public State Example |
+|----------|---------------------|
+| Voting | Voter's preferred language for result notifications |
+| Auction | Bidder's display name (not the bid amount) |
+| Survey | Respondent's demographic category |
+| Computation | Input metadata (timestamp, format version) |
+
+### When You Don't Need Public State
+
+- Simple computations where only the masked value matters
+- Applications where all metadata is handled off-chain
+- Minimal contracts that only need MPC results
+
+### Implementation Pattern
+
+Create a wrapper function that calls `submitMaskedInput` and stores additional public metadata:
+
+```solidity
+contract MyMPCApp is StoffelCoordinator {
+    // Optional: Track public state alongside masked inputs
+    mapping(address => bytes) public clientMetadata;
+
+    event InputWithMetadata(address indexed client, uint256 reservedIndex, bytes metadata);
+
+    /// @notice Submit masked input with optional public metadata
+    /// @param maskedInput The masked value (raw input + mask)
+    /// @param reservedIndex The previously reserved index
+    /// @param metadata Optional public data associated with this input
+    function submitMaskedInputWithMetadata(
+        uint256 maskedInput,
+        uint256 reservedIndex,
+        bytes calldata metadata
+    ) external {
+        // Call parent to handle the masked input
+        this.submitMaskedInput(maskedInput, reservedIndex);
+
+        // Store optional public metadata
+        if (metadata.length > 0) {
+            clientMetadata[msg.sender] = metadata;
+        }
+
+        emit InputWithMetadata(msg.sender, reservedIndex, metadata);
+    }
+}
+```
+
+<Warning>
+Public state is stored on-chain and visible to everyone. Only use it for non-sensitive metadata. The actual secret input remains protected by the masking mechanism.
+</Warning>
+
+### Example: Voting with Voter Preferences
+
+```solidity
+contract SecureVotingWithPreferences is StoffelCoordinator {
+    struct VoterPrefs {
+        string preferredLanguage;
+        bool wantsEmailNotification;
+    }
+
+    mapping(address => VoterPrefs) public voterPreferences;
+
+    function submitVoteWithPreferences(
+        uint256 maskedVote,
+        uint256 reservedIndex,
+        string calldata language,
+        bool emailNotify
+    ) external atRound(Round.CollectingClientInputRound) {
+        // Submit the private vote
+        this.submitMaskedInput(maskedVote, reservedIndex);
+
+        // Store public preferences (not sensitive)
+        voterPreferences[msg.sender] = VoterPrefs({
+            preferredLanguage: language,
+            wantsEmailNotification: emailNotify
+        });
+    }
+}
+```
+
 ## Next Steps
 
 - [Security Best Practices](./security) - Essential safety considerations

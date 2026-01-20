@@ -1,0 +1,373 @@
+# Security Best Practices
+
+This guide covers essential security considerations when building MPC applications with the Stoffel Solidity SDK.
+
+## Overview
+
+MPC applications have unique security requirements beyond typical smart contracts. The security of the entire system depends on:
+
+1. **Access control** - Who can trigger state transitions
+2. **Input integrity** - Ensuring inputs are properly masked and validated
+3. **Round sequencing** - Maintaining correct state machine flow
+4. **Threshold configuration** - Proper n/t settings for Byzantine fault tolerance
+
+## Access Control
+
+### Why `onlyDesignatedParty` Matters
+
+The designated party role controls the MPC lifecycle. Unauthorized access could:
+
+- Skip preprocessing, causing computation failures
+- Prematurely end input collection, excluding legitimate clients
+- Trigger computation with insufficient inputs
+- Publish invalid outputs
+
+```solidity
+// ALWAYS protect lifecycle methods
+function startPreprocessing() external override onlyDesignatedParty atRound(Round.PreprocessingRound) {
+    // ...
+}
+```
+
+<Warning>
+Never remove the `onlyDesignatedParty` modifier from lifecycle methods. This is the primary defense against unauthorized state manipulation.
+</Warning>
+
+### Party Role Management
+
+```solidity
+// Safe party addition
+function addParty(address party) external onlyDesignatedParty {
+    require(getPartyCount() < nParties, "Max parties reached");
+    _grantRole(PARTY_ROLE, party);
+}
+
+// Safe party removal - maintains threshold
+function removeParty(address party) external onlyDesignatedParty {
+    require(getPartyCount() > threshold + 1, "Would violate threshold");
+    _revokeRole(PARTY_ROLE, party);
+}
+```
+
+### Designated Party Security
+
+| Risk | Mitigation |
+|------|------------|
+| Private key compromise | Use hardware wallet or multi-sig |
+| Single point of failure | Consider time-locked transfers |
+| Malicious designated party | Implement governance controls |
+
+```solidity
+// Consider using a timelock for designated party transfer
+function initiateDesignatedPartyTransfer(address newParty) external onlyDesignatedParty {
+    pendingDesignatedParty = newParty;
+    transferUnlocksAt = block.timestamp + 2 days;
+}
+
+function completeDesignatedPartyTransfer() external {
+    require(block.timestamp >= transferUnlocksAt, "Timelock active");
+    _transferDesignatedParty(pendingDesignatedParty);
+}
+```
+
+## Threshold Configuration
+
+### The n >= 3t + 1 Rule
+
+HoneyBadger MPC requires `n >= 3t + 1` for Byzantine fault tolerance:
+
+| n (parties) | t (threshold) | Tolerates | Valid? |
+|-------------|---------------|-----------|--------|
+| 4 | 1 | 1 faulty | Yes (4 >= 4) |
+| 5 | 1 | 1 faulty | Yes (5 >= 4) |
+| 7 | 2 | 2 faulty | Yes (7 >= 7) |
+| 10 | 3 | 3 faulty | Yes (10 >= 10) |
+| 5 | 2 | - | No (5 < 7) |
+
+```solidity
+constructor(uint256 n, uint256 t, ...) {
+    require(n >= 3 * t + 1, "Invalid threshold configuration");
+    // ...
+}
+```
+
+<Note>
+A threshold of `t` means the system tolerates up to `t` malicious or faulty parties. Higher thresholds require more parties but provide stronger security guarantees.
+</Note>
+
+### Production Recommendations
+
+| Environment | Recommended Config | Reasoning |
+|-------------|-------------------|-----------|
+| Development | n=4, t=1 | Minimum viable for testing |
+| Staging | n=5, t=1 | Allows for node failures |
+| Production | n=7+, t=2+ | Higher fault tolerance |
+
+## Input Handling
+
+### Why Input Masking is Required
+
+Raw inputs on-chain would be visible to everyone. Masking ensures privacy:
+
+```
+Client's secret: 42
+Random mask:     17
+On-chain value:  59  ← Reveals nothing about 42
+```
+
+```solidity
+// NEVER accept raw inputs
+function submitInput(uint256 rawInput) external {  // DANGEROUS!
+    // Raw input visible on-chain to everyone
+}
+
+// ALWAYS require masked inputs
+function submitMaskedInput(uint256 maskedInput, uint256 reservedIndex) external {
+    require(reservedInputIndices[reservedIndex] == msg.sender, "Invalid reservation");
+    // maskedInput reveals nothing without the mask
+}
+```
+
+### Input Count Validation
+
+Always validate sufficient inputs before computation:
+
+```solidity
+function initiateMPCComputation() external override onlyDesignatedParty atRound(Round.ClientInputsCollectionEndRound) {
+    // Validate minimum inputs
+    require(currentInputCount >= minimumRequiredInputs, "Insufficient inputs");
+
+    // Optional: Validate maximum to prevent DoS
+    require(currentInputCount <= maxInputs, "Too many inputs");
+
+    _nextRound();
+}
+```
+
+### Replay Attack Prevention
+
+Each input mask can only be used once:
+
+```solidity
+function submitMaskedInput(uint256 maskedInput, uint256 reservedIndex) external {
+    // Check ownership
+    require(reservedInputIndices[reservedIndex] == msg.sender, "Not your index");
+
+    // Store input
+    clientInputs[msg.sender] = MaskedInput({
+        index: reservedIndex,
+        maskedInput: maskedInput
+    });
+
+    // CRITICAL: Invalidate the index to prevent reuse
+    reservedInputIndices[reservedIndex] = address(0);
+}
+```
+
+<Warning>
+Failing to invalidate used indices allows mask reuse attacks, which can leak information about client inputs.
+</Warning>
+
+## Round State Machine
+
+### Why Rounds Must Be Sequential
+
+The round state machine ensures:
+
+1. Preprocessing completes before inputs are collected
+2. All inputs are gathered before computation
+3. Computation finishes before outputs are published
+
+```
+PreprocessingRound → ClientInputMaskReservationRound → CollectingClientInputRound
+        ↓                                                        ↓
+ClientInputsCollectionEndRound → MPCTaskExecutionRound → MPCTaskExecutionEndRound
+                                                                 ↓
+                                               ClientOutputCollectionRound
+```
+
+### The `atRound` Modifier
+
+Always use `atRound` to enforce correct sequencing:
+
+```solidity
+modifier atRound(Round expectedRound) {
+    require(currentRound == expectedRound, "Invalid round");
+    _;
+}
+
+// Correct: enforces round ordering
+function startPreprocessing() external override onlyDesignatedParty atRound(Round.PreprocessingRound) {
+    _nextRound();
+}
+
+// DANGEROUS: allows skipping rounds
+function startPreprocessing() external override onlyDesignatedParty {  // Missing atRound!
+    _nextRound();
+}
+```
+
+### Common Round Pitfalls
+
+| Pitfall | Consequence | Prevention |
+|---------|-------------|------------|
+| Skipping rounds | Missing preprocessing data | Always use `atRound` modifier |
+| Re-entering rounds | State corruption | Use `_nextRound()` only once per function |
+| Stuck in round | Computation blocked | Implement timeout mechanisms |
+
+### Timeout Handling
+
+For production systems, implement timeouts to handle stuck states:
+
+```solidity
+uint256 public roundStartTime;
+uint256 public constant ROUND_TIMEOUT = 1 hours;
+
+modifier timedRound() {
+    require(block.timestamp <= roundStartTime + ROUND_TIMEOUT, "Round timed out");
+    _;
+}
+
+function _nextRound() internal {
+    currentRound = Round(uint(currentRound) + 1);
+    roundStartTime = block.timestamp;  // Reset timeout
+}
+
+// Emergency function if round times out
+function cancelComputation() external onlyDesignatedParty {
+    require(block.timestamp > roundStartTime + ROUND_TIMEOUT, "Not timed out");
+    // Reset or refund logic
+}
+```
+
+## Common Vulnerabilities
+
+### 1. Insufficient Input Validation
+
+```solidity
+// VULNERABLE: No validation of input bounds
+function submitMaskedInput(uint256 maskedInput, uint256 index) external {
+    clientInputs[msg.sender] = MaskedInput(index, maskedInput);
+}
+
+// SECURE: Validates index bounds and ownership
+function submitMaskedInput(uint256 maskedInput, uint256 index) external {
+    require(index < nTotalIndices, "Index out of bounds");
+    require(reservedInputIndices[index] == msg.sender, "Not your index");
+
+    clientInputs[msg.sender] = MaskedInput(index, maskedInput);
+    reservedInputIndices[index] = address(0);
+}
+```
+
+### 2. Missing Round Checks
+
+```solidity
+// VULNERABLE: Can be called at any time
+function submitMaskedInput(uint256 maskedInput, uint256 index) external {
+    // ...
+}
+
+// SECURE: Enforces correct round
+function submitMaskedInput(uint256 maskedInput, uint256 index)
+    external
+    atRound(Round.CollectingClientInputRound)
+{
+    // ...
+}
+```
+
+### 3. Incorrect Threshold Configuration
+
+```solidity
+// VULNERABLE: Allows invalid configurations
+constructor(uint256 n, uint256 t, ...) {
+    nParties = n;
+    threshold = t;  // No validation!
+}
+
+// SECURE: Validates before setting
+constructor(uint256 n, uint256 t, ...) {
+    require(n >= 3 * t + 1, "Invalid: n must be >= 3t + 1");
+    require(n >= 4, "Minimum 4 parties required");
+    require(t >= 1, "Threshold must be at least 1");
+
+    nParties = n;
+    threshold = t;
+}
+```
+
+### 4. Reentrancy in Input Submission
+
+```solidity
+// VULNERABLE: State updated after external call
+function submitMaskedInput(uint256 maskedInput, uint256 index) external {
+    // External call before state update
+    _notifySubmission(msg.sender);  // Could reenter!
+
+    reservedInputIndices[index] = address(0);
+}
+
+// SECURE: Checks-Effects-Interactions pattern
+function submitMaskedInput(uint256 maskedInput, uint256 index) external {
+    // Checks
+    require(reservedInputIndices[index] == msg.sender, "Not your index");
+
+    // Effects (state changes first)
+    reservedInputIndices[index] = address(0);
+    clientInputs[msg.sender] = MaskedInput(index, maskedInput);
+
+    // Interactions (external calls last)
+    _notifySubmission(msg.sender);
+}
+```
+
+### 5. Missing Events for Critical Actions
+
+```solidity
+// VULNERABLE: No audit trail
+function addParty(address party) external onlyDesignatedParty {
+    _grantRole(PARTY_ROLE, party);
+}
+
+// SECURE: Emits events for monitoring
+event PartyAdded(address indexed party, address indexed addedBy, uint256 timestamp);
+
+function addParty(address party) external onlyDesignatedParty {
+    _grantRole(PARTY_ROLE, party);
+    emit PartyAdded(party, msg.sender, block.timestamp);
+}
+```
+
+## Security Checklist
+
+Before deploying your MPC contract, verify:
+
+### Access Control
+- [ ] All lifecycle methods have `onlyDesignatedParty` modifier
+- [ ] Party management functions validate threshold constraints
+- [ ] Designated party key is secured (hardware wallet/multi-sig)
+
+### Input Handling
+- [ ] Input masks are initialized in preprocessing
+- [ ] Index reservations are validated before submission
+- [ ] Used indices are invalidated after submission
+- [ ] Minimum input count is enforced before computation
+
+### Round Management
+- [ ] All state-changing functions use `atRound` modifier
+- [ ] `_nextRound()` is called exactly once per lifecycle method
+- [ ] Timeout mechanisms exist for stuck states
+
+### General
+- [ ] Threshold configuration satisfies `n >= 3t + 1`
+- [ ] Critical events are emitted for monitoring
+- [ ] Checks-Effects-Interactions pattern is followed
+- [ ] Contract has been tested with edge cases
+
+## Next Steps
+
+- [Template Guide](./template-guide) - Step-by-step implementation
+- [StoffelCoordinator](./coordinator) - Full API reference
+- [Access Control](./access-control) - Role management details
+- [Input Manager](./input-manager) - Input handling details

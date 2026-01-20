@@ -1,0 +1,471 @@
+# Using the Solidity Templates
+
+This guide walks you through using the Stoffel CLI's Solidity templates to build on-chain coordinated MPC applications.
+
+## Choosing a Template
+
+Stoffel provides two Solidity templates:
+
+| Template | Framework | Best For |
+|----------|-----------|----------|
+| `solidity-foundry` | Foundry | Rust developers, CI/CD pipelines, fast compilation |
+| `solidity-hardhat` | Hardhat | JavaScript/TypeScript developers, existing Hardhat workflows |
+
+Both templates generate identical contract code - choose based on your team's preferred tooling.
+
+## Creating a Project
+
+```bash
+# Foundry template (recommended for most use cases)
+stoffel init my-mpc-app --template solidity-foundry
+
+# Hardhat template
+stoffel init my-mpc-app --template solidity-hardhat
+```
+
+## Generated Project Structure
+
+### Foundry Template
+
+```
+my-mpc-app/
+├── Cargo.toml                    # Rust workspace root
+├── Makefile                      # Build orchestration
+├── app/
+│   └── src/main.rs              # Rust application for MPC operations
+├── crates/bindings/             # Auto-generated contract bindings
+├── contracts/
+│   ├── foundry.toml             # Foundry configuration
+│   ├── src/
+│   │   └── MyMPCApp.sol         # Your MPC coordinator contract
+│   ├── test/
+│   │   └── MyMPCApp.t.sol       # Foundry tests
+│   └── script/
+│       └── Deploy.s.sol         # Deployment script
+└── stoffel/
+    ├── Stoffel.toml             # MPC configuration
+    └── src/
+        └── program.stfl         # StoffelLang MPC program
+```
+
+### Hardhat Template
+
+```
+my-mpc-app/
+├── package.json
+├── hardhat.config.ts
+├── contracts/
+│   └── MyMPCApp.sol             # Your MPC coordinator contract
+├── test/
+│   └── MyMPCApp.test.ts         # TypeScript tests
+├── scripts/
+│   └── deploy.ts                # Deployment script
+└── stoffel/
+    ├── Stoffel.toml
+    └── src/
+        └── program.stfl
+```
+
+## Understanding MyMPCApp.sol
+
+The generated `MyMPCApp.sol` extends `StoffelCoordinator` and requires you to implement 4 abstract methods that control the MPC lifecycle.
+
+### The 4 Required Methods
+
+```solidity
+contract MyMPCApp is StoffelCoordinator {
+    // 1. Initialize preprocessing (input masks, cryptographic material)
+    function startPreprocessing() external override;
+
+    // 2. Enable clients to submit inputs
+    function gatherInputs() external override;
+
+    // 3. Trigger the off-chain MPC computation
+    function initiateMPCComputation() external override;
+
+    // 4. Publish computation results on-chain
+    function publishOutputs() external override;
+}
+```
+
+## Implementing Each Method
+
+### 1. startPreprocessing()
+
+Called by the designated party to initialize the preprocessing phase.
+
+```solidity
+function startPreprocessing()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.PreprocessingRound)
+{
+    // Initialize the input mask buffer
+    // The parameter is the number of client inputs you expect
+    this.initialzeInputMaskBuffer(10);  // Allow up to 10 clients
+
+    emit PreprocessingStarted(msg.sender, block.timestamp);
+    _nextRound();
+}
+```
+
+<Warning>
+You MUST call `initialzeInputMaskBuffer()` during preprocessing. Without this, clients cannot reserve input masks and submit inputs.
+</Warning>
+
+### 2. gatherInputs()
+
+Transitions the contract to accept client inputs.
+
+```solidity
+function gatherInputs()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.ClientInputMaskReservationRound)
+{
+    // Optional: Add any validation or setup logic
+
+    emit InputGatheringStarted(msg.sender, block.timestamp);
+    _nextRound();
+}
+```
+
+After this method executes, clients can:
+1. Call `reserveInputMask(index)` to reserve a slot
+2. Request their input mask from MPC nodes off-chain
+3. Call `submitMaskedInput(maskedInput, reservedIndex)` to submit
+
+### 3. initiateMPCComputation()
+
+Triggers the off-chain MPC computation.
+
+```solidity
+function initiateMPCComputation()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.ClientInputsCollectionEndRound)
+{
+    // Validate you have enough inputs
+    require(currentInputCount >= requiredInputCount, "Not enough inputs");
+
+    emit MPCComputationInitiated(msg.sender, currentInputCount, block.timestamp);
+    _nextRound();
+}
+```
+
+<Note>
+MPC nodes listen for the `MPCComputationInitiated` event to begin the off-chain computation. Ensure your event includes all necessary context.
+</Note>
+
+### 4. publishOutputs()
+
+Called after the MPC computation completes to publish results.
+
+```solidity
+function publishOutputs()
+    external
+    override
+    onlyDesignatedParty
+    atRound(Round.MPCTaskExecutionEndRound)
+{
+    // Store public outputs (computed off-chain by MPC nodes)
+    // publicOutputs = _computedOutputs;
+
+    emit OutputsPublished(msg.sender, publicOutputs, block.timestamp);
+    _nextRound();
+}
+```
+
+## Complete Implementation Example
+
+Here's a complete example for a secure voting application:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {StoffelCoordinator} from "@stoffel/StoffelCoordinator.sol";
+
+contract SecureVoting is StoffelCoordinator {
+    uint256 public requiredVoters;
+    uint256 public currentVoteCount;
+    uint256 public winningOption;
+
+    event VotingStarted(uint256 requiredVoters);
+    event VoteReceived(address indexed voter);
+    event VotingCompleted(uint256 winningOption, uint256 totalVotes);
+
+    constructor(
+        bytes32 _programHash,
+        uint256 _n,
+        uint256 _t,
+        address _designatedParty,
+        address[] memory _nodes,
+        uint256 _requiredVoters
+    ) StoffelCoordinator(_programHash, _n, _t, _designatedParty, _nodes) {
+        requiredVoters = _requiredVoters;
+    }
+
+    function startPreprocessing() external override onlyDesignatedParty atRound(Round.PreprocessingRound) {
+        // Reserve input masks for all expected voters
+        this.initialzeInputMaskBuffer(requiredVoters);
+        emit VotingStarted(requiredVoters);
+        _nextRound();
+    }
+
+    function gatherInputs() external override onlyDesignatedParty atRound(Round.ClientInputMaskReservationRound) {
+        _nextRound();
+    }
+
+    function initiateMPCComputation() external override onlyDesignatedParty atRound(Round.ClientInputsCollectionEndRound) {
+        require(currentVoteCount >= requiredVoters, "Not enough votes");
+        emit MPCComputationInitiated(msg.sender, currentVoteCount, block.timestamp);
+        _nextRound();
+    }
+
+    function publishOutputs() external override onlyDesignatedParty atRound(Round.MPCTaskExecutionEndRound) {
+        // winningOption is set by submitResult() called separately
+        emit VotingCompleted(winningOption, currentVoteCount);
+        _nextRound();
+    }
+
+    // Hook called when a vote is submitted
+    function _onInputReceived(address voter, uint256) internal {
+        currentVoteCount++;
+        emit VoteReceived(voter);
+    }
+
+    function submitResult(uint256 _result) external onlyDesignatedParty {
+        winningOption = _result;
+    }
+}
+```
+
+## Testing Your Contract
+
+### Foundry Tests
+
+```bash
+cd contracts
+forge test
+forge test -vvv  # Verbose output
+```
+
+Example test file (`test/MyMPCApp.t.sol`):
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "forge-std/Test.sol";
+import "../src/MyMPCApp.sol";
+
+contract MyMPCAppTest is Test {
+    MyMPCApp public app;
+    address designatedParty = address(1);
+    address[] nodes;
+
+    function setUp() public {
+        nodes = new address[](5);
+        for (uint i = 0; i < 5; i++) {
+            nodes[i] = address(uint160(100 + i));
+        }
+
+        vm.prank(designatedParty);
+        app = new MyMPCApp(
+            keccak256("test-program"),
+            5,  // n parties
+            1,  // threshold
+            designatedParty,
+            nodes
+        );
+    }
+
+    function test_StartPreprocessing() public {
+        vm.prank(designatedParty);
+        app.startPreprocessing();
+
+        assertEq(
+            uint(app.getCurrentRound()),
+            uint(StoffelCoordinator.Round.ClientInputMaskReservationRound)
+        );
+    }
+}
+```
+
+### Hardhat Tests
+
+```bash
+npx hardhat test
+npx hardhat test --grep "specific test"
+```
+
+## Deployment
+
+### Foundry Deployment
+
+```bash
+cd contracts
+
+# Deploy to local network
+forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+
+# Deploy to testnet (e.g., Sepolia)
+forge script script/Deploy.s.sol \
+    --rpc-url $SEPOLIA_RPC_URL \
+    --private-key $PRIVATE_KEY \
+    --broadcast \
+    --verify
+```
+
+### Hardhat Deployment
+
+```bash
+# Deploy to local network
+npx hardhat run scripts/deploy.ts --network localhost
+
+# Deploy to testnet
+npx hardhat run scripts/deploy.ts --network sepolia
+```
+
+## End-to-End Workflow
+
+Here's the complete flow for running an MPC computation:
+
+```
+1. Deploy Contract
+   └─ Constructor sets up parties, threshold, program hash
+
+2. Preprocessing (Round 0)
+   └─ Designated party calls startPreprocessing()
+   └─ MPC nodes generate input masks off-chain
+   └─ Contract transitions to Round 1
+
+3. Input Mask Reservation (Round 1)
+   └─ Designated party calls gatherInputs()
+   └─ Contract transitions to Round 2
+
+4. Input Collection (Round 2)
+   └─ Clients call reserveInputMask(index)
+   └─ Clients request mask from MPC nodes (off-chain)
+   └─ Clients call submitMaskedInput(masked, index)
+   └─ When ready, transition to Round 3
+
+5. Computation Initiation (Round 3)
+   └─ Designated party calls initiateMPCComputation()
+   └─ MPC nodes see event, begin off-chain computation
+   └─ Contract transitions to Round 4
+
+6. MPC Execution (Round 4)
+   └─ Off-chain: MPC nodes run StoffelLang program
+   └─ Off-chain: Nodes compute on secret-shared inputs
+   └─ When complete, transition to Round 5
+
+7. Output Publishing (Round 5)
+   └─ Designated party calls publishOutputs()
+   └─ Public results stored on-chain
+   └─ Contract transitions to Round 6
+
+8. Output Collection (Round 6)
+   └─ Clients retrieve their results
+   └─ Computation complete!
+```
+
+## Handling Optional Public State
+
+When clients submit masked inputs via `submitMaskedInput`, your application may also need to track associated **public state** - data that doesn't need privacy protection but is logically tied to the input.
+
+<Note>
+This pattern is optional. Many applications only need the masked input itself and can skip this section entirely.
+</Note>
+
+### When You Need Public State
+
+| Use Case | Public State Example |
+|----------|---------------------|
+| Voting | Voter's preferred language for result notifications |
+| Auction | Bidder's display name (not the bid amount) |
+| Survey | Respondent's demographic category |
+| Computation | Input metadata (timestamp, format version) |
+
+### When You Don't Need Public State
+
+- Simple computations where only the masked value matters
+- Applications where all metadata is handled off-chain
+- Minimal contracts that only need MPC results
+
+### Implementation Pattern
+
+Create a wrapper function that calls `submitMaskedInput` and stores additional public metadata:
+
+```solidity
+contract MyMPCApp is StoffelCoordinator {
+    // Optional: Track public state alongside masked inputs
+    mapping(address => bytes) public clientMetadata;
+
+    event InputWithMetadata(address indexed client, uint256 reservedIndex, bytes metadata);
+
+    /// @notice Submit masked input with optional public metadata
+    /// @param maskedInput The masked value (raw input + mask)
+    /// @param reservedIndex The previously reserved index
+    /// @param metadata Optional public data associated with this input
+    function submitMaskedInputWithMetadata(
+        uint256 maskedInput,
+        uint256 reservedIndex,
+        bytes calldata metadata
+    ) external {
+        // Call parent to handle the masked input
+        this.submitMaskedInput(maskedInput, reservedIndex);
+
+        // Store optional public metadata
+        if (metadata.length > 0) {
+            clientMetadata[msg.sender] = metadata;
+        }
+
+        emit InputWithMetadata(msg.sender, reservedIndex, metadata);
+    }
+}
+```
+
+<Warning>
+Public state is stored on-chain and visible to everyone. Only use it for non-sensitive metadata. The actual secret input remains protected by the masking mechanism.
+</Warning>
+
+### Example: Voting with Voter Preferences
+
+```solidity
+contract SecureVotingWithPreferences is StoffelCoordinator {
+    struct VoterPrefs {
+        string preferredLanguage;
+        bool wantsEmailNotification;
+    }
+
+    mapping(address => VoterPrefs) public voterPreferences;
+
+    function submitVoteWithPreferences(
+        uint256 maskedVote,
+        uint256 reservedIndex,
+        string calldata language,
+        bool emailNotify
+    ) external atRound(Round.CollectingClientInputRound) {
+        // Submit the private vote
+        this.submitMaskedInput(maskedVote, reservedIndex);
+
+        // Store public preferences (not sensitive)
+        voterPreferences[msg.sender] = VoterPrefs({
+            preferredLanguage: language,
+            wantsEmailNotification: emailNotify
+        });
+    }
+}
+```
+
+## Next Steps
+
+- [Security Best Practices](./security) - Essential safety considerations
+- [StoffelCoordinator Reference](./coordinator) - Full API documentation
+- [Access Control](./access-control) - Managing MPC parties
+- [Input Manager](./input-manager) - Client input handling

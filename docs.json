@@ -3,7 +3,35 @@
   "theme": "mint",
   "name": "Stoffel Documentation",
   "colors": {
-    "primary": "#6366F1"
+    "primary": "#3448F0",
+    "light": "#3448F0",
+    "dark": "#5A6BF5"
+  },
+  "logo": {
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg",
+    "href": "https://stoffel.dev"
+  },
+  "favicon": "/images/favicon.svg",
+  "fonts": {
+    "heading": {
+      "family": "Ambit",
+      "source": "/fonts/ambit-bold.woff2",
+      "format": "woff2",
+      "weight": 700
+    },
+    "body": {
+      "family": "Ambit",
+      "source": "/fonts/ambit-regular.woff2",
+      "format": "woff2",
+      "weight": 400
+    }
+  },
+  "background": {
+    "color": {
+      "light": "#F8F8FC",
+      "dark": "#0A0A14"
+    }
   },
   "navigation": {
     "tabs": [

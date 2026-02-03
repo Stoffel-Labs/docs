@@ -13,16 +13,16 @@
     "href": "https://stoffel.dev"
   },
   "favicon": "/images/favicon.svg",
-  "font": {
-    "headings": {
+  "fonts": {
+    "heading": {
       "family": "Ambit",
-      "url": "/fonts/ambit-bold.woff2",
+      "source": "/fonts/ambit-bold.woff2",
       "format": "woff2",
       "weight": 700
     },
     "body": {
       "family": "Ambit",
-      "url": "/fonts/ambit-regular.woff2",
+      "source": "/fonts/ambit-regular.woff2",
       "format": "woff2",
       "weight": 400
     }

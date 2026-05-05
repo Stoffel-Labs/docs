@@ -33,6 +33,12 @@
       "dark": "#0A0A14"
     }
   },
+  "integrations": {
+    "posthog": {
+        "apiKey": "phc_fK7eWL5Albx4SL3QHbXlZyHRG7R6Y1ms79GkbxOmjLz",
+        "sessionRecording": false
+    }
+  },
   "navigation": {
     "tabs": [
       {

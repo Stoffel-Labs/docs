@@ -26,15 +26,15 @@ Help developers write MPC-oriented Stoffel apps using `secret` types, `Share.*`,
 
 ## Current source of truth
 
-- `StoffelVM/crates/stoffel-lang/examples/README.md`
-- `StoffelVM/crates/stoffel-lang/examples/COVERAGE.md`
-- `StoffelVM/crates/stoffel-lang/examples/mpc_*`
-- `StoffelVM/crates/stoffel-lang/examples/bits/secret/*`
-- `StoffelVM/crates/stoffel-lang/examples/matrix/secret/*`
-- `StoffelVM/crates/stoffel-lang/examples/polynomials/secret/*`
-- `StoffelVM/crates/stoffel-lang/examples/number_theory/secret/*`
-- `StoffelVM/crates/stoffel-lang/examples/avss_*`
-- `StoffelVM/crates/stoffel-lang/examples/threshold_signatures/*`
+- `crates/stoffel-lang/examples/README.md`
+- `crates/stoffel-lang/examples/COVERAGE.md`
+- `crates/stoffel-lang/examples/mpc_*`
+- `crates/stoffel-lang/examples/bits/secret/*`
+- `crates/stoffel-lang/examples/matrix/secret/*`
+- `crates/stoffel-lang/examples/polynomials/secret/*`
+- `crates/stoffel-lang/examples/number_theory/secret/*`
+- `crates/stoffel-lang/examples/avss_*`
+- `crates/stoffel-lang/examples/threshold_signatures/*`
 
 ## Minimal secret app
 
@@ -209,7 +209,7 @@ stoffel run crates/stoffel-lang/examples/mpc_bitonic_sort/main.stfl \
 0.1.0 framework validation:
 
 ```sh
-cd /path/to/StoffelVM/crates/stoffel-lang
+cd /path/to/stoffel/crates/stoffel-lang
 ./examples/validate_examples.sh
 ```
 

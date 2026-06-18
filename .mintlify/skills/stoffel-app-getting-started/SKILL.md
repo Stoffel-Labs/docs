@@ -24,11 +24,11 @@ Use this playbook when a developer or coding agent needs the shortest path from 
 
 Use the public docs when available, then verify against the 0.1.0 app-facing repo surfaces:
 
-- `StoffelVM/README.md`
-- `StoffelVM/crates/stoffel-cli/src/main.rs`
-- `StoffelVM/crates/stoffel-cli/src/project.rs`
-- `StoffelVM/crates/stoffel-lang/examples/README.md`
-- `StoffelVM/crates/stoffel-rust-sdk/README.md`
+- `README.md`
+- `crates/stoffel-cli/src/main.rs`
+- `crates/stoffel-cli/src/project.rs`
+- `crates/stoffel-lang/examples/README.md`
+- `crates/stoffel-rust-sdk/README.md`
 
 These are source-inspection references for app behavior, not instructions for app developers to edit framework internals.
 
@@ -36,7 +36,7 @@ These are source-inspection references for app behavior, not instructions for ap
 
 - Rust stable and Cargo.
 - The `stoffel` CLI from the documented 0.1.0 installation path.
-- A local checkout of the `StoffelVM` repository for source-based 0.1.0 development.
+- A local checkout of the `stoffel` repository for source-based 0.1.0 development.
 - For local MPC execution: a `stoffel-run` helper binary available through `PATH`, `--runner`, `STOFFEL_RUN_BIN`, or the SDK builder.
 
 ## Install
@@ -51,7 +51,7 @@ stoffel --help
 Local checkout flow for source-based 0.1.0 development:
 
 ```sh
-cd /path/to/StoffelVM
+cd /path/to/stoffel
 cargo install --path crates/stoffel-cli
 cargo build -p stoffel-vm --bin stoffel-run
 stoffel --help
@@ -124,7 +124,7 @@ For a secret ClientStore example, include its documented `# run-args:` flags and
 ## Common pitfalls
 
 - For 0.1.0 development, prefer the documented source dependency or local path dependency.
-- Do not describe `StoffelVM` internals unless they explain public app behavior.
+- Do not describe `Stoffel VM` internals unless they explain public app behavior.
 - Do not claim local MPC works until a real run has completed.
 - Do not treat `Stoffel.toml` as network/off-chain config.
 - Do not omit `--expected-output-clients` when running examples that send outputs to clients.

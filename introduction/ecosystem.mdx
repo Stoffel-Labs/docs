@@ -1,22 +1,28 @@
 ---
 title: "Ecosystem Overview"
-description: "Current Stoffel 0.1.0 component map, repository status, and developer workflow."
+description: "Stoffel 0.1.0 component map, repositories, and developer workflow."
 ---
 
 # Ecosystem Overview
 
-Stoffel 0.1.0 is organized around [`Stoffel-Labs/StoffelVM`](https://github.com/Stoffel-Labs/StoffelVM), the primary repository for the CLI, compiler, Rust SDK, VM runtime, and shared bytecode/type definitions.
+Stoffel 0.1.0 is organized around [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel), the canonical repository for the CLI, compiler, Rust SDK, Stoffel VM runtime, and shared bytecode/type definitions.
 
-The product promise is developer-accessible MPC: write the computation, mark sensitive values explicitly, run the same workflow locally, and move from clear tests to secret-shared execution without becoming a protocol implementer.
+Stoffel’s 0.1.0 workflow is developer-accessible MPC: write the computation, mark sensitive values explicitly, run clear checks locally, then exercise secret-shared execution through the CLI or Rust SDK without becoming a protocol implementer.
 
-## 0.1.0 repository status
+## Components in 0.1.0
 
-| Repository | Role in 0.1.0 | Developer guidance |
+| Component | Location | Developer guidance |
 | --- | --- | --- |
-| `Stoffel-Labs/StoffelVM` | Primary repository for CLI, compiler, Rust SDK, VM, bytecode, runtime helper, C FFI, and examples. | Start here. Build from source for 0.1.0. |
-| `Stoffel-Labs/mpc-protocols` | MPC protocol dependency used by the VM/SDK. | Pulled by Cargo as a git dependency; app developers normally use the CLI and SDK. |
-| `Stoffel-Labs/stoffel-networking` | QUIC/networking dependency used by local/networked execution paths. | Pulled by Cargo as a git dependency. |
-| `Stoffel-Labs/stoffel-mpc-coordinator` | Coordinator dependency used by SDK/on-chain coordination surfaces. | Pulled by Cargo as a git dependency. |
+| Stoffel repository | [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) | Start here. It contains the CLI, compiler, Rust SDK, VM runtime, bytecode/types crates, runtime helper, C FFI, and examples. |
+| Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project workflow for `init`, `check`, `compile`, `build`, `run`, `dev`, and tests. |
+| Rust SDK | `crates/stoffel-rust-sdk` / crate `stoffel` | Primary application API for compile/load/run, local clear checks, local MPC, bytecode helpers, and network configuration surfaces. |
+| Stoffel VM runtime | `crates/stoffel-vm` | Register-based runtime with clear values, secret shares, builtins, hooks, FFI, and the `stoffel-run` helper. Most app developers reach it through the CLI or SDK. |
+| VM types and bytecode | `crates/stoffel-vm-types` | Shared instruction, value, function, and `.stflb` compiled binary types. |
+| MPC/network dependencies | `mpc-protocols`, `stoffel-networking`, `stoffel-mpc-coordinator` | Pulled by Cargo for protocol, networking, and coordination support; app developers normally use the CLI and SDK first. |
+
+## Security review scope
+
+`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped when validating a deployment.
 
 ## Component architecture
 
@@ -25,30 +31,26 @@ The product promise is developer-accessible MPC: write the computation, mark sen
 │  Stoffel app / project │
 └───────────┬────────────┘
             │
-            ▼
-┌────────────────────────┐
-│  Stoffel CLI (`stoffel`)│  init/check/compile/build/run/dev/test
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ Stoffel Lang compiler  │  `.stfl` source → `.stflb` bytecode
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ Rust SDK (`stoffel`)   │  compile/load/run APIs for apps
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ Stoffel VM/runtime     │  clear execution, secret shares, builtins, hooks
-└───────────┬────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│ MPC/network backends   │  local simulation and networked MPC plumbing
-└────────────────────────┘
+            ├─────────────────────────────┐
+            ▼                             ▼
+┌────────────────────────┐     ┌────────────────────────┐
+│  Stoffel CLI (`stoffel`)│     │ Rust SDK (`stoffel`)   │
+│  init/check/build/run   │     │ compile/load/run APIs  │
+└───────────┬────────────┘     └───────────┬────────────┘
+            │                              │
+            └──────────────┬───────────────┘
+                           ▼
+              ┌────────────────────────┐
+              │ Stoffel Lang compiler  │  `.stfl` source → `.stflb` bytecode
+              └───────────┬────────────┘
+                          ▼
+              ┌────────────────────────┐
+              │ Stoffel VM runtime     │  clear execution, secret shares, builtins, hooks
+              └───────────┬────────────┘
+                          ▼
+              ┌────────────────────────┐
+              │ MPC/network integrations│ local MPC helper and lower-level network surfaces
+              └────────────────────────┘
 ```
 
 ## Primary developer workflow
@@ -56,9 +58,9 @@ The product promise is developer-accessible MPC: write the computation, mark sen
 ### 1. Install the tools
 
 ```bash
-git clone https://github.com/Stoffel-Labs/StoffelVM.git
-cd StoffelVM
-git checkout v0.1.0
+git clone https://github.com/Stoffel-Labs/stoffel.git
+cd stoffel
+git checkout dev
 cargo build
 cargo install --path crates/stoffel-cli
 cargo build -p stoffel-vm --bin stoffel-run
@@ -99,7 +101,7 @@ For local MPC development:
 
 ```bash
 stoffel dev \
-  --runner /path/to/StoffelVM/target/debug/stoffel-run \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
   --parties 5 \
   --threshold 1 \
   --once
@@ -112,7 +114,7 @@ Use `stoffel dev --once` for a script-friendly one-shot run.
 
 ### Stoffel CLI
 
-The `stoffel` binary is a Cargo-like command-line tool. Current commands are:
+The `stoffel` binary is a Cargo-like command-line tool. The 0.1.0 CLI commands are:
 
 - `init` / `new`: create projects from templates.
 - `check`: validate source and MPC settings without writing bytecode.
@@ -134,11 +136,12 @@ def main(a: int64, b: int64) -> int64:
   return a + b
 ```
 
-Secret inputs are explicit:
+Secret-shared values are explicit in the 0.1.0 local MPC smoke path:
 
 ```stoffel
-def main(a: secret int64, b: secret int64) -> secret int64:
-  return a + b
+def add_private_values(a: Share, b: Share) -> int64:
+  var sum = Share.add(a, b)
+  return sum.open()
 ```
 
 ### Rust SDK
@@ -170,5 +173,5 @@ HoneyBadger MPC, AVSS, reliable broadcast, and QUIC networking integrations are 
 
 - [Install Stoffel](../getting-started/installation)
 - [Run the quick start](../getting-started/quick-start)
-- [Read the CLI guide](../cli/overview)
 - [Use the Rust SDK](../rust-sdk/overview)
+- [Read the CLI guide](../cli/overview)

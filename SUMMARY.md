@@ -24,7 +24,7 @@
 - [Compilation](./stoffel-lang/compilation.md)
 - [FFI / C Bindings](./stoffel-lang/ffi.md)
 
-# StoffelVM
+# Stoffel VM
 - [Implementation Details](./stoffel-vm/implementation.md)
 - [Instructions and Types](./stoffel-vm/instructions.md)
 - [Using the VM](./stoffel-vm/usage.md)

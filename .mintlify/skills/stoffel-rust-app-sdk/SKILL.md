@@ -22,13 +22,13 @@ Use this playbook when a Rust application embeds Stoffel compilation, bytecode l
 
 ## Current source of truth
 
-- `StoffelVM/crates/stoffel-rust-sdk/README.md`
-- `StoffelVM/crates/stoffel-rust-sdk/src/lib.rs`
-- `StoffelVM/crates/stoffel-rust-sdk/src/prelude.rs`
-- `StoffelVM/crates/stoffel-rust-sdk/src/runtime.rs`
-- `StoffelVM/crates/stoffel-rust-sdk/src/config.rs`
-- `StoffelVM/crates/stoffel-rust-sdk/src/types.rs`
-- `StoffelVM/crates/stoffel-rust-sdk/examples/*`
+- `crates/stoffel-rust-sdk/README.md`
+- `crates/stoffel-rust-sdk/src/lib.rs`
+- `crates/stoffel-rust-sdk/src/prelude.rs`
+- `crates/stoffel-rust-sdk/src/runtime.rs`
+- `crates/stoffel-rust-sdk/src/config.rs`
+- `crates/stoffel-rust-sdk/src/types.rs`
+- `crates/stoffel-rust-sdk/examples/*`
 
 ## Dependencies
 
@@ -44,7 +44,7 @@ Local checkout flow for source-based 0.1.0 development:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", path = "../StoffelVM/crates/stoffel-rust-sdk" }
+stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust-sdk" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -72,7 +72,7 @@ fn main() -> stoffel::Result<()> {
 Build or install the runner used by local coordinator-backed execution. Source-based 0.1.0 checkout path:
 
 ```sh
-cd /path/to/StoffelVM
+cd /path/to/stoffel
 cargo build -p stoffel-vm --bin stoffel-run
 ```
 
@@ -86,7 +86,7 @@ async fn main() -> stoffel::Result<()> {
     )?
     .parties(5)
     .threshold(1)
-    .local_runner_path("/path/to/StoffelVM/target/debug/stoffel-run")
+    .local_runner_path("/path/to/stoffel/target/debug/stoffel-run")
     .with_client_input(0, &[42_i64])
     .execute_local()
     .await?;

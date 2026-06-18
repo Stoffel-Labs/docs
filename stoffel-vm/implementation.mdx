@@ -1,11 +1,11 @@
 ---
-title: "StoffelVM Implementation"
-description: "StoffelVM architecture, workspace crates, bytecode format, runtime values, and 0.1.0 execution paths."
+title: "Stoffel VM Implementation"
+description: "Stoffel VM architecture, workspace crates, bytecode format, runtime values, and 0.1.0 execution paths."
 ---
 
-# StoffelVM Implementation
+# Stoffel VM Implementation
 
-StoffelVM is the register-based runtime at the center of the Stoffel 0.1.0 stack. It lives in `Stoffel-Labs/StoffelVM` and is consumed by the CLI, StoffelLang compiler, Rust SDK, and lower-level FFI surfaces.
+Stoffel VM is the register-based runtime at the center of the Stoffel 0.1.0 stack. It lives in `crates/stoffel-vm` inside [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) and is consumed by the CLI, StoffelLang compiler, Rust SDK, and lower-level FFI surfaces.
 
 ## Workspace layout
 
@@ -107,8 +107,8 @@ cargo build -p stoffel-vm --bin stoffel-run
 Most developers should call it through the CLI or Rust SDK instead of invoking it directly:
 
 ```bash
-stoffel run --runner /path/to/StoffelVM/target/debug/stoffel-run
-stoffel dev --once --runner /path/to/StoffelVM/target/debug/stoffel-run
+stoffel run --runner /path/to/stoffel/target/debug/stoffel-run
+stoffel dev --once --runner /path/to/stoffel/target/debug/stoffel-run
 ```
 
 ## Embedding through the Rust SDK
@@ -168,7 +168,7 @@ fn main() -> Result<(), String> {
         None,
         2,
         vec![
-            Instruction::LDI(0, Value::String("Hello from StoffelVM".to_string())),
+            Instruction::LDI(0, Value::String("Hello from Stoffel VM".to_string())),
             Instruction::PUSHARG(0),
             Instruction::CALL("print".to_string()),
             Instruction::LDI(1, Value::Unit),

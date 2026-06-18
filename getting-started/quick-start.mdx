@@ -15,7 +15,7 @@ This guide gets you from a fresh 0.1.0 installation to a working Stoffel computa
 Finish [Installation](./installation) first. You should have:
 
 - the `stoffel` CLI on your path;
-- a local `StoffelVM` checkout;
+- a local `stoffel` checkout;
 - `target/debug/stoffel-run` built in that checkout for local MPC runs.
 
 Check the CLI:
@@ -65,7 +65,7 @@ stoffel compile --disassemble target/debug/hello-mpc.stflb
 
 # Run local MPC once instead of entering watch mode.
 stoffel dev \
-  --runner /path/to/StoffelVM/target/debug/stoffel-run \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
   --parties 5 \
   --threshold 1 \
   --once
@@ -87,7 +87,7 @@ Add dependencies in `Cargo.toml`:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/StoffelVM", tag = "v0.1.0" }
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", branch = "dev" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -95,7 +95,7 @@ For development against a local checkout, use a path dependency:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", path = "../StoffelVM/crates/stoffel-rust-sdk" }
+stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust-sdk" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -171,10 +171,10 @@ Expected output after the local runner starts and accepts masked inputs:
 Local MPC named-input result: 100
 ```
 
-If the SDK cannot find the runner automatically, build it in your StoffelVM checkout:
+If the SDK cannot find the runner automatically, build it in your stoffel checkout:
 
 ```bash
-cd /path/to/StoffelVM
+cd /path/to/stoffel
 cargo build -p stoffel-vm --bin stoffel-run
 ```
 

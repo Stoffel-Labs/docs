@@ -1,16 +1,16 @@
 ---
 title: "Installation"
-description: "Install the Stoffel 0.1.0 tools from the StoffelVM repository."
+description: "Install the Stoffel 0.1.0 tools from the Stoffel repository."
 ---
 
 # Installation
 
-These docs describe the Stoffel 0.1.0 installation path from [`Stoffel-Labs/StoffelVM`](https://github.com/Stoffel-Labs/StoffelVM).
+These docs describe the Stoffel 0.1.0 installation path from [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel).
 
 <Note>
 **Stoffel 0.1.0 docs**
 
-Start from `Stoffel-Labs/StoffelVM`; dependent MPC and networking crates are pulled by Cargo.
+Start from `Stoffel-Labs/stoffel`; dependent MPC and networking crates are pulled by Cargo.
 </Note>
 
 ## Prerequisites
@@ -32,8 +32,8 @@ cargo --version
 ## Install from source
 
 ```bash
-git clone https://github.com/Stoffel-Labs/StoffelVM.git
-cd StoffelVM
+git clone https://github.com/Stoffel-Labs/stoffel.git
+cd stoffel
 
 # Build the workspace.
 cargo build
@@ -58,14 +58,14 @@ You should see commands such as `init`, `check`, `compile`, `build`, `run`, `dev
 The local MPC runner is built at:
 
 ```text
-StoffelVM/target/debug/stoffel-run
+stoffel/target/debug/stoffel-run
 ```
 
 Pass that path whenever a command or SDK example needs the runner:
 
 ```bash
 stoffel dev \
-  --runner "$HOME/path/to/StoffelVM/target/debug/stoffel-run" \
+  --runner "$HOME/path/to/stoffel/target/debug/stoffel-run" \
   --parties 5 \
   --threshold 1 \
   --once
@@ -86,7 +86,7 @@ cargo build --release -p stoffel-vm --bin stoffel-run
 The release runner path is then:
 
 ```text
-StoffelVM/target/release/stoffel-run
+stoffel/target/release/stoffel-run
 ```
 
 ## Add the Rust SDK to an application
@@ -97,7 +97,7 @@ For source-based 0.1.0 development, point your app at the repository path or git
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/StoffelVM", tag = "v0.1.0" }
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", branch = "dev" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -105,7 +105,7 @@ When developing against a local checkout, use a path dependency:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", path = "../StoffelVM/crates/stoffel-rust-sdk" }
+stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust-sdk" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -142,9 +142,9 @@ Add that line to your shell profile if needed.
 Build the runner and pass its path:
 
 ```bash
-cd /path/to/StoffelVM
+cd /path/to/stoffel
 cargo build -p stoffel-vm --bin stoffel-run
-stoffel dev --runner /path/to/StoffelVM/target/debug/stoffel-run --once
+stoffel dev --runner /path/to/stoffel/target/debug/stoffel-run --once
 ```
 
 ### Cargo fetches git dependencies slowly

@@ -1,6 +1,6 @@
 ---
 title: "VM Usage"
-description: "How to run StoffelVM bytecode through the 0.1.0 CLI, Rust SDK, and stoffel-run helper."
+description: "How to run Stoffel VM bytecode through the 0.1.0 CLI, Rust SDK, and stoffel-run helper."
 ---
 
 # VM Usage
@@ -9,7 +9,7 @@ Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK instead
 
 ## Build the helper
 
-From the `StoffelVM` repository:
+From the `stoffel` repository:
 
 ```bash
 cargo build -p stoffel-vm --bin stoffel-run
@@ -55,7 +55,7 @@ stoffel run --program-info
 
 ```bash
 stoffel run \
-  --runner /path/to/StoffelVM/target/debug/stoffel-run \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -75,7 +75,7 @@ stoffel run \
 
 ```bash
 stoffel dev \
-  --runner /path/to/StoffelVM/target/debug/stoffel-run \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -83,7 +83,7 @@ stoffel dev \
 Use one-shot mode for scripts:
 
 ```bash
-stoffel dev --once --runner /path/to/StoffelVM/target/debug/stoffel-run
+stoffel dev --once --runner /path/to/stoffel/target/debug/stoffel-run
 ```
 
 ## Run through the Rust SDK

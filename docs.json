@@ -72,7 +72,7 @@
             ]
           },
           {
-            "group": "StoffelVM",
+            "group": "Stoffel VM",
             "pages": [
               "stoffel-vm/implementation",
               "stoffel-vm/instructions",
@@ -160,12 +160,6 @@
               "architecture/vm",
               "architecture/mpc",
               "architecture/sources"
-            ]
-          },
-          {
-            "group": "RFCs",
-            "pages": [
-              "rfcs/0001-preprocessing-configuration"
             ]
           }
         ]

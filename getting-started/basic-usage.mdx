@@ -5,7 +5,7 @@ description: "Daily Stoffel CLI workflows for checking, building, running, testi
 
 # Basic Usage
 
-This page describes the Stoffel 0.1.0 CLI from `Stoffel-Labs/StoffelVM`. The `stoffel` binary is a Cargo-like project tool; the lower-level `stoffel-run` helper executes compiled bytecode for local MPC runs.
+This page describes the Stoffel 0.1.0 CLI from `Stoffel-Labs/stoffel`. The `stoffel` binary is a Cargo-like project tool; the lower-level `stoffel-run` helper executes compiled bytecode for local MPC runs.
 
 ## Core workflow
 
@@ -179,7 +179,7 @@ stoffel run \
 `--local` is the default unless `--network` or `--config` is set. Use `--runner` if the CLI cannot find `stoffel-run` automatically:
 
 ```bash
-stoffel run --runner /path/to/StoffelVM/target/debug/stoffel-run
+stoffel run --runner /path/to/stoffel/target/debug/stoffel-run
 ```
 
 ## Development watch mode
@@ -188,7 +188,7 @@ stoffel run --runner /path/to/StoffelVM/target/debug/stoffel-run
 
 ```bash
 stoffel dev \
-  --runner /path/to/StoffelVM/target/debug/stoffel-run \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -196,7 +196,7 @@ stoffel dev \
 For scripts and CI, run once and exit:
 
 ```bash
-stoffel dev --once --runner /path/to/StoffelVM/target/debug/stoffel-run
+stoffel dev --once --runner /path/to/stoffel/target/debug/stoffel-run
 ```
 
 Tune watch latency with `--poll-ms`:
@@ -219,7 +219,7 @@ stoffel test --verbose
 Use local MPC execution for tests that need the local runner path:
 
 ```bash
-stoffel test --local --runner /path/to/StoffelVM/target/debug/stoffel-run
+stoffel test --local --runner /path/to/stoffel/target/debug/stoffel-run
 ```
 
 ## Status, clean, and update

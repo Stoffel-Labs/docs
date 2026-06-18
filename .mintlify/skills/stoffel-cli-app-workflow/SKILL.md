@@ -22,10 +22,10 @@ Use this playbook when building, running, testing, inspecting, or troubleshootin
 
 ## Current source of truth
 
-- `StoffelVM/crates/stoffel-cli/src/main.rs`
-- `StoffelVM/crates/stoffel-cli/src/project.rs`
-- `StoffelVM/crates/stoffel-cli/tests/cli.rs`
-- `StoffelVM/crates/stoffel-rust-sdk/src/input_file.rs`
+- `crates/stoffel-cli/src/main.rs`
+- `crates/stoffel-cli/src/project.rs`
+- `crates/stoffel-cli/tests/cli.rs`
+- `crates/stoffel-rust-sdk/src/input_file.rs`
 
 ## Core commands
 

@@ -2,7 +2,7 @@
 name: stoffel-rust-app-sdk
 description: Embed Stoffel in Rust apps using the SDK for compilation, bytecode loading, local execution, clients, and servers.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -40,7 +40,7 @@ stoffel = { package = "stoffel-rust-sdk", version = "0.1" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Temporary WIP/local checkout flow before publication:
+Local checkout flow for source-based 0.1.0 development:
 
 ```toml
 [dependencies]
@@ -69,7 +69,7 @@ fn main() -> stoffel::Result<()> {
 
 ## Local MPC execution
 
-Build or install the runner used by local coordinator-backed execution. Public path after publication may differ; WIP local checkout path:
+Build or install the runner used by local coordinator-backed execution. Source-based 0.1.0 checkout path:
 
 ```sh
 cd /path/to/StoffelVM
@@ -221,11 +221,11 @@ cargo run
 For local MPC app paths:
 
 ```sh
-cargo build -p stoffel-vm --bin stoffel-run   # WIP checkout only
+cargo build -p stoffel-vm --bin stoffel-run   # source checkout
 cargo run
 ```
 
-Framework WIP validation:
+0.1.0 framework validation:
 
 ```sh
 cargo test -p stoffel-rust-sdk
@@ -240,7 +240,7 @@ cargo run -p stoffel-rust-sdk --example local_mpc_client_input
 - Do not set an explicit backend that conflicts with bytecode metadata. Prefer generated manifests for ClientStore programs.
 - For `ClientStore` apps, validate client input shapes before network submission.
 - If source is shared between host and container/VM/remote environments, confirm that `stoffel-run` was built for the execution environment.
-- While the SDK still has unpublished/path/git dependencies, using `stoffel-rust-sdk` as both an app dependency and a build-dependency can trigger Cargo duplicate-crate/output-collision errors. Prefer runtime SDK metadata validation for sample apps, or pre-generate bindings outside the app build until dependency graphs are deduplicated.
+- Using `stoffel-rust-sdk` as both an app dependency and a build-dependency can trigger Cargo duplicate-crate/output-collision errors with path or git dependencies. Prefer runtime SDK metadata validation for sample apps, or pre-generate bindings outside the app build.
 
 ## Next playbooks
 

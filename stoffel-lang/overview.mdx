@@ -1,317 +1,215 @@
 ---
 title: "StoffelLang Overview"
-description: "Modern programming language for MPC applications with familiar syntax inspired by Rust and Python, featuring native secret types and strong typing."
+description: "The current Stoffel language for clear local logic and MPC-aware computations compiled to Stoffel VM bytecode."
 ---
 
 # StoffelLang Overview
 
-StoffelLang is a modern programming language designed specifically for secure Multi-Party Computation (MPC) applications. With syntax inspired by Rust, Python, and JavaScript, it provides a familiar development experience while offering powerful features for privacy-preserving computation.
+StoffelLang is the application language compiled by the `stoffellang` crate in the `StoffelVM` repository. It uses Python-like indentation, `def` functions, `var` bindings, static type annotations, lists, objects, closures, and explicit MPC share APIs.
 
-## Design Goals
+The Stoffel 0.1.0 language is practical and still evolving. Prefer examples from `crates/stoffel-lang/examples/` and the Rust SDK examples over syntax outside the documented 0.1.0 `def`/`var`/`.stflb` workflow.
 
-StoffelLang is designed with the following principles:
+## Design goals
 
-- **Familiar Syntax**: Draws from popular languages to reduce learning curve
-- **Type Safety**: Strong static typing with type inference for reliability
-- **MPC Native**: Built-in support for secret and public data distinctions
-- **Performance**: Compiles to efficient StoffelVM bytecode
-- **Developer Experience**: Clear error messages and tooling integration
+- Familiar Python-style control flow and indentation.
+- Static types with inference for local development ergonomics.
+- Direct compilation to portable `.stflb` Stoffel VM bytecode.
+- Explicit share-oriented MPC APIs such as `Share.*`, `ClientStore.*`, `Mpc.*`, and `MpcOutput.*`.
+- Host integration through the CLI and Rust SDK.
 
-## Key Features
+## A minimal program
 
-### Modern Language Features
-
-- **Static Typing**: Strong type system with inference to catch errors early
-- **Pattern Matching**: Powerful pattern matching for control flow
-- **Closures**: First-class functions with lexical scoping
-- **Memory Safety**: Automatic memory management without garbage collection overhead
-- **Generics**: Parametric polymorphism for reusable code
-
-### MPC-Specific Features
-
-- **Secret Types**: Native support for `secret` type annotations
-- **Reveal Operations**: Explicit operations for transitioning from secret to public
-- **Protocol Agnostic**: Works with different MPC protocol backends
-- **Optimized Compilation**: Generates efficient MPC-aware bytecode
-
-## Syntax Overview
-
-### Basic Syntax
-
-```
-# Variables and types
-let x: int64 = 42
-let y = 3.14  # Type inference
-let name = "Stoffel"
-let is_active = true
-
-# Functions
-proc add(a: int64, b: int64): int64 =
+```stoffel
+def add(a: int64, b: int64) -> int64:
   return a + b
 
-# Control flow
-if x > 0:
-  print("Positive")
-else:
-  print("Non-positive")
-
-# Loops
-for i in 0..10:
-  print("Count: " + $i)
+def main() -> int64:
+  return add(40, 2)
 ```
 
-### MPC-Specific Syntax
-
-```
-# Secret types
-proc secure_add(a: secret int64, b: secret int64): secret int64 =
-  return a + b
-
-# Mixed computation
-proc threshold_check(secret_value: secret int64, threshold: int64): secret bool =
-  return secret_value > threshold
-
-# Reveal operations (conceptual - actual implementation varies)
-proc main() =
-  let secret_sum = secure_add(25, 17)
-  print("Computation completed securely")
-```
-
-### Advanced Features
-
-```
-# Type definitions
-type Person = object
-  name: string
-  age: int64
-  is_secret: bool
-
-# Object creation
-let alice = Person(
-  name: "Alice",
-  age: 25,
-  is_secret: false
-)
-
-# Enum definitions (planned)
-type Status = enum
-  Active
-  Inactive
-  Pending
-```
-
-## Type System
-
-### Primitive Types
-
-- **`int64`**: 64-bit signed integers (primary integer type)
-- **`bool`**: Boolean values (`true`, `false`)
-- **`string`**: UTF-8 strings
-- **`nil`**: Null/empty value
-
-### Collection Types
-
-- **Objects**: Structured data with named fields
-- **Enums**: Enumerated types with named variants
-- **Lists**: Dynamic arrays (planned)
-- **Tuples**: Fixed-size heterogeneous collections (planned)
-
-### Secret Types
-
-Any type can be made secret by prefixing with `secret`:
-
-```
-let public_value: int64 = 42
-let secret_value: secret int64 = 42
-let secret_name: secret string = "Alice"
-```
-
-### Function Types
-
-```
-# Function definitions
-proc add(a: int64, b: int64): int64 =
-  return a + b
-
-proc multiply(x: int64, y: int64): int64 =
-  return x * y
-
-# Functions can call other functions
-proc calculate(a: int64, b: int64): int64 =
-  let sum = add(a, b)
-  let product = multiply(a, b)
-  return sum + product
-```
-
-## Compilation Process
-
-StoffelLang follows a multi-stage compilation process:
-
-```
-Source (.stfl) → Lexer → Parser → Type Checker → Code Generator → Bytecode (.stfbin)
-```
-
-### Compilation Stages
-
-1. **Lexical Analysis**: Tokenizes source code
-2. **Parsing**: Builds Abstract Syntax Tree (AST)
-3. **Type Checking**: Verifies type correctness and infers types
-4. **Optimization**: Applies various optimization passes
-5. **Code Generation**: Generates StoffelVM bytecode
-
-### Optimization Levels
+Compile and run it from a project or as a source file:
 
 ```bash
-# Different optimization levels
-stoffel compile source.stfl -O0    # No optimization (debug)
-stoffel compile source.stfl -O1    # Basic optimization
-stoffel compile source.stfl -O2    # Standard optimization
-stoffel compile source.stfl -O3    # Maximum optimization
+stoffel check src/main.stfl
+stoffel build
+stoffel run --entry main
 ```
 
-## Integration with StoffelVM
+## Variables and types
 
-StoffelLang compiles to StoffelVM bytecode, which includes:
+Use `var` for local bindings. Type annotations are optional when the compiler can infer the type.
 
-- **Rich Type Information**: Preserves type metadata for runtime
-- **Function Definitions**: Complete function metadata and instructions
-- **Constant Pools**: Efficient storage for literals and constants
-- **Debug Information**: Line numbers and variable names for debugging
-
-### Binary Format
-
-The compiler generates `.stfbin` files that contain:
-
-```
-┌─────────────────┐
-│   File Header   │
-├─────────────────┤
-│  Type Metadata  │
-├─────────────────┤
-│   Constant Pool │
-├─────────────────┤
-│   Function Defs │
-├─────────────────┤
-│   Bytecode      │
-├─────────────────┤
-│  Debug Info     │
-└─────────────────┘
+```stoffel
+def main() -> int64:
+  var count: int64 = 42
+  var message = "hello"
+  var ready = true
+  discard message
+  discard ready
+  return count
 ```
 
-## Development Tools
+Current primitive and runtime-facing types include:
 
-### Compiler CLI
+- signed integers: `int8`, `int16`, `int32`, `int64`
+- unsigned integers: `uint8`, `uint16`, `uint32`, `uint64`
+- `bool`
+- `string`
+- `None` / no-value returns
+- `Share` for MPC secret shares
+- `list[T]`
+- object and closure values used by the VM runtime
+
+## Functions
+
+```stoffel
+def multiply(a: int64, b: int64) -> int64:
+  return a * b
+
+def log_message(message: string) -> None:
+  print(message)
+```
+
+The CLI and SDK default to executing `main`, but most commands can select another entry function:
 
 ```bash
-# Basic compilation
-stoffel compile source.stfl
-
-# Generate VM-compatible binary
-stoffel compile source.stfl --binary
-
-# Enable optimizations
-stoffel compile source.stfl --binary -O2
-
-# Print intermediate representations
-stoffel compile source.stfl --print-ir
+stoffel run --entry multiply --input a=6 --input b=7
 ```
 
-### Integration with Stoffel CLI
+## Control flow
 
-The StoffelLang compiler is integrated with the main Stoffel CLI:
+```stoffel
+def fibonacci(n: int64) -> int64:
+  if n <= 1:
+    return n
+
+  var previous: int64 = 0
+  var current: int64 = 1
+  var index: int64 = 2
+
+  while index <= n:
+    var next: int64 = previous + current
+    previous = current
+    current = next
+    index = index + 1
+
+  return current
+```
+
+Ranges and list iteration are supported:
+
+```stoffel
+def checksum(limit: int64) -> int64:
+  var total: int64 = 0
+
+  for value in 1..limit:
+    total += value
+
+  return total
+```
+
+## Lists
+
+```stoffel
+def main() -> int64:
+  var scores: list[int64] = []
+  scores.append(72)
+  scores.append(41)
+  scores.append(93)
+
+  scores[1] = scores[1] + 10
+
+  var total: int64 = 0
+  for score in scores:
+    total += score
+
+  return total + scores.len()
+```
+
+## MPC share APIs
+
+The 0.1.0 release models MPC values explicitly as `Share` values. Use `ClientStore` to read client-provided shares, `Share` methods/functions to compute, and `open()` or `MpcOutput.send_to_client` where your program intentionally reconstructs or delivers a result.
+
+```stoffel
+def add_private_values(a: Share, b: Share) -> int64:
+  var sum = Share.add(a, b)
+  return sum.open()
+```
+
+Equivalent method-style calls are common in examples:
+
+```stoffel
+def normalize(raw_score: Share) -> Share:
+  var adjusted = raw_score.add_scalar(25)
+  return adjusted.mul_scalar(2)
+```
+
+## ClientStore inputs
+
+`ClientStore` exposes local or network client input slots to the program:
+
+```stoffel
+def main() -> int64:
+  var client_count = ClientStore.get_number_clients()
+  var share = ClientStore.take_share(0, 0)
+  var opened: int64 = share.open()
+  return opened + client_count
+```
+
+When running locally through the CLI, provide client-slot inputs with `--client-input`:
 
 ```bash
-# Compile via Stoffel CLI
-stoffel compile src/main.stfl
-
-# Compile with optimizations
-stoffel compile src/main.stfl --binary -O3
-
-# Development workflow
-stoffel compile src/main.stfl --binary --output app.stfbin
-stoffel-run app.stfbin main
+stoffel run --local --client-input 0=42 --parties 5 --threshold 1
 ```
 
-## Examples
+With the Rust SDK, use `.with_client_input(0, &[42_i64])`.
 
-### Hello World
+## Runtime metadata
 
-```
-proc main() =
-  print("Hello, world!")
-```
+MPC programs can query runtime metadata and capabilities:
 
-### Secure Addition
+```stoffel
+def main() -> int64:
+  var score: int64 = Mpc.party_id()
+  score = score + Mpc.n_parties()
+  score = score + Mpc.threshold()
 
-```
-proc secure_add(a: secret int64, b: secret int64): secret int64 =
-  return a + b
+  if Mpc.has_capability("multiplication"):
+    score = score + 100
 
-proc main() =
-  let result = secure_add(25, 17)
-  print("Secure addition completed")
-```
-
-### Complex Data Structures
-
-```
-type Person = object
-  name: string
-  age: secret int64
-  email: string
-
-proc process_person(person: Person): bool =
-  # Note: Age comparison would need special MPC operations
-  return true  # Simplified for example
-
-proc main() =
-  let alice = Person(
-    name: "Alice",
-    age: secret(25),
-    email: "alice@example.com"
-  )
-
-  let is_adult = process_person(alice)
-  print("Person processed: " + $is_adult)
+  discard Mpc.protocol_name()
+  discard Mpc.curve()
+  discard Mpc.field()
+  discard Mpc.instance_id()
+  return score
 ```
 
-### Basic Computation
+## Compilation outputs
 
-```
-proc calculate_total(base: int64, multiplier: int64): int64 =
-  return base * multiplier
+The current bytecode extension is `.stflb`:
 
-proc main() =
-  let base_value: int64 = 100
-  let factor: int64 = 3
-  let total = calculate_total(base_value, factor)
-  print("Total: " + $total)
+```bash
+stoffel compile src/main.stfl --output target/debug/main.stflb
+stoffel compile --disassemble target/debug/main.stflb
 ```
 
-## Future Features
+`stoffel build` writes project bytecode under `target/debug` or `target/release` depending on the selected profile.
 
-Planned enhancements for StoffelLang:
+## Examples in the repository
 
-- **Pattern Matching**: Powerful pattern matching for complex data
-- **Generics**: Parametric polymorphism for reusable code
-- **Async/Await**: Asynchronous programming support
-- **Macros**: Compile-time code generation
-- **Package System**: Module imports and dependency management
-- **Standard Library**: Comprehensive built-in functions and types
+Useful source-of-truth examples live under `crates/stoffel-lang/examples/`:
 
-## Language Server
+- `local_control_flow/main.stfl`
+- `local_collections/main.stfl`
+- `mpc_share_arithmetic/main.stfl`
+- `mpc_runtime_info/main.stfl`
+- `mpc_client_private_score/main.stfl`
+- `mpc_aes128_cbc_client_io/main.stfl`
+- `threshold_signatures/*/main.stfl`
 
-A Language Server Protocol (LSP) implementation is planned to provide:
+## Next steps
 
-- **Syntax Highlighting**: Rich syntax highlighting in editors
-- **Error Reporting**: Real-time error checking and suggestions
-- **Auto-completion**: Intelligent code completion
-- **Go-to Definition**: Navigate to symbol definitions
-- **Refactoring**: Automated code refactoring tools
-
-## Next Steps
-
-To learn more about StoffelLang:
-
-- **[Syntax and Examples](./syntax)**: Detailed syntax guide with examples
-- **[Compilation](./compilation)**: Understanding the compilation process
+- [Syntax and Examples](./syntax)
+- [Compilation](./compilation)
+- [Built-in Functions](../stoffel-vm/builtins)
+- [Rust SDK Examples](../rust-sdk/examples)

@@ -2,7 +2,7 @@
 name: stoffel-app-network-and-offchain-integration
 description: Move from local bytecode to client/server builders, network config, and off-chain coordinator integration.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -22,7 +22,7 @@ Use this playbook when an app moves beyond local runs and needs client/server bu
 
 ## Goal
 
-Guide advanced app developers from local bytecode to app-level network/off-chain integration using public SDK builders, while staying conservative about WIP lower-layer behavior.
+Guide advanced app developers from local bytecode to app-level network/off-chain integration using public SDK builders, while labeling lower-layer behavior with its 0.1.0 component status.
 
 ## Current source of truth
 
@@ -134,9 +134,9 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 - Network config validates before starting servers/clients.
 - Client IO metadata matches generated bindings.
 - Real client/server run returns expected output or a concrete error with logs.
-- Any WIP coordinator/network branch assumptions are labeled as WIP, not production deployment docs.
+- Any coordinator/network assumptions are labeled with 0.1.0 component status and paired with deployment validation guidance.
 
-Framework WIP validation:
+0.1.0 framework validation:
 
 ```sh
 cargo test -p stoffel-rust-sdk
@@ -150,5 +150,5 @@ cargo run -p stoffel-rust-sdk --example client_server
 - Do not duplicate lower-level networking/protocol logic in app code.
 - Do not bypass typed IO validation for ClientStore apps.
 - Keep on-chain coordinator paths marked advanced until public docs and stable APIs exist.
-- Do not present WIP coordinator/network branch assumptions as production deployment docs.
+- Present coordinator/network assumptions with explicit 0.1.0 status and deployment validation guidance.
 - Do not move to network debugging until the local loop has produced a real passing or failing run.

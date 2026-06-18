@@ -2,7 +2,7 @@
 name: stoffel-app-getting-started
 description: Install the Stoffel tooling, create a new app, run first local smoke tests, and choose the right development path.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -22,7 +22,7 @@ Use this playbook when a developer or coding agent needs the shortest path from 
 
 ## Current source of truth
 
-Use the public docs when available, then verify against the current app-facing repo surfaces:
+Use the public docs when available, then verify against the 0.1.0 app-facing repo surfaces:
 
 - `StoffelVM/README.md`
 - `StoffelVM/crates/stoffel-cli/src/main.rs`
@@ -35,8 +35,8 @@ These are source-inspection references for app behavior, not instructions for ap
 ## Prerequisites
 
 - Rust stable and Cargo.
-- The `stoffel` CLI, installed from crates.io once published.
-- During WIP only: a local checkout of the `StoffelVM` monorepo branch that contains the app-facing crates.
+- The `stoffel` CLI from the documented 0.1.0 installation path.
+- A local checkout of the `StoffelVM` repository for source-based 0.1.0 development.
 - For local MPC execution: a `stoffel-run` helper binary available through `PATH`, `--runner`, `STOFFEL_RUN_BIN`, or the SDK builder.
 
 ## Install
@@ -48,7 +48,7 @@ cargo install stoffel-cli
 stoffel --help
 ```
 
-Temporary WIP/local checkout flow before publication:
+Local checkout flow for source-based 0.1.0 development:
 
 ```sh
 cd /path/to/StoffelVM
@@ -123,7 +123,7 @@ For a secret ClientStore example, include its documented `# run-args:` flags and
 
 ## Common pitfalls
 
-- Do not teach monorepo path dependencies as the default after crates are published.
+- For 0.1.0 development, prefer the documented source dependency or local path dependency.
 - Do not describe `StoffelVM` internals unless they explain public app behavior.
 - Do not claim local MPC works until a real run has completed.
 - Do not treat `Stoffel.toml` as network/off-chain config.

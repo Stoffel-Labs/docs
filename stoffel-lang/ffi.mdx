@@ -1,6 +1,6 @@
 ---
 title: "FFI / C Bindings"
-description: "Foreign Function Interface for using the StoffelLang compiler from C, C++, Python, and other languages via C-compatible ABI."
+description: "Foreign Function Interface for using the StoffelLang compiler from C, C++, Python, and other languages via C ABI."
 ---
 
 # FFI / C Bindings
@@ -9,10 +9,10 @@ StoffelLang provides a Foreign Function Interface (FFI) that allows non-Rust app
 
 ## Overview
 
-The FFI exposes the StoffelLang compiler through a C-compatible ABI, allowing you to:
+The FFI exposes the StoffelLang compiler through a C ABI, allowing you to:
 
 - Compile StoffelLang source code to bytecode
-- Compile directly to VM-compatible binary format
+- Compile directly to VM bytecode format
 - Configure compiler options (optimization level, debug output)
 - Access detailed error information
 
@@ -143,7 +143,7 @@ stoffel_free_result(result);
 
 ### stoffel_compile_to_binary
 
-Compiles directly to VM-compatible binary format (.stfbin).
+Compiles directly to VM-compatible bytecode format (`.stflb` in the 0.1.0 CLI).
 
 ```c
 CBinaryResult* stoffel_compile_to_binary(
@@ -172,7 +172,7 @@ CBinaryResult* result = stoffel_compile_to_binary(
 
 if (result->success) {
     // Write to file
-    FILE* f = fopen("program.stfbin", "wb");
+    FILE* f = fopen("program.stflb", "wb");
     fwrite(result->binary_data, 1, result->binary_len, f);
     fclose(f);
 }
@@ -264,11 +264,11 @@ int main(int argc, char** argv) {
     printf("Binary size: %zu bytes\n", result->binary_len);
 
     // Write to file
-    FILE* f = fopen("example.stfbin", "wb");
+    FILE* f = fopen("example.stflb", "wb");
     if (f) {
         fwrite(result->binary_data, 1, result->binary_len, f);
         fclose(f);
-        printf("Written to example.stfbin\n");
+        printf("Written to example.stflb\n");
     }
 
     stoffel_free_binary_result(result);

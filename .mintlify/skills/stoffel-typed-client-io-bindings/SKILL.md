@@ -2,7 +2,7 @@
 name: stoffel-typed-client-io-bindings
 description: Generate and use Rust typed client input/output bindings from exact Stoffel bytecode manifests.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -161,7 +161,7 @@ stoffel run program.stflb \
 - Run the app's local smoke with the same bytecode.
 - For network/off-chain submissions, validate the runtime's program manifest against generated types before submitting.
 
-Framework WIP tests:
+0.1.0 framework tests:
 
 ```sh
 cargo test -p stoffel-rust-sdk generate_bindings_emits_typed_client_io_from_stflb_manifest
@@ -176,7 +176,7 @@ cargo test -p stoffel-rust-sdk --test compile_fail
 - Do not hand-edit generated binding files.
 - Do not bypass manifest validation when network clients submit real inputs.
 - Do not assume slot order from Rust struct field order alone; it follows ordered ClientStore metadata from bytecode.
-- While dependencies are unpublished/path/git based, avoid using the same local SDK as both app dependency and build-dependency if it causes Cargo duplicate-crate/output-collision failures. Pre-generate bindings or use a dedicated build step until published crates deduplicate the graph.
+- When using path or git dependencies, avoid using the same local SDK as both app dependency and build-dependency if it causes Cargo duplicate-crate/output-collision failures. Pre-generate bindings or use a dedicated build step.
 
 ## Next playbooks
 

@@ -1,82 +1,67 @@
 ---
 title: "Installation"
-description: "Install the Stoffel Rust SDK using Cargo or the Stoffel CLI template for quick project setup."
+description: "Install the 0.1.0 Rust SDK from the StoffelVM repository."
 ---
 
-# Installation
+# Rust SDK Installation
+
+The Rust SDK is the primary application API for Stoffel 0.1.0. Its Cargo package is `stoffel-rust-sdk`, and the library crate you import in Rust code is `stoffel`.
+
+<Note>
+**Stoffel 0.1.0 Rust SDK**
+
+Use the source dependency shown below for 0.1.0 applications and integrations.
+</Note>
 
 ## Prerequisites
 
-- Rust 1.70 or higher
-- Git (for submodule dependencies)
-- Stoffel CLI (optional, for project scaffolding)
+- Rust and Cargo, latest stable recommended
+- A local or git checkout of [`Stoffel-Labs/StoffelVM`](https://github.com/Stoffel-Labs/StoffelVM)
+- `stoffel-run` built if you want local MPC execution
 
-## Installation Methods
+Build the repository and runner:
 
-### Using Cargo (Recommended)
+```bash
+git clone https://github.com/Stoffel-Labs/StoffelVM.git
+cd StoffelVM
+git checkout v0.1.0
+cargo build
+cargo build -p stoffel-vm --bin stoffel-run
+```
 
-Add to your `Cargo.toml`:
+## Add the SDK from git
 
 ```toml
 [dependencies]
-stoffel-rust-sdk = { git = "https://github.com/Stoffel-Labs/stoffel-rust-sdk" }
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/StoffelVM", tag = "v0.1.0" }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Then run:
+## Add the SDK from a local checkout
 
-```bash
-cargo build
+Use this while developing against the same checkout you built:
+
+```toml
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", path = "../StoffelVM/crates/stoffel-rust-sdk" }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
-### Using Stoffel CLI Template
+Adjust the relative path to match your directory layout.
 
-The easiest way to start a new Rust MPC project:
+## Verify clear execution
 
-```bash
-# Install Stoffel CLI first (see Getting Started)
-stoffel init my-mpc-app --template rust
-cd my-mpc-app
-cargo build
-```
-
-This creates a complete project with:
-- Rust application with SDK integration
-- StoffelLang program in `stoffel/src/program.stfl`
-- Example code demonstrating the SDK API
-- Ready-to-run configuration
-
-### From Source
-
-For development or customization:
-
-```bash
-git clone https://github.com/Stoffel-Labs/stoffel-rust-sdk.git
-cd stoffel-rust-sdk
-
-# Initialize submodules (required)
-git submodule update --init --recursive
-
-cargo build
-cargo test
-```
-
-## Verifying Installation
-
-Create a simple test program:
+Create `src/main.rs`:
 
 ```rust
-use stoffel_rust_sdk::prelude::*;
+use stoffel::prelude::*;
 
-fn main() -> Result<()> {
-    let source = r#"
-        main main() -> int64:
-            return 42
-    "#;
+fn main() -> stoffel::Result<()> {
+    let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return a + b")?
+        .with_inputs(&[("a", 42_i64), ("b", 58_i64)])
+        .execute_clear()?;
 
-    let result = Stoffel::compile(source)?
-        .execute_local()?;
-
-    println!("Result: {:?}", result);
+    println!("Result: {}", result[0]);
     Ok(())
 }
 ```
@@ -88,66 +73,135 @@ cargo run
 ```
 
 Expected output:
+
+```text
+Result: 100
 ```
-Result: I64(42)
+
+## Verify local MPC execution
+
+Build the helper binary in the repository:
+
+```bash
+cd /path/to/StoffelVM
+cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-## Dependencies
+Then use an async main with `Share` inputs:
 
-The SDK depends on several Stoffel components (managed as git submodules):
+```rust
+use stoffel::prelude::*;
 
-| Component | Purpose |
-|-----------|---------|
-| `stoffellang` | StoffelLang compiler |
-| `stoffel-vm` | Virtual machine runtime |
-| `stoffelmpc-mpc` | HoneyBadger MPC protocol |
-| `stoffelnet` | QUIC networking |
+#[tokio::main]
+async fn main() -> stoffel::Result<()> {
+    let source = r#"
+def add_private_values(a: Share, b: Share) -> int64:
+  var sum = Share.add(a, b)
+  return sum.open()
+"#;
 
-These are automatically fetched when you add the SDK as a dependency.
+    match Stoffel::compile(source)?
+        .parties(5)
+        .threshold(1)
+        .with_inputs(&[("a", 42_i64), ("b", 58_i64)])
+        .execute_local_function("add_private_values")
+        .await
+    {
+        Ok(result) => println!("Local MPC named-input result: {}", result[0]),
+        Err(stoffel::Error::Unsupported(message)) if message.contains("stoffel-run") => {
+            println!("Build stoffel-run first to execute local MPC: {message}");
+        }
+        Err(error) => return Err(error),
+    }
 
-## Platform Support
+    Ok(())
+}
+```
 
-| Platform | Status |
-|----------|--------|
-| Linux (x86_64) | ✅ Fully supported |
-| macOS (x86_64, ARM64) | ✅ Fully supported |
-| Windows (WSL2) | ✅ Supported |
-| Windows (native) | ⚠️ Experimental |
+Run it:
+
+```bash
+cargo run
+```
+
+Expected output:
+
+```text
+Local MPC named-input result: 100
+```
+
+## Current SDK surface
+
+The SDK currently includes:
+
+- `Stoffel::compile(source)` and `Stoffel::compile_file(path)` for source compilation.
+- `Stoffel::load(bytecode)` and `Stoffel::load_file(path)` for bytecode loading.
+- `with_inputs(&[(name, value)])` for named function inputs.
+- `with_client_input(slot, &[values])` for ClientStore-style local MPC programs.
+- `execute_clear()` for fast local logic checks.
+- `execute_local().await` and `execute_local_function(name).await` for local MPC-style execution.
+- `parties(n)` and `threshold(t)` MPC configuration.
+- bytecode save/load and summary helpers.
+- network deployment/config builders for multi-node experiments.
+- observability and error-category helpers.
+- on-chain coordinator handles for integration experiments.
+
+## Examples in the repository
+
+The SDK examples live at:
+
+```text
+StoffelVM/crates/stoffel-rust-sdk/examples/
+```
+
+Useful starting points:
+
+| Example | What it shows |
+| --- | --- |
+| `quickstart.rs` | Clear local execution with named inputs. |
+| `local_mpc_named_inputs.rs` | Recommended local MPC smoke test using `Share` values with named inputs. |
+| `local_mpc_client_input.rs` | Recommended ClientStore smoke test using local client slots. |
+| `quickstart_mpc.rs` | Direct `secret int64` argument example; useful for reading, but the `Share` and `ClientStore` examples are the more reliable current smoke tests. |
+| `bytecode_roundtrip.rs` | Save bytecode, load it back, and execute. |
+| `network_config.rs` | Generate and parse network deployment TOML. |
+| `observability.rs` | Tracing, metrics, server health, and error categories. |
+| `onchain.rs` | On-chain coordinator handle setup. |
+
+Run an example from the repository:
+
+```bash
+cd /path/to/StoffelVM
+cargo run -p stoffel-rust-sdk --example quickstart
+cargo run -p stoffel-rust-sdk --example local_mpc_named_inputs
+cargo run -p stoffel-rust-sdk --example local_mpc_client_input
+```
 
 ## Troubleshooting
 
-### Submodule Issues
+### `use stoffel::prelude::*` cannot resolve
 
-If you see errors about missing dependencies:
+Confirm that your dependency renames the package to the library crate name:
 
-```bash
-git submodule update --init --recursive
+```toml
+stoffel = { package = "stoffel-rust-sdk", path = "../StoffelVM/crates/stoffel-rust-sdk" }
 ```
 
-### Build Failures
+### Local MPC cannot find `stoffel-run`
 
-Ensure you have the latest Rust:
-
-```bash
-rustup update stable
-```
-
-### Linking Errors
-
-On Linux, you may need:
+Build the runner in the repository:
 
 ```bash
-sudo apt-get install build-essential pkg-config libssl-dev
+cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-On macOS:
+Keep your SDK app near the repository during development or use the CLI `--runner` flag for CLI local runs.
 
-```bash
-xcode-select --install
-```
+### Git dependencies take a while
 
-## Next Steps
+The SDK pulls MPC, networking, and coordinator crates through Cargo git dependencies. The first build can take several minutes.
 
-- **[SDK Overview](./overview)**: Understand the SDK architecture
-- **[API Reference](./api)**: Complete API documentation
-- **[Examples](./examples)**: Working code examples
+## Next steps
+
+- [Rust SDK Examples](./examples)
+- [CLI Overview](../cli/overview)
+- [Quick Start](../getting-started/quick-start)

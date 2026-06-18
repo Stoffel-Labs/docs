@@ -1,186 +1,174 @@
 ---
 title: "Ecosystem Overview"
-description: "Complete overview of the Stoffel ecosystem including CLI, compiler, virtual machine, MPC protocols, and language SDKs."
+description: "Current Stoffel 0.1.0 component map, repository status, and developer workflow."
 ---
 
 # Ecosystem Overview
 
-The Stoffel ecosystem provides a complete toolchain for developing privacy-preserving applications using secure Multi-Party Computation (MPC). This page provides an overview of how the different components work together.
+Stoffel 0.1.0 is organized around [`Stoffel-Labs/StoffelVM`](https://github.com/Stoffel-Labs/StoffelVM), the primary repository for the CLI, compiler, Rust SDK, VM runtime, and shared bytecode/type definitions.
 
-## Component Architecture
+The product promise is developer-accessible MPC: write the computation, mark sensitive values explicitly, run the same workflow locally, and move from clear tests to secret-shared execution without becoming a protocol implementer.
 
+## 0.1.0 repository status
+
+| Repository | Role in 0.1.0 | Developer guidance |
+| --- | --- | --- |
+| `Stoffel-Labs/StoffelVM` | Primary repository for CLI, compiler, Rust SDK, VM, bytecode, runtime helper, C FFI, and examples. | Start here. Build from source for 0.1.0. |
+| `Stoffel-Labs/mpc-protocols` | MPC protocol dependency used by the VM/SDK. | Pulled by Cargo as a git dependency; app developers normally use the CLI and SDK. |
+| `Stoffel-Labs/stoffel-networking` | QUIC/networking dependency used by local/networked execution paths. | Pulled by Cargo as a git dependency. |
+| `Stoffel-Labs/stoffel-mpc-coordinator` | Coordinator dependency used by SDK/on-chain coordination surfaces. | Pulled by Cargo as a git dependency. |
+
+## Component architecture
+
+```text
+┌────────────────────────┐
+│  Stoffel app / project │
+└───────────┬────────────┘
+            │
+            ▼
+┌────────────────────────┐
+│  Stoffel CLI (`stoffel`)│  init/check/compile/build/run/dev/test
+└───────────┬────────────┘
+            │
+            ▼
+┌────────────────────────┐
+│ Stoffel Lang compiler  │  `.stfl` source → `.stflb` bytecode
+└───────────┬────────────┘
+            │
+            ▼
+┌────────────────────────┐
+│ Rust SDK (`stoffel`)   │  compile/load/run APIs for apps
+└───────────┬────────────┘
+            │
+            ▼
+┌────────────────────────┐
+│ Stoffel VM/runtime     │  clear execution, secret shares, builtins, hooks
+└───────────┬────────────┘
+            │
+            ▼
+┌────────────────────────┐
+│ MPC/network backends   │  local simulation and networked MPC plumbing
+└────────────────────────┘
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Stoffel CLI   │    │  StoffelLang    │    │   Python SDK    │
-│                 │    │   Compiler      │    │                 │
-│ Project Mgmt    │───▶│                 │    │ StoffelProgram  │
-│ Build Tools     │    │ .stfl → .stfb   │    │ StoffelClient   │
-│ Dev Server      │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       ▼                       │
-         │              ┌─────────────────┐              │
-         │              │   StoffelVM     │              │
-         │              │                 │              │
-         └─────────────▶│ Register-based  │◀─────────────┘
-                        │ Virtual Machine │
-                        │ MPC Optimized   │
-                        └─────────────────┘
-                                 │
-                                 ▼
-                        ┌─────────────────┐
-                        │ MPC Protocols   │
-                        │                 │
-                        │ HoneyBadger MPC │
-                        │ Rust Implementation│
-                        └─────────────────┘
-```
 
-## Development Workflow
+## Primary developer workflow
 
-### 1. Project Initialization
-Use the Stoffel CLI to create new projects with appropriate templates:
+### 1. Install the tools
 
 ```bash
-# Create a new MPC project with Python integration
-stoffel init my-secure-app --template python
-
-# Create a pure StoffelLang project
-stoffel init privacy-lib --lib
+git clone https://github.com/Stoffel-Labs/StoffelVM.git
+cd StoffelVM
+git checkout v0.1.0
+cargo build
+cargo install --path crates/stoffel-cli
+cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-### 2. Development
-Write your privacy-preserving logic in StoffelLang and integrate with your preferred language:
+For Stoffel 0.1.0, `stoffel-run` is the local MPC helper used by SDK and CLI local execution paths.
 
-**StoffelLang Program (`src/secure_add.stfl`)**:
-```javascript
-fn secure_add(a: secret i32, b: secret i32) -> secret i32 {
-    return a + b;
-}
-
-fn main() {
-    let result = secure_add(25, 17);
-    reveal(result);
-}
-```
-
-**Python Integration**:
-```python
-from stoffel import StoffelProgram, StoffelClient
-
-# Compile and execute
-program = StoffelProgram("src/secure_add.stfl")
-program.compile()
-
-client = StoffelClient(config)
-result = await client.execute_with_inputs(
-    secret_inputs={"a": 25, "b": 17}
-)
-```
-
-### 3. Development Server
-Run the development server for hot reloading and MPC simulation:
+### 2. Create a project
 
 ```bash
-stoffel dev --parties 5 --port 3000
+stoffel init hello-mpc
+cd hello-mpc
 ```
 
-### 4. Building and Deployment
-Build optimized binaries for production:
+The default template currently creates a hybrid Rust/Stoffel project:
+
+```text
+hello-mpc/
+├── Cargo.toml
+├── README.md
+├── Stoffel.toml
+└── src/
+    ├── main.rs
+    ├── main.stfl
+    └── stoffel_bindings.rs
+```
+
+### 3. Compile, inspect, and run
 
 ```bash
-# Create production build
-stoffel build --release
-
-# Deploy to TEE environment
-stoffel deploy --target tee --env production
+stoffel check
+stoffel build
+stoffel compile --disassemble target/debug/hello-mpc.stflb
+stoffel run
 ```
 
-## Component Details
+For local MPC development:
+
+```bash
+stoffel dev \
+  --runner /path/to/StoffelVM/target/debug/stoffel-run \
+  --parties 5 \
+  --threshold 1 \
+  --once
+
+```
+
+Use `stoffel dev --once` for a script-friendly one-shot run.
+
+## Component details
 
 ### Stoffel CLI
-The central command-line interface that orchestrates the entire development workflow:
 
-- **Project Management**: Initialize projects with templates for different use cases
-- **Compilation**: Compile StoffelLang programs to VM bytecode
-- **Development**: Hot-reloading server with MPC simulation
-- **Build System**: Optimize and package applications for deployment
-- **Deployment**: Deploy to various targets including TEE and cloud environments
+The `stoffel` binary is a Cargo-like command-line tool. Current commands are:
 
-### StoffelLang Compiler
-A modern programming language designed specifically for MPC:
+- `init` / `new`: create projects from templates.
+- `check`: validate source and MPC settings without writing bytecode.
+- `compile`: compile source or projects to `.stflb`, or disassemble bytecode.
+- `build`: write project bytecode under `target/`.
+- `run`: run a project, `.stfl` source file, or `.stflb` bytecode file.
+- `dev`: watch and rerun local MPC flows.
+- `test`: run no-argument Stoffel test functions.
+- `status` / `doctor`: show project health and environment status.
+- `clean`: remove generated artifacts.
+- `update` / `upgrade`: check or update CLI/project dependencies.
 
-- **Syntax**: Inspired by Rust, Python, and JavaScript for familiar development experience
-- **Type System**: Strong static typing with inference, supporting both clear and secret types
-- **Compilation**: Generates optimized bytecode compatible with StoffelVM
-- **Integration**: Works seamlessly with the CLI and other ecosystem components
+### Stoffel Lang compiler
 
-### StoffelVM
-A register-based virtual machine optimized for multiparty computation:
+Stoffel Lang is the source language for the VM. The 0.1.0 syntax is Python-style:
 
-- **Architecture**: Separate clear and secret registers for efficient MPC operations
-- **Instructions**: Comprehensive instruction set for arithmetic, control flow, and memory operations
-- **Types**: Rich type system including primitives, objects, arrays, and closures
-- **Runtime**: Hook system for debugging and protocol integration
-
-### Python SDK
-High-level Python interface for integrating Stoffel into existing applications:
-
-- **StoffelProgram**: Handles compilation, VM operations, and execution parameters
-- **StoffelClient**: Manages MPC network communication and data handling
-- **API Design**: Clean separation of concerns with explicit public/secret input handling
-- **Integration**: Easy integration into existing Python codebases
-
-### MPC Protocols
-Rust implementation of secure multiparty computation protocols:
-
-- **HoneyBadger MPC**: Primary protocol implementation for secure computation
-- **Cryptographic Fields**: Support for multiple fields (BLS12-381, BN254, etc.)
-- **Security**: Configurable security parameters and threshold settings
-- **Performance**: Optimized for practical MPC applications
-
-## Integration Patterns
-
-### Standalone Applications
-For new applications built entirely with Stoffel:
-
-```bash
-stoffel init secure-voting-app
-cd secure-voting-app
-stoffel dev
+```stoffel
+def main(a: int64, b: int64) -> int64:
+  return a + b
 ```
 
-### Library Integration
-For adding privacy features to existing applications:
+Secret inputs are explicit:
 
-```bash
-cd existing-project
-stoffel init --lib --path ./privacy-module
+```stoffel
+def main(a: secret int64, b: secret int64) -> secret int64:
+  return a + b
 ```
 
-### Multiple Language Support
-Templates available for different development environments:
+### Rust SDK
 
-- **Python**: Full SDK integration with Poetry and pytest
-- **Rust**: FFI integration with StoffelVM
-- **TypeScript**: Node.js client integration
-- **Solidity**: Smart contract integration with MPC result verification
+The Rust SDK is the primary application API for 0.1.0. It exposes `Stoffel::compile`, `Stoffel::load`, `with_inputs`, `with_client_input`, `execute_clear`, `execute_local`, bytecode save/load helpers, network deployment builders, and observability helpers.
 
-## Security Model
+```rust
+use stoffel::prelude::*;
 
-The Stoffel ecosystem provides security through:
+fn main() -> stoffel::Result<()> {
+    let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return a + b")?
+        .with_inputs(&[("a", 42_i64), ("b", 58_i64)])
+        .execute_clear()?;
 
-- **Type Safety**: Clear distinction between public and secret data at the language level
-- **Protocol Security**: Proven MPC protocols with configurable security parameters
-- **Deployment Security**: TEE integration and secure deployment practices
-- **Development Security**: Simulation environment for testing without exposing real secrets
+    println!("Result: {}", result[0]);
+    Ok(())
+}
+```
 
-## Next Steps
+### Stoffel VM
 
-To start working with the Stoffel ecosystem:
+The VM is a register-based runtime with clear values, secret shares, objects, arrays, closures, FFI support, VM hooks, bytecode support, and MPC-focused builtins such as `Share.*`, `Mpc.*`, `ClientStore.*`, and `MpcOutput.*`.
 
-1. **[Install Stoffel](../getting-started/installation)** - Set up the development environment
-2. **[Create Your First Project](../getting-started/first-project)** - Build a simple MPC application
-3. **[Learn StoffelLang](../stoffel-lang/overview)** - Master the programming language
-4. **[Explore the CLI](../cli/overview)** - Understand all available commands and options
-5. **[Use the Python SDK](../python-sdk/overview)** - Integrate with Python applications
+### MPC/network backends
+
+HoneyBadger MPC, AVSS, reliable broadcast, and QUIC networking integrations are wired into the repository through Rust dependencies. Local developer workflows normally use the SDK/CLI and `stoffel-run` rather than integrating those crates directly.
+
+## Next steps
+
+- [Install Stoffel](../getting-started/installation)
+- [Run the quick start](../getting-started/quick-start)
+- [Read the CLI guide](../cli/overview)
+- [Use the Rust SDK](../rust-sdk/overview)

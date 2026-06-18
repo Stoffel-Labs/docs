@@ -1,243 +1,206 @@
 ---
 title: "Built-in Functions"
-description: "StoffelVM standard library reference including print, array operations, and the ClientStore API for MPC computations."
+description: "Current StoffelVM standard and MPC builtin functions, including Share, ClientStore, Mpc, and MpcOutput APIs."
 ---
 
 # Built-in Functions
 
-StoffelVM provides a set of built-in functions that are available to all StoffelLang programs. These functions handle common operations like I/O, array manipulation, and MPC-specific functionality.
+StoffelVM registers ordinary runtime builtins and MPC-focused module-style builtins. This page reflects the 0.1.0 release in the `StoffelVM` repository.
 
-## Console Output
+## General runtime builtins
 
-### print
+| Builtin | Purpose |
+| --- | --- |
+| `print(value)` | Print a value during VM execution. |
+| `type(value)` | Return a runtime type name. |
+| `to_string(value)` | Convert a value to its string form. |
+| `create_object(...)` | Create an object value. |
+| `create_array(...)` | Create an array/list value. |
+| `get_field(object, key)` | Read an object field or array/list index. |
+| `set_field(object, key, value)` | Write an object field or array/list index. |
+| `array_length(array)` | Return array/list length. |
+| `array_push(array, value, ...)` | Append one or more values. |
+| `slice(value, start, end)` | Slice arrays/strings; negative bounds are supported. |
+| `contains(container, value)` | Membership test backing the `in` operator. |
+| `assert(condition)` | Abort execution if a condition is false. |
+| `create_closure`, `call_closure` | Closure creation and invocation support. |
+| `get_upvalue`, `set_upvalue` | Captured-variable access for closures. |
 
-Outputs text to the console during program execution.
+In StoffelLang, prefer method syntax where the language exposes it:
 
-**Signature:**
-```
-print(message: string) -> nil
-```
-
-**Example:**
-```python
-def greet() -> nil:
-    print("Hello, World!")
-    print("Computation complete")
-```
-
-**Notes:**
-- Output is displayed during VM execution
-- Useful for debugging and progress tracking
-- Does not reveal secret values (they remain masked)
-
-## Array Operations
-
-### array_push
-
-Adds an element to the end of an array.
-
-**Signature:**
-```
-array_push(array: [T], element: T) -> nil
+```stoffel
+def main() -> int64:
+  var values: list[int64] = []
+  values.append(10)
+  values.append(20)
+  return values.len()
 ```
 
-**Example:**
-```python
-var numbers: [int64] = []
-array_push(numbers, 10)
-array_push(numbers, 20)
-array_push(numbers, 30)
-# numbers is now [10, 20, 30]
+## Share builtins
+
+`Share` values represent MPC secret shares. The VM registers these names on the 0.1.0 release:
+
+```text
+Share.from_clear
+Share.from_clear_int
+Share.from_clear_uint
+Share.from_clear_fixed
+Share.add
+Share.sub
+Share.neg
+Share.add_scalar
+Share.mul_scalar
+Share.mul
+Share.open
+Share.batch_open
+Share.send_to_client
+Share.interpolate_local
+Share.get_type
+Share.get_party_id
+Share.open_exp
+Share.random
+Share.random_field
+Share.random_int
+Share.get_commitment
+Share.commitment_count
+Share.has_commitments
+Share.mul_field
+Share.add_field
+Share.retag
+Share.open_field
+Share.open_exp_custom
 ```
 
-**Notes:**
-- Uses **0-based indexing** (updated in recent versions)
-- Modifies the array in place
-- Works with both clear and secret element types
+Most share functions are also available as methods in StoffelLang examples:
 
-### array_len
-
-Returns the length of an array.
-
-**Signature:**
-```
-array_len(array: [T]) -> int64
+```stoffel
+def compute(a: Share, b: Share) -> int64:
+  var sum = a.add(b)
+  var scaled = sum.mul_scalar(2)
+  return scaled.open()
 ```
 
-**Example:**
-```python
-var items: [int64] = [1, 2, 3, 4, 5]
-var count = array_len(items)  # count = 5
+Opening a share reconstructs the value into the execution context. Use `open()` deliberately at the point where your program needs a clear result.
+
+## Batch open
+
+Use batch operations when a program naturally returns multiple shares:
+
+```stoffel
+def main() -> list[int64]:
+  var left = Share.from_clear(40)
+  var right = Share.from_clear(2)
+  var values: list[Share] = [left, right, left.add(right)]
+  return Share.batch_open(values)
 ```
 
-## ClientStore Operations
+## ClientStore builtins
 
-The `ClientStore` is a built-in singleton that provides access to client inputs in MPC computations. It acts as the bridge between external client data and the secure computation.
+`ClientStore` bridges external client input material into a Stoffel program.
 
-### ClientStore.get_number_clients
+| Builtin | Purpose |
+| --- | --- |
+| `ClientStore.get_number_clients()` | Total known client slots. |
+| `ClientStore.get_number_input_clients()` | Clients with input material. |
+| `ClientStore.get_number_output_clients()` | Output-capable clients. |
+| `ClientStore.take_share(client_slot, input_index)` | Load an integer share from a client slot. |
+| `ClientStore.take_share_fixed(client_slot, input_index)` | Load a fixed-point share from a client slot. |
 
-Returns the total number of clients participating in the MPC computation.
+Example:
 
-**Signature:**
-```
-ClientStore.get_number_clients() -> int64
-```
-
-**Returns:** A clear (non-secret) `int64` value representing the client count.
-
-**Example:**
-```python
-main main() -> nil:
-    var num_clients: int64 = ClientStore.get_number_clients()
-    print("Clients connected")
-```
-
-**Notes:**
-- Returns a **clear** (public) value, not a secret
-- Can be assigned to regular variables
-- Useful for dynamic iteration over client inputs
-
-### ClientStore.take_share
-
-Retrieves a secret share from a specific client at a given index.
-
-**Signature:**
-```
-ClientStore.take_share(client_id: int64, share_index: int64) -> secret int64
+```stoffel
+def main() -> int64:
+  var client_count = ClientStore.get_number_clients()
+  var share = ClientStore.take_share(0, 0)
+  var opened: int64 = share.open()
+  return opened + client_count
 ```
 
-**Parameters:**
-- `client_id`: The ID of the client (0-indexed)
-- `share_index`: The index of the share from that client (0-indexed)
+CLI local execution:
 
-**Returns:** A secret `int64` value.
-
-**Example:**
-```python
-main main() -> nil:
-    # Get first share from client 0
-    secret var input1 = ClientStore.take_share(0, 0)
-
-    # Get first share from client 1
-    secret var input2 = ClientStore.take_share(1, 0)
-
-    # Get second share from client 0
-    secret var input3 = ClientStore.take_share(0, 1)
+```bash
+stoffel run --local --client-input 0=42 --parties 5 --threshold 1
 ```
 
-**Critical Constraint:**
-
-Results from `ClientStore.take_share()` **must** be assigned to secret variables. The compiler enforces this requirement.
-
-**Valid usage patterns:**
-```python
-# 1. Using 'secret var' keyword
-secret var share1 = ClientStore.take_share(0, 0)
-
-# 2. Using explicit secret type annotation
-var share2: secret int64 = ClientStore.take_share(1, 0)
-
-# 3. Reassigning to existing secret variable
-secret var mutable_share: int64 = ClientStore.take_share(0, 0)
-mutable_share = ClientStore.take_share(1, 0)  # Valid
-```
-
-**Invalid usage (compiler error):**
-```python
-# ERROR: Cannot assign take_share result to non-secret variable
-var share: int64 = ClientStore.take_share(0, 0)
-
-# ERROR: Implicit type doesn't make it secret
-var share = ClientStore.take_share(0, 0)
-```
-
-## MPC-Specific Builtins
-
-These functions are available when running in MPC mode and interact with the underlying protocol.
-
-### Share Operations
-
-When values are declared as `secret`, the VM automatically handles:
-- **Secret sharing**: Splitting values into shares across parties
-- **Share arithmetic**: Computing on shares using MPC protocols
-- **Reconstruction**: Combining shares to produce final outputs
-
-The programmer doesn't directly call share operations—they happen automatically when working with secret types.
-
-### Protocol Integration
-
-StoffelVM integrates with the HoneyBadger MPC protocol through internal hooks:
-
-| Operation | Internal Function | Description |
-|-----------|------------------|-------------|
-| Addition | `mpc_add` | Adds two secret values |
-| Subtraction | `mpc_sub` | Subtracts two secret values |
-| Multiplication | `mpc_mul` | Multiplies using Beaver triples |
-| Comparison | `mpc_cmp` | Compares two secret values |
-
-These are invoked automatically by the VM when operating on secret types.
-
-## Type Conversion Builtins
-
-### int_to_string (Planned)
-
-Convert an integer to its string representation.
-
-```python
-var num = 42
-var text = int_to_string(num)  # "42"
-```
-
-### string_to_int (Planned)
-
-Parse a string as an integer.
-
-```python
-var text = "123"
-var num = string_to_int(text)  # 123
-```
-
-## Memory and Lifecycle
-
-### Automatic Memory Management
-
-StoffelVM manages memory automatically:
-- Values are allocated on the stack or heap as needed
-- Arrays grow dynamically with `array_push`
-- Memory is reclaimed when values go out of scope
-
-### Register Architecture
-
-The VM uses a dual-register architecture:
-- **Clear registers**: For public/non-secret values
-- **Secret registers**: For MPC-protected values
-
-Built-in functions automatically select the appropriate register set based on operand types.
-
-## FFI Integration
-
-StoffelVM supports calling external functions through Foreign Function Interface (FFI):
+Rust SDK local execution:
 
 ```rust
-// Rust side: Register a custom builtin
-vm.register_builtin("custom_hash", |args| {
-    // Implementation
-});
+use stoffel::prelude::*;
+
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::compile(
+    "def main() -> int64:\n  var share = ClientStore.take_share(0, 0)\n  return share.open()",
+)?
+.parties(5)
+.threshold(1)
+.with_client_input(0, &[42_i64])
+.execute_local()
+.await?;
+# Ok(())
+# }
 ```
 
-```python
-# StoffelLang side: Call the custom builtin
-var result = custom_hash(data)
+## Mpc builtins
+
+`Mpc` exposes runtime metadata and capability checks:
+
+```text
+Mpc.party_id
+Mpc.n_parties
+Mpc.threshold
+Mpc.is_ready
+Mpc.instance_id
+Mpc.protocol_name
+Mpc.curve
+Mpc.field
+Mpc.has_capability
+Mpc.capabilities
+Mpc.rand
+Mpc.rand_int
 ```
 
-See the [Architecture - FFI](../architecture/subsections/foreignfunctioninterface) section for details on implementing custom builtins.
+Example:
 
-## Summary Table
+```stoffel
+def main() -> int64:
+  var score: int64 = Mpc.party_id()
+  score = score + Mpc.n_parties()
+  score = score + Mpc.threshold()
 
-| Function | Input Types | Return Type | Description |
-|----------|-------------|-------------|-------------|
-| `print` | string | nil | Console output |
-| `array_push` | [T], T | nil | Add element to array |
-| `array_len` | [T] | int64 | Get array length |
-| `ClientStore.get_number_clients` | - | int64 (clear) | Get client count |
-| `ClientStore.take_share` | int64, int64 | secret int64 | Get client share |
+  if Mpc.is_ready():
+    score = score + 10
+
+  if Mpc.has_capability("multiplication"):
+    score = score + 100
+
+  return score
+```
+
+## MpcOutput builtins
+
+Use `MpcOutput.send_to_client` when a program should deliver share outputs to client slots through the coordinator/output path:
+
+```stoffel
+def main() -> int64:
+  var client_count = ClientStore.get_number_clients()
+  var result = ClientStore.take_share(0, 0).add_scalar(5)
+
+  if Mpc.has_capability("client-output"):
+    var outputs: list[Share] = []
+    outputs.append(result)
+    MpcOutput.send_to_client(0, outputs)
+
+  return client_count
+```
+
+`Share.send_to_client(client_slot)` is also available for single-share output flows.
+
+## Crypto, Bytes, Rbc, and Avss modules
+
+The VM also includes module-style builtins for cryptographic helpers, byte-array operations, reliable broadcast helpers, and AVSS-specific operations. These are lower-level integration surfaces; prefer checked examples in `crates/stoffel-lang/examples/` for production-facing patterns.
+
+## See also
+
+- [StoffelLang Overview](../stoffel-lang/overview)
+- [Rust SDK Examples](../rust-sdk/examples)
+- [StoffelVM Implementation](./implementation)

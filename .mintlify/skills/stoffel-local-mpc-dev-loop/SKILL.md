@@ -2,7 +2,7 @@
 name: stoffel-local-mpc-dev-loop
 description: Run local MPC smoke tests, ClientStore input flows, hot reload, and SDK local coordinator-backed execution.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -34,7 +34,7 @@ Give developers a repeatable local loop for testing private/MPC apps before any 
 
 ## Runner setup
 
-Public install path may change once runtime binaries are published. WIP local checkout:
+For source-based local development, build the runner from a local checkout:
 
 ```sh
 cd /path/to/StoffelVM
@@ -159,7 +159,7 @@ stoffel build --program-info
 stoffel run --timeout-secs 180 <inputs or documented run-args>
 ```
 
-For WIP framework example validation:
+For 0.1.0 framework example validation:
 
 ```sh
 cd /path/to/StoffelVM/crates/stoffel-lang

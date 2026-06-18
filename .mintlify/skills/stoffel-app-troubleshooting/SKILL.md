@@ -2,7 +2,7 @@
 name: stoffel-app-troubleshooting
 description: Diagnose app-level init, check, build, run, local MPC, binding, SDK, and network failures with evidence.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -106,7 +106,7 @@ Inspect `Stoffel.toml`:
 - Bindings were generated from the same `.stflb` loaded at runtime.
 - Rust code includes generated bindings after generation.
 - `cargo check` was run after regeneration.
-- If duplicate crate/output collision errors appear while crates are unpublished/path/git based, pre-generate bindings or remove the duplicate SDK build-dependency until published dependencies deduplicate.
+- If duplicate crate/output collision errors appear with path or git dependencies, pre-generate bindings or remove the duplicate SDK build-dependency.
 
 ## Network/off-chain checklist
 

@@ -7,6 +7,10 @@ description: "HoneyBadger MPC protocol overview with Byzantine fault tolerance f
 
 Stoffel uses the **HoneyBadger MPC protocol** for secure multi-party computation. This protocol provides Byzantine fault tolerance, allowing computations to complete correctly even when some parties are malicious or unavailable.
 
+<Note>
+`mpc-protocols` has received an external audit from Zellic. Audit scope matters: validate the specific protocol version, integration code, deployment configuration, and threat model you rely on. Other Stoffel components have also had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped when evaluating a deployment.
+</Note>
+
 ## What is MPC?
 
 Multi-Party Computation (MPC) allows multiple parties to jointly compute a function over their private inputs without revealing those inputs to each other.
@@ -199,7 +203,7 @@ Stoffel uses QUIC for party-to-party communication:
 
 - **Stream multiplexing**: Multiple logical channels per connection
 - **TLS 1.3 encryption**: Secure by default
-- **Connection migration**: Handles network changes gracefully
+- **Connection resilience**: Handles network changes gracefully
 - **Low latency**: 0-RTT connection establishment
 
 ## Protocol Phases

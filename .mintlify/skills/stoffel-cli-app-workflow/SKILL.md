@@ -2,7 +2,7 @@
 name: stoffel-cli-app-workflow
 description: Use the stoffel CLI to init, check, build, compile, run, test, inspect, and troubleshoot Stoffel apps.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and current app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Package assumption: the app-facing crates from `StoffelVM` are expected to be published to crates.io. Prefer public package/install snippets when available. Use local path dependencies only for temporary WIP testing before publication or when testing unreleased framework changes.
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -108,7 +108,7 @@ stoffel init my-foundry-app --template solidity-foundry
 stoffel init my-hardhat-app --template solidity-hardhat
 ```
 
-Treat non-Rust wrapper templates as integration placeholders until their public SDKs/docs are published.
+Treat non-Rust wrapper templates as integration scaffolds; use the Rust SDK for executable 0.1.0 application flows.
 
 ## Inputs
 
@@ -215,7 +215,7 @@ If tests exist:
 stoffel test --verbose
 ```
 
-For secret examples copied from the monorepo, use the exact first-line `# run-args:` header when present.
+For secret examples copied from the repository, use the exact first-line `# run-args:` header when present.
 
 ## Common pitfalls
 

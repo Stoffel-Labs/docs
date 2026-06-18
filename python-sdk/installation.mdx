@@ -1,98 +1,66 @@
 ---
 title: "Installation"
-description: "Install the Stoffel Python SDK using Poetry or pip for development and integration with Python applications."
+description: "Use the Python project template in the Stoffel 0.1.0 release."
 ---
 
 # Installation
 
-<Warning>
-**Status: Work in Progress**
+<Note>
+**Python integration starts with the CLI template.**
 
-The Python SDK is under active development. Installation instructions will be finalized when the SDK reaches beta.
-</Warning>
-
-## Repository
-
-Clone the SDK repository to get started:
-
-```bash
-git clone https://github.com/Stoffel-Labs/stoffel-python-sdk.git
-cd stoffel-python-sdk
-```
-
-## Development Installation
-
-For contributors and early adopters:
-
-```bash
-# With Poetry (recommended)
-poetry install
-
-# Or with pip in development mode
-pip install -e .
-```
-
-## Future Installation
-
-Once the SDK reaches stable release, it will be available via pip:
-
-```bash
-pip install stoffel-python-sdk
-```
+Use the `stoffel` repository and the CLI Python template for Python-oriented project scaffolding. Use the Rust SDK for verified application execution.
+</Note>
 
 ## Prerequisites
 
-The Python SDK requires:
-
-- Python 3.8 or higher
-- StoffelVM shared library (`libstoffel_vm.so` / `libstoffel_vm.dylib`)
-- StoffelLang compiler (included with Stoffel CLI)
-
-### Building StoffelVM Shared Library
+Install the 0.1.0 CLI from the matching `stoffel` source checkout first:
 
 ```bash
-# Clone and build StoffelVM
-git clone https://github.com/Stoffel-Labs/StoffelVM.git
-cd StoffelVM
-cargo build --release
-
-# The shared library will be at:
-# Linux: target/release/libstoffel_vm.so
-# macOS: target/release/libstoffel_vm.dylib
+git clone https://github.com/Stoffel-Labs/stoffel.git
+cd stoffel
+git checkout dev
+cargo install --path crates/stoffel-cli
+cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-## Current Alternative
-
-For production use today, the [Rust SDK](../rust-sdk/overview) is fully functional:
+Verify the Python template is available:
 
 ```bash
-# Add to your Cargo.toml
-[dependencies]
-stoffel-rust-sdk = { git = "https://github.com/Stoffel-Labs/stoffel-rust-sdk" }
+stoffel init --help
 ```
 
-Or use the CLI to create a Rust project:
+The help output should list `python (py)` among the supported templates.
 
-```bash
-stoffel init my-project --template rust
-```
-
-## Using the Python Template
-
-Even while the SDK is in development, you can scaffold a Python project structure:
+## Create a Python scaffold
 
 ```bash
 stoffel init my-python-project --template python
+cd my-python-project
 ```
 
-This creates:
-- Project structure with `pyproject.toml`
-- StoffelLang program in `stoffel/src/program.stfl`
-- Python entry point ready for SDK integration
-- Test scaffolding with pytest
+Then inspect the generated README and manifests:
 
-## Next Steps
+```bash
+ls
+cat README.md
+find stoffel -maxdepth 3 -type f
+```
 
-- **[SDK Overview](./overview)**: Understand the SDK architecture
-- **[API Reference](./api)**: See the target API design
-- **[Rust SDK](../rust-sdk/overview)**: Use the production-ready alternative
+Run the nested Stoffel program with the CLI:
+
+```bash
+stoffel check stoffel
+stoffel run stoffel --input a=40 --input b=2
+```
+
+If your generated program expects different inputs, follow that template's `README.md` or `stoffel/src/program.stfl`.
+
+## Python package status
+
+Stoffel 0.1.0 uses the CLI Python template rather than a Python SDK package. The documented install path is the repository CLI plus the Rust SDK.
+
+## Next steps
+
+- [Python SDK Overview](./overview)
+- [Rust SDK Overview](../rust-sdk/overview)
+- [Quick Start](../getting-started/quick-start)

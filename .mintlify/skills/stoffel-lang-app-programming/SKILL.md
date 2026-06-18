@@ -1,0 +1,149 @@
+---
+name: stoffel-lang-app-programming
+description: Write .stfl application logic using supported Stoffel-Lang syntax, types, builtins, and example patterns.
+license: MIT
+compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+metadata:
+  author: Stoffel Labs
+  version: "1.0"
+  docs-page: /developer-skills/stoffel-lang-app-programming
+  source: Stoffel App Developer Skills
+---
+
+# Stoffel-Lang App Programming
+
+> Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
+>
+> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+
+## Use when
+
+Use this playbook when writing `.stfl` application logic or checking which language features are currently supported by examples and tests.
+
+## Current source of truth
+
+- `crates/stoffel-lang/README.md`
+- `crates/stoffel-lang/examples/README.md`
+- `crates/stoffel-lang/examples/COVERAGE.md`
+- `crates/stoffel-lang/examples/**/*.stfl`
+- `crates/stoffel-lang/src/builtin_registry.rs`
+
+## Minimal clear app
+
+```stfl
+def main(a: int64, b: int64) -> int64:
+  return a + b
+```
+
+Run it:
+
+```sh
+stoffel run src/main.stfl --input a=40 --input b=2
+```
+
+## Supported app-language surfaces
+
+Current examples cover:
+
+- Pythonic indentation, `#` comments, `def` functions, typed and inferred returns, explicit `return`, `discard`, and `pass`.
+- `main` entry points plus no-argument test functions run by `stoffel test`.
+- Imports and import aliases.
+- Type aliases and scalar names: signed/unsigned 8/16/32/64-bit integers, `bool`, `float`/`float64`, `fix32`/`fix64`, strings, bytes aliases, `None`.
+- Integer literal widths/suffixes and hex literals.
+- Lists, dictionaries, nested generics, indexing, negative indexing, assignment through index, and slicing where covered by examples.
+- Dynamic objects, runtime field access, object schemas, base object syntax, and secret-typed fields.
+- `if` / `elif` / `else`, `while`, and `for` over ranges, lists, and strings.
+- End-exclusive ranges such as `0..10`.
+- Unary `-`, `not`, arithmetic, comparison, boolean operators, and compound assignment (`+=`, `-=`, `*=`, `/=`, `%=`).
+- `mod` for floored modulo and `%` for truncating remainder in number-theory examples.
+- Bitwise keywords on integers: `and`, `or`, `xor`, `not`, `shl`, `shr`.
+- Fixed-point arithmetic and comparisons with tolerance checks.
+- Field-access method syntax and object builtin syntax.
+- Closures exposed by the language stdlib.
+- Secret-share arithmetic, `secret bool` gates, and client-provided private inputs via `ClientStore`.
+
+## Unsupported or not runtime-ready today
+
+Do not present these as supported app syntax until examples/tests prove otherwise:
+
+- `enum`
+- `break`
+- `continue`
+- `yield`
+- `try/catch`
+
+They may have AST or lexer traces but are not represented as supported runtime examples.
+
+## Builtins to know
+
+Core app builtins:
+
+- `print`
+- `type`
+- `append` / `push`
+- `len`
+- `slice`
+- `contains` / `in`
+- `assert`
+- `LocalStorage.store`, `LocalStorage.load`, `LocalStorage.retrieve`, `LocalStorage.delete`, `LocalStorage.exists`
+- `LocalStorage.load_share` for share-bearing stored values in advanced MPC examples
+- closure helpers such as `create_closure`, `create_closure_with_upvalue`, `call_closure`, `call_closure_with_arg`, `get_upvalue`, `set_upvalue`
+
+Switch to Stoffel Secret MPC Programming when code uses `secret`, `Share.*`, `ClientStore.*`, `Mpc.*`, `MpcOutput.*`, `Crypto.*`, `Bytes.*`, `Rbc.*`, `Aba.*`, or `Avss.*`.
+
+## Example map
+
+Start with small local examples:
+
+- `local_control_flow`: loops, ranges, branching, arithmetic.
+- `local_collections`: list literals, indexing, append/push/len aliases.
+- `local_nested_generics`: generic functions over nested list shapes.
+- `local_storage`: local VM storage.
+- `local_dynamic_workflow`: dynamic objects, runtime type inspection, callbacks.
+- `local_closure_counter`: captured upvalues and stateful callbacks.
+- `local_text_processing`: string iteration.
+- `local_uint64_inverse`: overflow-safe unsigned modular inverse arithmetic.
+- `language_policy_engine`: imports, numeric widths, boolean logic, compound assignment.
+- `language_mpc_schemas`: object schemas with secret-typed fields.
+
+Use the algorithm gallery when looking for realistic app patterns:
+
+- `bits/clear/*`: popcount, bit reversal, parity, rotations, Gray code, flags, xorshift, etc.
+- `matrix/clear/*`: multiply, transpose, determinant, Fibonacci powers, Gaussian elimination, convolution, Markov power iteration, graph paths.
+- `polynomials/clear/*`: Horner evaluation, polynomial multiplication/division, calculus, interpolation, Newton/Chebyshev/Taylor examples.
+- `number_theory/clear/*`: Euclid, extended Euclid, modular inverse/CRT, LCM, modular exponentiation.
+
+## Validation / done criteria
+
+For an app source change:
+
+```sh
+stoffel check path/to/main.stfl
+stoffel build path/to/main.stfl
+stoffel run path/to/main.stfl --timeout-secs 180
+```
+
+For framework examples in the 0.1.0 docs:
+
+```sh
+cd /path/to/stoffel/crates/stoffel-lang
+./examples/validate_examples.sh
+```
+
+For a single example with documented private input flags:
+
+```sh
+stoffel run crates/stoffel-lang/examples/mpc_top_k/main.stfl \
+  --client-input 0=50 --client-input 0=20 --client-input 0=40 \
+  --client-input 0=10 --client-input 0=30 \
+  --expected-output-clients 1 \
+  --timeout-secs 180
+```
+
+## Common pitfalls
+
+- Do not invent syntax from Rust, Python, or JavaScript without checking examples.
+- Keep app examples small and runnable.
+- Do not use unsupported control-flow constructs (`break`, `continue`) in developer-facing examples.
+- For secret examples, copy the `# run-args:` header and preserve client-slot ordering.
+- If a program uses secret values or `ClientStore`, switch to Stoffel Secret MPC Programming.

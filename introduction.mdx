@@ -1,67 +1,58 @@
 ---
 title: "Introduction"
-description: "Overview of Stoffel, a comprehensive framework for building privacy-preserving applications using secure Multi-Party Computation (MPC)."
+description: "Stoffel 0.1.0 release: approachable tools for building applications with secure multiparty computation."
 ---
 
 # Introduction
 
-<Warning>
-**Work in Progress Notice**
+<Note>
+**Stoffel 0.1.0 docs**
 
-This documentation is actively being developed and is subject to frequent changes. Some sections may be incomplete or pending review.
-</Warning>
+These docs track the Stoffel 0.1.0 release. Use component pages for current API, security, and deployment status.
+</Note>
 
-## About Stoffel
+## What Stoffel is
 
-Stoffel is a comprehensive framework for building privacy-preserving applications using secure Multi-Party Computation (MPC). It provides a complete toolchain that enables developers to create, compile, and deploy MPC applications without requiring deep cryptographic expertise.
+Stoffel is a developer stack for secure multiparty computation (MPC). It gives application developers a practical way to write programs that operate on secret-shared data, test them locally, and integrate them through familiar CLI and Rust SDK workflows.
 
-## The Stoffel Ecosystem
+Most software privacy has a missing layer: we encrypt data at rest, encrypt data in transit, and then decrypt it to compute. MPC addresses that data-in-use gap by letting multiple parties jointly compute over shares of private inputs. Stoffel packages that model into developer tooling: a language, compiler, VM, local runner, and SDK surface that let you focus on the application logic instead of implementing MPC protocols from scratch.
 
-Stoffel consists of several integrated components that work together to provide a seamless development experience:
+## What is in 0.1.0
 
-### Core Components
+The 0.1.0 release ships the core developer workflow from [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel):
 
-- **Stoffel CLI**: A comprehensive command-line interface for project management, compilation, development, and deployment
-- **StoffelLang**: A modern programming language with syntax inspired by Rust, Python, and JavaScript, designed specifically for MPC applications
-- **StoffelVM**: A register-based virtual machine optimized for multiparty computation with support for both clear and secret values
-- **MPC Protocols**: Rust implementation of secure multiparty computation protocols, including HoneyBadger MPC
-- **Python SDK**: High-level Python interface for integrating Stoffel into existing applications
+| Component | Crate/package | 0.1.0 status |
+| --- | --- | --- |
+| Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project CLI for `init`, `check`, `compile`, `build`, `run`, `dev`, `test`, `status`, `clean`, and `update`. |
+| Stoffel Lang compiler | `crates/stoffel-lang` / crate `stoffellang` | Python-style language compiler that emits Stoffel VM bytecode. |
+| Rust SDK | `crates/stoffel-rust-sdk` / library crate `stoffel` | Primary application API for compile/load/run workflows, local clear execution, local MPC simulation, network configuration, observability, and on-chain coordinator handles. |
+| Stoffel VM | `crates/stoffel-vm` | Register-based VM runtime with builtins, secret-share values, networking/MPC integrations, C FFI, and the `stoffel-run` helper binary. |
+| VM types and bytecode | `crates/stoffel-vm-types` | Shared value, instruction, function, and compiled `.stflb` bytecode types. |
 
-### Key Features
+Start from the `stoffel` repository for the Stoffel 0.1.0 workflow.
 
-- **Modern Development Experience**: Project templates, hot-reloading development server, and comprehensive CLI tools
-- **Multiple Language Support**: Templates and SDKs for Python, Rust, TypeScript, and Solidity integration
-- **Rich Type System**: Support for integers, floats, strings, booleans, arrays, objects, and closures
-- **VM Architecture**: Register-based design with separate clear/secret registers for efficient MPC operations
-- **Production Ready**: Built-in deployment tools with support for TEE and cloud environments
+## What you can do today
 
-## Current Status
+- Write computations in Stoffel Lang with explicit `secret` values.
+- Use clear local execution for fast logic checks.
+- Use the Rust SDK as the primary app integration path.
+- Run local MPC-style smoke tests with the SDK or CLI and `stoffel-run`.
+- Generate, save, load, inspect, and execute `.stflb` bytecode.
+- Create project templates for Stoffel, Rust, Python, Foundry, and Hardhat workflows.
 
-The Stoffel ecosystem is under active development:
+## How to think about 0.1.0
 
-- ✅ **StoffelVM**: Core virtual machine with instruction set and runtime (functional with quirks)
-- ✅ **Stoffel CLI**: Comprehensive project management and build tools
-- ✅ **StoffelLang**: Compiler with VM-compatible binary generation
-- ✅ **Python SDK**: Clean API with proper separation of concerns
-- 🚧 **MPC Integration**: Full MPC protocol integration (in progress)
-- 🚧 **Production Deployment**: TEE and cloud deployment features
+These docs describe the Stoffel 0.1.0 release. The Rust SDK and CLI are the documented application path for building, testing, and deploying Stoffel applications. Other SDK and on-chain surfaces are present for exploration and integration planning.
 
-## Getting Started
+MPC is a powerful primitive, not a complete security product by itself. Deployment teams should validate component status, threat models, output design, metadata exposure, operational hardening, and application-level access control for their use case.
 
-The best way to start with Stoffel is to:
+## Security review and deployment
 
-1. [Install the Stoffel CLI](./getting-started/installation)
-2. [Create your first MPC project](./getting-started/first-project)
-3. [Explore the ecosystem](./introduction/ecosystem)
+`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat this coverage as component-scoped: deployment teams should validate the full application, integration code, configuration, and threat model they rely on.
 
-## Documentation Structure
+## Start here
 
-This documentation is organized to guide you through the Stoffel ecosystem:
-
-- **[Getting Started](./getting-started/installation)**: Installation, quick start, and first project
-- **[Stoffel CLI](./cli/overview)**: Comprehensive guide to the command-line interface
-- **[StoffelLang](./stoffel-lang/overview)**: Programming language syntax and compilation
-- **[StoffelVM](./stoffel-vm/overview)**: Virtual machine architecture and usage
-- **[Python SDK](./python-sdk/overview)**: Python integration and API reference
-- **[Architecture](./architecture/system)**: System design and technical details
-- **[Development](./development/contributing)**: Contributing and building from source
+1. [Install Stoffel 0.1.0](./getting-started/installation)
+2. [Run the 0.1.0 quick start](./getting-started/quick-start)
+3. [Explore the current ecosystem map](./introduction/ecosystem)
+4. [Use the Rust SDK](./rust-sdk/overview)

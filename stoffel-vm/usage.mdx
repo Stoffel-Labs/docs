@@ -1,340 +1,149 @@
 ---
-title: "Using the VM"
-description: "Running compiled StoffelLang programs with StoffelVM, including command-line options, debugging, and MPC integration."
+title: "VM Usage"
+description: "How to run Stoffel VM bytecode through the 0.1.0 CLI, Rust SDK, and stoffel-run helper."
 ---
 
-# Using the VM
+# VM Usage
 
-This guide covers how to run compiled StoffelLang programs using StoffelVM, including command-line options, debugging techniques, and integration with MPC protocols.
+Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK instead of invoking `stoffel-run` directly. The direct helper remains useful for debugging bytecode and local MPC internals.
 
-## Running Programs
+## Build the helper
 
-### Basic Execution
-
-After compiling a StoffelLang program to bytecode, use `stoffel-run` to execute it:
+From the `stoffel` repository:
 
 ```bash
-# Basic execution
-stoffel-run program.stfbin main
-
-# Specify a different entry function
-stoffel-run program.stfbin my_entry_point
+cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-**Parameters:**
-- `program.stfbin`: Path to the compiled bytecode file
-- `main`: Name of the entry function to execute (optional, defaults to `main`)
+The debug helper is written to:
 
-### Output
+```text
+target/debug/stoffel-run
+```
 
-A successful execution returns the program's result:
+For optimized runs:
 
 ```bash
-$ stoffel-run fibonacci.stfbin main
-Program returned: 55
+cargo build --release -p stoffel-vm --bin stoffel-run
 ```
 
-For programs that return `nil`:
+## Compile bytecode
+
+The current bytecode extension is `.stflb`:
 
 ```bash
-$ stoffel-run hello.stfbin main
-Hello, World!
-Program returned: Unit
+stoffel compile src/main.stfl --output target/debug/main.stflb
+stoffel compile --disassemble target/debug/main.stflb
 ```
 
-## Command-Line Flags
-
-### Debugging Flags
-
-StoffelVM provides detailed tracing for debugging program execution:
-
-| Flag | Description |
-|------|-------------|
-| `--trace-instr` | Trace instructions before and after execution |
-| `--trace-regs` | Trace register read and write operations |
-| `--trace-stack` | Trace function calls and stack operations |
-
-### Instruction Tracing
+For project workflows, prefer:
 
 ```bash
-stoffel-run program.stfbin main --trace-instr
+stoffel build
+stoffel run
 ```
 
-**Example output:**
-```
-[INSTR] 0x0000: LDI r0, 42
-[INSTR] 0x0004: LDI r1, 10
-[INSTR] 0x0008: ADD r2, r0, r1
-[INSTR] 0x000c: RET r2
-```
-
-This shows:
-- Instruction address
-- Opcode and operands
-- Register assignments
-
-### Register Tracing
+## Run through the CLI
 
 ```bash
-stoffel-run program.stfbin main --trace-regs
+stoffel run target/debug/main.stflb --entry main
+stoffel run src/main.stfl --input a=40 --input b=2
+stoffel run --program-info
 ```
 
-**Example output:**
-```
-[REG] WRITE r0 = 42
-[REG] WRITE r1 = 10
-[REG] READ r0 -> 42
-[REG] READ r1 -> 10
-[REG] WRITE r2 = 52
-```
-
-This shows:
-- Register reads and writes
-- Values being stored and retrieved
-- Clear vs secret register operations
-
-### Stack Tracing
+`stoffel run` defaults to local execution unless `--network` or `--config` is provided. If local MPC execution cannot locate the helper binary, pass it explicitly:
 
 ```bash
-stoffel-run program.stfbin main --trace-stack
+stoffel run \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --parties 5 \
+  --threshold 1
 ```
 
-**Example output:**
-```
-[STACK] CALL fibonacci(10) at 0x0020
-[STACK] PUSH frame: locals=2, args=1
-[STACK] CALL fibonacci(9) at 0x0020
-[STACK] PUSH frame: locals=2, args=1
-...
-[STACK] POP frame, returning 55
-[STACK] RET to 0x0024
-```
-
-This shows:
-- Function call entries and exits
-- Stack frame allocation
-- Return addresses and values
-
-### Combined Tracing
-
-For comprehensive debugging, combine multiple flags:
+For `ClientStore.take_share` programs, provide client-slot inputs:
 
 ```bash
-stoffel-run program.stfbin main --trace-instr --trace-regs --trace-stack
+stoffel run \
+  --local \
+  --client-input 0=42 \
+  --expected-output-clients 1 \
+  --parties 5 \
+  --threshold 1
 ```
 
-## Bytecode File Format
-
-### File Extensions
-
-| Extension | Description |
-|-----------|-------------|
-| `.stfbin` | Binary bytecode format (recommended) |
-| `.stfb` | Alternative binary extension |
-| `.bc` | Text-based bytecode (for debugging) |
-
-### Binary Structure
-
-The `.stfbin` file contains:
-
-1. **Header**: Magic bytes, version, metadata
-2. **Constants pool**: Literal values and strings
-3. **Main chunk**: Entry point bytecode
-4. **Function chunks**: Compiled function bodies
-
-## Execution Modes
-
-### Local Execution
-
-For development and testing without MPC:
+## Watch mode
 
 ```bash
-# Single-party execution (no network)
-stoffel-run program.stfbin main
+stoffel dev \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --parties 5 \
+  --threshold 1
 ```
 
-In local mode:
-- Secret values are computed directly (not distributed)
-- Useful for logic testing before MPC deployment
-- Full debugging support available
-
-### MPC Execution
-
-For distributed secure computation:
+Use one-shot mode for scripts:
 
 ```bash
-# Using the Rust SDK
-cargo run --example honeybadger_mpc_demo
+stoffel dev --once --runner /path/to/stoffel/target/debug/stoffel-run
 ```
 
-In MPC mode:
-- Values are secret-shared across parties
-- HoneyBadger protocol handles Byzantine fault tolerance
-- Requires network configuration (see [Rust SDK](../rust-sdk/overview))
+## Run through the Rust SDK
 
-## Integration with MPC Protocols
+Clear local execution:
 
-### HoneyBadger Integration
+```rust
+use stoffel::prelude::*;
 
-StoffelVM integrates with the HoneyBadger MPC protocol for secure multi-party computation:
+fn main() -> stoffel::Result<()> {
+    let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return a + b")?
+        .with_inputs(&[("a", 40_i64), ("b", 2_i64)])
+        .execute_clear()?;
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Party 1   │     │   Party 2   │     │   Party 3   │
-│  StoffelVM  │◄───►│  StoffelVM  │◄───►│  StoffelVM  │
-│   Instance  │     │   Instance  │     │   Instance  │
-└─────────────┘     └─────────────┘     └─────────────┘
-       │                   │                   │
-       └───────────────────┴───────────────────┘
-                    HoneyBadger Protocol
-                    (Byzantine Fault Tolerant)
+    println!("Result: {}", result[0]);
+    Ok(())
+}
 ```
 
-### Configuration Requirements
+Local MPC execution through the helper:
 
-For MPC execution, all parties must agree on:
+```rust
+use stoffel::prelude::*;
 
-| Parameter | Constraint | Example |
-|-----------|------------|---------|
-| `n_parties` | Number of compute nodes | 5 |
-| `threshold` | Max faulty parties | 1 |
-| `instance_id` | Unique computation ID | 12345 |
-
-**Validation rule**: `n_parties >= 3 * threshold + 1`
-
-Valid configurations:
-- 4 parties, threshold 1: `4 >= 4` ✓
-- 5 parties, threshold 1: `5 >= 4` ✓ (recommended minimum)
-- 7 parties, threshold 2: `7 >= 7` ✓
-
-### ClientStore Integration
-
-When running with MPC, the VM's `ClientStore` is populated with client shares:
-
-```python
-main main() -> nil:
-    # These calls retrieve actual shares from MPC clients
-    secret var input1 = ClientStore.take_share(0, 0)
-    secret var input2 = ClientStore.take_share(1, 0)
-
-    # Computation happens on shares
-    secret var result = input1 + input2
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::compile(
+    "def main() -> int64:\n  var share = ClientStore.take_share(0, 0)\n  return share.open()",
+)?
+.parties(5)
+.threshold(1)
+.with_client_input(0, &[42_i64])
+.execute_local()
+.await?;
+# Ok(())
+# }
 ```
 
-## Error Handling
+## Direct helper invocation
 
-### Common Errors
-
-**"Error loading binary"**
-```
-Error: Failed to load binary: No such file or directory
-```
-- Verify the file path is correct
-- Ensure the file was compiled successfully
-
-**"Function not found"**
-```
-Error: Entry function 'main' not found in program
-```
-- Check the entry function name matches what's in the source
-- Use `--trace-instr` to see available functions
-
-**"Stack overflow"**
-```
-Error: Stack overflow: maximum depth exceeded
-```
-- Check for infinite recursion
-- Consider iterative alternatives for deep recursion
-
-**"Type mismatch"**
-```
-Error: Type mismatch in register operation
-```
-- Verify operand types match expected types
-- Check for mixing clear and secret values incorrectly
-
-### Debugging Workflow
-
-1. **Start with instruction tracing**:
-   ```bash
-   stoffel-run program.stfbin main --trace-instr
-   ```
-
-2. **Add register tracing for value issues**:
-   ```bash
-   stoffel-run program.stfbin main --trace-instr --trace-regs
-   ```
-
-3. **Add stack tracing for call issues**:
-   ```bash
-   stoffel-run program.stfbin main --trace-instr --trace-stack
-   ```
-
-## Performance Considerations
-
-### Register Architecture
-
-StoffelVM uses a dual-register architecture:
-
-- **Clear registers**: Fast operations on public values
-- **Secret registers**: MPC-protected operations on private values
-
-Mixing clear and secret values appropriately can improve performance.
-
-### Optimization Levels
-
-When compiling with StoffelLang, use optimization flags:
+Direct `stoffel-run` invocation is a lower-level path. Use the helper's installed help output for exact flags:
 
 ```bash
-# No optimization (fastest compile, slowest run)
-stoffellang -O0 program.stfl -b
-
-# Basic optimization
-stoffellang -O1 program.stfl -b
-
-# Standard optimization (recommended)
-stoffellang -O2 program.stfl -b
-
-# Aggressive optimization (longest compile, fastest run)
-stoffellang -O3 program.stfl -b
+./target/debug/stoffel-run --help
 ```
 
-## Examples
+When docs disagree with the helper's `--help`, the helper output is the source of truth for that checkout.
 
-### Simple Arithmetic
+## Debugging
+
+Useful CLI-level debugging commands:
 
 ```bash
-# Compile
-stoffellang arithmetic.stfl -b
-
-# Run
-stoffel-run arithmetic.stfbin main
+stoffel check --print-ir
+stoffel run --program-info
+stoffel compile --disassemble target/debug/main.stflb
+stoffel status --verbose
 ```
 
-### Fibonacci with Debugging
+## See also
 
-```bash
-# Compile with debug info
-stoffellang fibonacci.stfl -b --print-ir
-
-# Run with full tracing
-stoffel-run fibonacci.stfbin main --trace-instr --trace-regs --trace-stack
-```
-
-### MPC Integration Test
-
-```bash
-# Build the Rust SDK example
-cd SDKs/stoffel-rust-sdk
-cargo build --example honeybadger_mpc_demo
-
-# Run the MPC demo (starts 5 parties locally)
-cargo run --example honeybadger_mpc_demo
-```
-
-## Next Steps
-
-- [Built-in Functions](./builtins): Reference for available builtins
-- [Instructions](./instructions): Complete instruction set documentation
-- [Rust SDK](../rust-sdk/overview): Integrate with Rust applications
-- [MPC Protocols](../mpc-protocols/overview): Understand the underlying cryptography
+- [CLI Overview](../cli/overview)
+- [Basic Usage](../getting-started/basic-usage)
+- [Rust SDK Examples](../rust-sdk/examples)

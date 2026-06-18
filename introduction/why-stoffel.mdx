@@ -1,11 +1,11 @@
 ---
 title: "Why Stoffel?"
-description: "How Stoffel solves MPC development challenges with a developer-friendly framework that makes privacy-preserving computation accessible."
+description: "How Stoffel turns secure multiparty computation into an approachable developer workflow."
 ---
 
 # Why Stoffel?
 
-While Multi-Party Computation offers powerful privacy-preserving capabilities, it has historically been challenging to implement and deploy in real-world applications. Stoffel addresses these challenges by providing a complete, developer-friendly framework that makes MPC accessible without requiring deep cryptographic expertise.
+Secure multiparty computation (MPC) lets multiple parties compute over private inputs without first pooling those inputs in one place. The hard part for most developers is not understanding why that is useful; it is getting from a product idea to code that compiles, runs locally, and can be integrated into an application. Stoffel focuses on that gap.
 
 ## The MPC Development Challenge
 
@@ -24,7 +24,7 @@ Developer → Learn MPC protocols → Implement low-level cryptography → Debug
 - Deployment requires extensive infrastructure knowledge
 
 **High Barrier to Entry**
-- Requires PhD-level cryptography knowledge
+- Requires specialized cryptography and distributed-systems knowledge
 - Complex protocol implementation details
 - Performance optimization requires deep understanding
 - Integration with existing systems is difficult
@@ -47,70 +47,61 @@ Result: No interoperability, no standard practices
 
 ## The Stoffel Solution
 
-Stoffel provides a complete, integrated framework that transforms MPC development from a specialized research domain into a practical development experience.
+Stoffel packages MPC into a practical development experience: a language for computations, a compiler and VM, a project CLI, local MPC tooling, and a Rust SDK for application integration.
 
 ### 🎯 **Design Philosophy**
 
 **Developer-First Approach**
 - Familiar programming patterns and syntax
 - Comprehensive tooling and development environment
-- Clear separation between application logic and cryptographic complexity
+- Clear interfaces between application logic and MPC protocol plumbing
 
-**Production-Ready**
-- Battle-tested protocols and optimized implementations
-- Deployment tools for various environments
-- Monitoring, debugging, and performance optimization
+**Practical MPC workflow**
+- Write application logic in StoffelLang and compile it to VM bytecode
+- Run clear local checks before exercising MPC-specific paths
+- Use local MPC smoke tests and Rust SDK APIs to validate integration boundaries
 
-**Protocol Agnostic**
-- Support for multiple MPC protocols
-- Easy switching between protocols based on requirements
-- Future-proof architecture for new protocol integration
+**Protocol-aware, developer-facing**
+- Exposes MPC concepts such as parties, thresholds, shares, and openings
+- Keeps protocol plumbing behind a CLI, VM, and SDK interface
+- Gives advanced developers lower-level hooks without making every app start there
 
 ## Key Advantages
 
 ### 1. **Familiar Development Experience**
 
 **Modern Programming Language**
-```javascript
-// StoffelLang - familiar syntax, powerful MPC features
-fn secure_auction(bids: secret [i32; 5]) -> secret i32 {
-    let max_bid = secret(0);
-    for bid in bids {
-        if bid > max_bid {
-            max_bid = bid;
-        }
-    }
-    return max_bid;
-}
+```stoffel
+def secure_sum(a: Share, b: Share) -> int64:
+  var total = a.add(b)
+  return total.open()
 ```
 
 **Comprehensive CLI**
 ```bash
-# Just like other modern development tools
-stoffel init secure-auction --template web3
-stoffel dev --parties 5
-stoffel build --release
-stoffel deploy --target production
+# Current Stoffel 0.1.0 workflow
+stoffel init secure-demo
+stoffel check
+stoffel build
+stoffel run --local --parties 5 --threshold 1
 ```
 
 ### 2. **Complete Ecosystem**
 
 **Integrated Components**
 ```
-StoffelLang → StoffelVM → MPC Protocols
+StoffelLang → Stoffel VM → MPC Protocols
     ↓             ↓            ↓
 Compilation   Execution   Network Layer
 ```
 
 **Language SDK Integration**
-```python
-# Python developers can use MPC naturally
-from stoffel import StoffelClient
+```rust
+use stoffel::prelude::*;
 
-result = await client.execute_with_inputs(
-    secret_inputs={"salary": 75000, "performance": 8.5},
-    public_inputs={"market_rate": 80000}
-)
+let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return a + b")?
+    .with_inputs(&[("a", 40_i64), ("b", 2_i64)])
+    .execute_clear()?;
 ```
 
 ### 3. **Protocol Flexibility**
@@ -123,13 +114,13 @@ result = await client.execute_with_inputs(
 **Configuration-Driven**
 ```toml
 [mpc]
-protocol = "honeybadger"
-parties = 7
-threshold = 2
-field = "bls12-381"
+backend = "honeybadger"
+parties = 5
+threshold = 1
+curve = "bls12-381"
 ```
 
-### 4. **Production-Ready Infrastructure**
+### 4. **Deployment-Oriented Building Blocks**
 
 **Development Tools**
 - Hot-reloading development server
@@ -137,11 +128,11 @@ field = "bls12-381"
 - Comprehensive debugging capabilities
 - Performance profiling and optimization
 
-**Deployment Options**
-- Cloud deployment with auto-scaling
-- TEE (Trusted Execution Environment) integration
-- Kubernetes orchestration
-- Multi-region distributed deployment
+**Deployment planning surfaces**
+- Network configuration builders
+- Server/client handle construction
+- Coordinator and on-chain integration surfaces
+- Clear places to validate infrastructure, custody, and threat-model assumptions
 
 ## Solving Real Problems
 
@@ -155,8 +146,8 @@ Cost: $500k+ per project, 18+ month timeline
 
 **Stoffel Approach**
 ```
-Learn StoffelLang → Build with familiar tools → Deploy with CLI
-Cost: Weeks of development, existing team skills
+Learn StoffelLang → Build with familiar tools → Validate locally → Deploy with explicit assumptions
+Cost: shorter iteration loops, existing engineering skills
 ```
 
 ### Problem 2: **Protocol Lock-in**
@@ -181,8 +172,8 @@ MPC Library → Custom networking → Database integration → API layer → Fro
 
 **Stoffel Approach**
 ```
-Existing Application → Add Stoffel SDK → Configure privacy requirements → Deploy
-(MPC complexity abstracted away)
+Existing Application → Add Stoffel SDK → Model secret-shared values → Validate deployment assumptions
+(MPC protocol plumbing is packaged behind language, VM, CLI, and SDK surfaces)
 ```
 
 ## Real-World Impact
@@ -200,10 +191,10 @@ Bank consortium wants privacy-preserving fraud detection
 
 **With Stoffel**
 ```
-stoffel init fraud-detection --template fintech
-# Write business logic in familiar language
-# Deploy to existing infrastructure
-→ 3-month implementation, proven technology
+# Model the computation in StoffelLang
+# Test clear logic and local MPC-style execution
+# Integrate through Rust SDK deployment/config builders
+→ Faster path from privacy requirement to validated prototype and deployment plan
 ```
 
 ### Healthcare Research
@@ -219,10 +210,10 @@ Multi-hospital study requires:
 
 **With Stoffel**
 ```
-# Standard MPC infrastructure
-# Built-in compliance features
-# Simple deployment across institutions
-→ Focus on medical research, not cryptography
+# Explicit secret-share inputs
+# Clear reconstruction/opening points
+# Deployment validation owned by the application team
+→ Focus more engineering time on the study logic and threat model
 ```
 
 ### Web3 Applications
@@ -238,10 +229,9 @@ Private voting system:
 
 **With Stoffel**
 ```
-stoffel init private-voting --template web3-voting
-# Standard patterns for blockchain integration
-# Built-in key management
-# Cloud deployment ready
+# Use Stoffel templates and on-chain coordination surfaces as integration starting points
+# Validate contract, coordinator, and off-chain MPC assumptions together
+# Deploy only after application-specific security review
 ```
 
 ## Technical Advantages
@@ -254,27 +244,27 @@ stoffel init private-voting --template web3-voting
 - Hardware acceleration support
 - Communication round minimization
 
-**Benchmarks vs Traditional Approaches**
+**Workflow advantage**
 ```
-Setup Time:    Weeks vs Months
-Development:   Days vs Months
-Deployment:    Hours vs Weeks
-Maintenance:   Minimal vs Ongoing
+Setup:       source install, CLI project, local runner
+Development: clear logic checks plus local MPC-style smoke tests
+Deployment:  explicit validation of protocol, SDK, infrastructure, and threat model
+Maintenance: versioned bytecode and documented 0.1.0 APIs
 ```
 
 ### Security
 
-**Battle-Tested Protocols**
-- Proven MPC protocol implementations
-- Formal security analysis
-- Regular security audits
-- Cryptographic best practices
+**Security review posture**
+- `mpc-protocols` has received an external audit from Zellic
+- Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev
+- Deployment teams should validate the full stack, configuration, and threat model for their application
+- Cryptographic best practices remain part of the implementation and review process
 
-**Built-in Security Features**
-- Automatic secret sharing
-- Secure communication channels
-- Access control and authentication
-- Audit logging and compliance
+**Built-in security-oriented features**
+- Explicit secret-share values and opening/reconstruction points
+- MPC party and threshold configuration
+- Network and coordinator surfaces for integration work
+- Application-level access control and audit logging should be designed around your deployment
 
 ### Scalability
 
@@ -292,35 +282,35 @@ Maintenance:   Minimal vs Ongoing
 
 ## Developer Benefits
 
-### **Faster Time to Market**
+### **Faster Path to a Deployable Design**
 ```
-Traditional MPC: 12-18 months to production
-Stoffel: 2-6 weeks to production
+Traditional MPC: protocol research before product iteration
+Stoffel: application logic, local validation, and deployment planning in one workflow
 ```
 
 ### **Lower Learning Curve**
 ```
-Traditional: PhD-level cryptography knowledge required
-Stoffel: Standard programming skills sufficient
+Traditional: protocol implementation knowledge before app logic
+Stoffel: standard programming skills plus explicit MPC concepts such as shares, parties, thresholds, and openings
 ```
 
-### **Reduced Risk**
+### **Reduced Implementation Risk**
 ```
-Traditional: Custom implementation, unknown bugs
-Stoffel: Battle-tested framework, proven patterns
+Traditional: custom MPC implementation for every application
+Stoffel: shared framework, audited protocol components, AI-assisted review on other surfaces, and repeatable validation steps
 ```
 
 ### **Better Integration**
 ```
-Traditional: Isolated MPC application
-Stoffel: Seamless integration with existing systems
+Traditional: isolated MPC prototype
+Stoffel: CLI, bytecode, VM, Rust SDK, and deployment/config builders for application integration
 ```
 
 ## Future-Proof Architecture
 
 ### Protocol Evolution
 - Easy integration of new MPC protocols
-- Backward compatibility with existing applications
+- Stable behavior for documented 0.1.0 application workflows
 - Performance improvements without code changes
 - Research-to-production pipeline
 
@@ -332,9 +322,9 @@ Stoffel: Seamless integration with existing systems
 
 ## Getting Started Benefits
 
-**Day 1**: Install Stoffel, create first MPC project
-**Week 1**: Deploy secure computation to cloud
-**Month 1**: Production-ready privacy-preserving application
+**Day 1**: Install Stoffel and create a first project
+**Week 1**: Prototype clear and local MPC-style workflows
+**Month 1**: Build an integration experiment with explicit shares, thresholds, openings, and deployment assumptions
 
 Compare this to traditional MPC development where Month 1 is typically spent just understanding the underlying cryptography!
 
@@ -346,12 +336,12 @@ Stoffel transforms MPC from a research curiosity into a practical development to
 - **Implementing HTTP from scratch** vs **using a web framework**
 - **Writing custom cryptography** vs **using established libraries**
 
-Stoffel is the PostgreSQL of multi-party computation - a robust, production-ready foundation that lets you focus on your application instead of the underlying complexity.
+Stoffel aims to be the approachable choice for building with MPC: technical enough to expose the right primitives, but packaged so developers can focus on application logic instead of protocol plumbing.
 
 ## Next Steps
 
-Ready to experience the Stoffel difference?
+Ready to build with MPC?
 
 - **[Get Started](../getting-started/installation)**: Install and create your first MPC project
 - **[Explore the Ecosystem](./ecosystem)**: Understand how all the components work together
-- **[See Examples](../python-sdk/examples)**: Real applications built with Stoffel
+- **[See Examples](../rust-sdk/examples)**: Rust SDK examples and local MPC workflows

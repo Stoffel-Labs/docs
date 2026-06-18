@@ -1,278 +1,229 @@
 ---
 title: "Stoffel CLI Overview"
-description: "Comprehensive command-line interface for developing, building, testing, and running privacy-preserving MPC applications."
+description: "Current 0.1.0 commands for creating, checking, compiling, building, running, and developing Stoffel projects."
 ---
 
 # Stoffel CLI Overview
 
-The Stoffel CLI is a comprehensive command-line interface that provides everything you need to develop, build, test, and run privacy-preserving applications using secure Multi-Party Computation (MPC).
+The `stoffel` CLI is the Cargo-like entry point for Stoffel 0.1.0 projects. It is built from `crates/stoffel-cli` in the `stoffel` repository.
 
-## Design Philosophy
-
-The Stoffel CLI is designed with the following principles:
-
-- **Developer-Friendly**: Intuitive commands that follow familiar patterns from tools like `cargo` and `npm`
-- **Template-Driven**: Project templates for different use cases and programming languages
-- **Integrated Workflow**: Seamless integration between development, compilation, and execution
-
-## Core Commands
-
-### Project Management
+Install it from the repository:
 
 ```bash
-# Initialize new projects
-stoffel init my-project                    # Default StoffelLang project
-stoffel init my-project --template python  # Python SDK integration
-stoffel init my-project --template rust    # Rust SDK integration
-stoffel init my-project --lib              # Create a library project
-stoffel init my-project --interactive      # Interactive project setup
+git clone https://github.com/Stoffel-Labs/stoffel.git
+cd stoffel
+git checkout dev
+cargo install --path crates/stoffel-cli
 ```
 
-### Compilation
+Check available commands:
 
 ```bash
-# Compile StoffelLang programs
-stoffel compile                            # Compile all files in src/
-stoffel compile src/main.stfl              # Compile specific file
-stoffel compile --binary                   # Generate VM-compatible binaries (.stfb)
-stoffel compile -O3                        # Maximum optimization (levels 0-3)
-stoffel compile --disassemble program.stfb # Disassemble bytecode
-stoffel compile --print-ir                 # Print intermediate representation
+stoffel --help
 ```
 
-### Building
+## Commands
+
+| Command | Alias | Purpose |
+| --- | --- | --- |
+| `init` | `new` | Create a new Stoffel project from a template. |
+| `check` | | Validate source and project MPC settings without writing bytecode. |
+| `compile` | | Write compiled bytecode for a project or source file; can also disassemble `.stflb`. |
+| `build` | | Build project bytecode under `target/`. |
+| `run` | `exec`, `execute` | Run a project directory, `.stfl` source file, or `.stflb` bytecode file. |
+| `dev` | | Watch a project and rerun it on local MPC when files change. |
+| `test` | | Run no-argument Stoffel test functions. |
+| `status` | `doctor` | Show project health and environment status. |
+| `clean` | | Remove generated build artifacts. |
+| `update` | `upgrade` | Check or update the CLI and project dependencies. |
+
+## Create a project
 
 ```bash
-# Build entire project
-stoffel build                              # Debug build
-stoffel build --release                    # Release build with optimizations
-stoffel build -O2                          # Specific optimization level
+stoffel init hello-mpc
+cd hello-mpc
 ```
 
-### Development
+Supported templates:
 
 ```bash
-# Compile and run locally
-stoffel dev                                # Default: 5 parties
-stoffel dev --parties 7                    # Custom party count
-stoffel dev --field bn254                  # Different cryptographic field
+stoffel init hello-mpc                         # default Stoffel/Rust project
+stoffel init my-lib --lib                      # library-style Stoffel project
+stoffel init rust-app --template rust
+stoffel init py-app --template python
+stoffel init contract-app --template solidity-foundry
+stoffel init hardhat-app --template solidity-hardhat
 ```
 
-### Execution
+`--force` writes template files into an existing directory without deleting unrelated files.
 
-```bash
-# Run compiled bytecode
-stoffel run                                # Auto-discover in target/
-stoffel run program.stfb                   # Run specific file
-stoffel run --entry my_function            # Custom entry point
+## Project structure
+
+The default template currently creates:
+
+```text
+hello-mpc/
+├── Cargo.toml
+├── README.md
+├── Stoffel.toml
+└── src/
+    ├── main.rs
+    ├── main.stfl
+    └── stoffel_bindings.rs
 ```
 
-### Testing
-
-```bash
-# Run project tests
-stoffel test                               # Discover and run all tests
-stoffel test --test specific_test          # Run specific test function
-stoffel test --integration                 # Integration tests only
-stoffel test --verbose                     # Detailed output
-```
-
-## Available Templates
-
-The CLI provides templates for different development scenarios:
-
-### Language-Specific Templates
-
-| Template | Description | Status |
-|----------|-------------|--------|
-| `stoffel` | Pure StoffelLang project (default) | ✅ Complete |
-| `python` | Python SDK integration with Poetry | ✅ Complete |
-| `rust` | Rust SDK integration | ✅ Complete |
-| `typescript` | TypeScript/Node.js integration | ⚠️ Skeleton (SDK pending) |
-| `solidity-foundry` | Solidity with Foundry framework | ✅ Complete |
-| `solidity-hardhat` | Solidity with Hardhat framework | ✅ Complete |
-
-### Template Usage
-
-```bash
-stoffel init my-app                           # Default stoffel template
-stoffel init my-app --template python         # Python project
-stoffel init my-app --template rust           # Rust project
-stoffel init my-app --template solidity-foundry  # Foundry project
-stoffel init my-app --template solidity-hardhat  # Hardhat project
-```
-
-## Project Structure
-
-### Pure StoffelLang Project
-
-```
-my-mpc-project/
-├── Stoffel.toml              # Project configuration
-├── src/                      # StoffelLang source files
-│   └── main.stfl            # Main program entry point
-├── tests/                   # Test files
-│   └── integration.stfl     # Integration tests
-└── README.md               # Project documentation
-```
-
-### Python Template Structure
-
-```
-my-python-project/
-├── pyproject.toml           # Poetry configuration
-├── src/
-│   └── my_python_project/
-│       └── main.py         # Python entry point
-├── stoffel/                 # Nested Stoffel project
-│   ├── Stoffel.toml
-│   └── src/
-│       └── program.stfl    # StoffelLang program
-├── tests/
-│   └── test_main.py        # Python tests
-└── README.md
-```
-
-### Rust Template Structure
-
-```
-my-rust-project/
-├── Cargo.toml               # Rust project config
-├── src/
-│   └── main.rs             # Rust entry point with SDK
-├── stoffel/                 # Nested Stoffel project
-│   ├── Stoffel.toml
-│   └── src/
-│       └── program.stfl    # StoffelLang program
-└── README.md
-```
-
-### Solidity Template Structure (Foundry)
-
-```
-my-solidity-project/
-├── foundry.toml             # Foundry configuration
-├── src/
-│   └── MyMPCApp.sol        # Main contract
-├── test/
-│   └── MyMPCApp.t.sol      # Foundry tests
-├── script/
-│   └── Deploy.s.sol        # Deployment script
-├── stoffel/                 # Nested Stoffel project
-│   ├── Stoffel.toml
-│   └── src/
-│       └── program.stfl
-└── README.md
-```
-
-## Configuration
-
-### Stoffel.toml
-
-The main configuration file for Stoffel projects:
+`Stoffel.toml` records package, MPC, and build settings:
 
 ```toml
 [package]
-name = "my-secure-app"
+name = "hello-mpc"
 version = "0.1.0"
-authors = ["Your Name <you@example.com>"]
 
 [mpc]
-protocol = "honeybadger"
+backend = "honeybadger"
 parties = 5
 threshold = 1
-field = "bls12-381"
 
 [build]
-optimization_level = 2
-output_dir = "target"
+source = "src/main.stfl"
+target_dir = "target"
 ```
 
-## MPC Configuration
+## Check source
 
-The CLI supports configurable MPC parameters:
-
-- **Parties**: Number of parties in the MPC computation (minimum 4 for HoneyBadger)
-- **Threshold**: Maximum number of corrupted parties tolerated
-- **Constraint**: `parties >= 3 * threshold + 1`
-- **Cryptographic Fields**: BLS12-381 (default), BN254, Secp256k1, Prime61
-
-### Valid Configurations
-
-| Parties | Threshold | Valid? |
-|---------|-----------|--------|
-| 4 | 1 | ✅ (4 >= 4) |
-| 5 | 1 | ✅ (5 >= 4) - default |
-| 7 | 2 | ✅ (7 >= 7) |
-| 3 | 1 | ❌ (3 < 4) |
-
-## Help System
-
-The CLI provides comprehensive help for all commands:
+Validate source and MPC settings without writing bytecode:
 
 ```bash
-stoffel --help                    # Main help
-stoffel init --help               # Command-specific help
-stoffel compile --help            # Compilation options
-stoffel test --help               # Testing options
+stoffel check
 ```
 
-## Command Status
+Use this before committing or before a longer local MPC run.
 
-### Implemented Commands
+## Compile bytecode
 
-| Command | Description |
-|---------|-------------|
-| `init` | Project initialization with templates |
-| `compile` | StoffelLang compilation |
-| `build` | Build entire project |
-| `dev` | Development mode (compile + run) |
-| `run` | Execute compiled bytecode |
-| `test` | Test discovery and execution |
-
-### Planned Commands
-
-| Command | Description |
-|---------|-------------|
-| `deploy` | Deployment to MPC networks |
-| `add` | Package dependency management |
-| `update` | Update dependencies |
-| `publish` | Publish packages to registry |
-| `clean` | Remove build artifacts |
-
-## Examples
-
-### Quick Start
+Compile a project or source file to Stoffel bytecode:
 
 ```bash
-# Create and run a simple MPC project
-stoffel init hello-mpc
-cd hello-mpc
-stoffel dev
+stoffel compile
+stoffel compile src/main.stfl --output target/debug/hello-mpc.stflb
+stoffel compile -O2 --backend honeybadger --parties 5 --threshold 1
 ```
 
-### Rust SDK Integration
+Disassemble an existing bytecode file:
 
 ```bash
-# Create Rust project with SDK
-stoffel init secure-compute --template rust
-cd secure-compute
-cargo build
-cargo run
+stoffel compile --disassemble target/debug/hello-mpc.stflb
 ```
 
-### Solidity Integration
+Useful compile flags:
+
+- `--output` / `--out`: write to a specific `.stflb` file when compiling one source file.
+- `--print-ir`: print compiler intermediate representation.
+- `-O`, `--opt-level`: set optimization level, for example `-O3`.
+- `--optimize`: use O2 unless `--release` selects O3.
+- `--release`: write under `target/release` and use O3 unless overridden.
+- `--backend`, `--field`, `--parties`, `--threshold`, `--instance-id`: override project MPC settings for this compile.
+
+## Build a project
+
+`build` writes bytecode under `target/` using project settings:
 
 ```bash
-# Create Solidity project with Foundry
-stoffel init my-contract --template solidity-foundry
-cd my-contract
-forge build
-forge test
+stoffel build
+stoffel build --release
+stoffel build -O2
 ```
 
-## Next Steps
+## Run source or bytecode
 
-- **[Project Management](./project-management)**: Learn about creating and managing projects
-- **[Development Workflow](./development)**: Understand the development process
-- **[Building and Deployment](./building)**: Build and deploy your applications
+Run the current project:
+
+```bash
+stoffel run
+```
+
+Run a specific file:
+
+```bash
+stoffel run --program-info
+stoffel run target/debug/hello-mpc.stflb --entry main
+```
+
+Useful run flags:
+
+- `--entry`: function to execute; defaults to `main`.
+- `--input NAME=VALUE`: named function argument, repeat once per argument.
+- `--input-file FILE`: load named inputs from `.json`, `.csv`, or `.txt`.
+- `--client-input SLOT=VALUE`: local ClientStore input for programs that call `ClientStore.take_share`.
+- `--client-input-file FILE`: load ClientStore inputs from `.json`, `.csv`, or `.txt`.
+- `--expected-output-clients N`: declare local output-capable client slots `0..N-1`.
+- `--local`: run on the local MPC simulator; this is the default unless `--network` or `--config` is set.
+- `--network --config FILE`: connect to an MPC network described by a network/off-chain client TOML file.
+- `--program-info`: print function and instruction metadata before executing.
+- `--runner PATH`: path to the `stoffel-run` helper binary for local execution.
+- `--timeout-secs N`: local MPC timeout; defaults to 180 seconds.
+
+## Local MPC development
+
+Build the local runner in your stoffel checkout:
+
+```bash
+cd /path/to/stoffel
+cargo build -p stoffel-vm --bin stoffel-run
+```
+
+Run the project once through the local MPC path:
+
+```bash
+cd /path/to/hello-mpc
+stoffel dev \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --parties 5 \
+  --threshold 1 \
+  --once
+
+```
+
+Run in watch mode by omitting `--once`:
+
+```bash
+stoffel dev \
+  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --parties 5 \
+  --threshold 1
+
+```
+
+`stoffel dev` watches `Stoffel.toml` and the configured source tree, rebuilds, and reruns when a `.stfl` file or project config changes. Use `--poll-ms` to tune reload latency.
+
+## Template maturity
+
+The Rust SDK path is the primary 0.1.0 application workflow. Python and Solidity templates are useful for exploration and integration planning, and should be verified against the Stoffel repository before relying on generated code in a deployment.
+
+## Troubleshooting
+
+### The command accepts an option but my generated project fails
+
+Check the generated `README.md` and `src/main.stfl`. Template programs vary: some expect named function inputs with `--input`, while ClientStore examples expect local client inputs with `--client-input`.
+
+### `stoffel-run` is missing
+
+Build it from the repository:
+
+```bash
+cd /path/to/stoffel
+cargo build -p stoffel-vm --bin stoffel-run
+```
+
+Then pass `--runner /path/to/stoffel/target/debug/stoffel-run`.
+
+### I need exact current flags
+
+Use command-specific help:
+
+```bash
+stoffel init --help
+stoffel compile --help
+stoffel run --help
+stoffel dev --help
+```

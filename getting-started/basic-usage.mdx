@@ -179,7 +179,7 @@ stoffel run \
 `--local` is the default unless `--network` or `--config` is set. Use `--runner` if the CLI cannot find `stoffel-run` automatically:
 
 ```bash
-stoffel run --runner /path/to/stoffel/target/debug/stoffel-run
+stoffel run --runner $HOME/.cargo/bin/stoffel-run
 ```
 
 ## Development watch mode
@@ -188,7 +188,7 @@ stoffel run --runner /path/to/stoffel/target/debug/stoffel-run
 
 ```bash
 stoffel dev \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner $HOME/.cargo/bin/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -196,7 +196,7 @@ stoffel dev \
 For scripts and CI, run once and exit:
 
 ```bash
-stoffel dev --once --runner /path/to/stoffel/target/debug/stoffel-run
+stoffel dev --once --runner $HOME/.cargo/bin/stoffel-run
 ```
 
 Tune watch latency with `--poll-ms`:
@@ -219,7 +219,7 @@ stoffel test --verbose
 Use local MPC execution for tests that need the local runner path:
 
 ```bash
-stoffel test --local --runner /path/to/stoffel/target/debug/stoffel-run
+stoffel test --local --runner $HOME/.cargo/bin/stoffel-run
 ```
 
 ## Status, clean, and update
@@ -246,7 +246,7 @@ stoffel update --self-from-source
 - Run `stoffel check --print-ir` before investigating runtime behavior.
 - Run `stoffel run --program-info` to inspect function and instruction metadata.
 - Use `stoffel compile --disassemble <file.stflb>` to inspect bytecode.
-- Build the runner with `cargo build -p stoffel-vm --bin stoffel-run` when local MPC commands report that `stoffel-run` is missing.
+- Install the runner with `cargo install stoffel-vm-runner --version 0.1.0 --locked` when local MPC commands report that `stoffel-run` is missing.
 - Prefer the Rust SDK examples for end-to-end local MPC smoke tests in the 0.1.0 workflow.
 
 ## Next steps

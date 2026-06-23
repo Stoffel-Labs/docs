@@ -45,10 +45,11 @@ cargo run -p stoffel-rust-sdk --example local_mpc_named_inputs
 cargo run -p stoffel-rust-sdk --example local_mpc_client_input
 ```
 
-Local MPC examples require `stoffel-run`:
+Local MPC examples require `stoffel-run`. Install it from crates.io:
 
 ```bash
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 ## Use the CLI directly from Python projects

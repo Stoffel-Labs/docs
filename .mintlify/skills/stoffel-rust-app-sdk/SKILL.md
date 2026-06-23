@@ -36,7 +36,7 @@ Use the released SDK dependency when your app does not need a local checkout:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", version = "0.1" }
+stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -69,11 +69,11 @@ fn main() -> stoffel::Result<()> {
 
 ## Local MPC execution
 
-Build the runner used by local coordinator-backed execution from your Stoffel checkout:
+Install the runner used by local coordinator-backed execution from crates.io:
 
 ```sh
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 ```rust
@@ -86,7 +86,7 @@ async fn main() -> stoffel::Result<()> {
     )?
     .parties(5)
     .threshold(1)
-    .local_runner_path("/path/to/stoffel/target/debug/stoffel-run")
+    .local_runner_path("$HOME/.cargo/bin/stoffel-run")
     .with_client_input(0, &[42_i64])
     .execute_local()
     .await?;
@@ -221,7 +221,7 @@ cargo run
 For local MPC app paths:
 
 ```sh
-cargo build -p stoffel-vm --bin stoffel-run   # source checkout
+cargo install stoffel-vm-runner --version 0.1.0 --locked
 cargo run
 ```
 

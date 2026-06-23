@@ -13,9 +13,9 @@ This workflow targets Stoffel 0.1.0. It is a small local example; use the same m
 
 ## What you will use
 
-- The `stoffel` repository for the 0.1.0 release.
 - The `stoffel` CLI.
-- The `stoffel-run` helper for local MPC execution.
+- `stoffel-vm-runner` from crates.io for local MPC execution.
+- The Rust SDK from crates.io if you run the Rust wrapper path.
 - A `Share`-based StoffelLang program.
 
 Finish [Installation](./installation) before starting.
@@ -69,11 +69,11 @@ If your project name produces a different bytecode file name, list `target/debug
 
 ## Run locally with a client input
 
-Build the local runner from the stoffel checkout:
+Install the local runner from crates.io:
 
 ```bash
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 Then run the project:
@@ -82,7 +82,7 @@ Then run the project:
 cd /path/to/eligibility-demo
 stoffel run \
   --local \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner "$HOME/.cargo/bin/stoffel-run" \
   --client-input 0=42 \
   --parties 5 \
   --threshold 1
@@ -94,7 +94,7 @@ The returned value is `(42 + 25) * 2`, not the raw client input.
 
 ```bash
 stoffel dev \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner "$HOME/.cargo/bin/stoffel-run" \
   --client-input 0=42 \
   --parties 5 \
   --threshold 1

@@ -15,9 +15,11 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
 | --- | --- | --- |
 | Stoffel repository | [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) | Start here. It contains the CLI, compiler, Rust SDK, VM runtime, bytecode/types crates, runtime helper, C FFI, and examples. |
 | Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project workflow for `init`, `check`, `compile`, `build`, `run`, `dev`, and tests. |
-| Rust SDK | `crates/stoffel-rust-sdk` / crate `stoffel` | Primary application API for compile/load/run, local clear checks, local MPC, bytecode helpers, and network configuration surfaces. |
-| Stoffel VM runtime | `crates/stoffel-vm` | Register-based runtime with clear values, secret shares, builtins, hooks, FFI, and the `stoffel-run` helper. Most app developers reach it through the CLI or SDK. |
-| VM types and bytecode | `crates/stoffel-vm-types` | Shared instruction, value, function, and `.stflb` compiled binary types. |
+| Rust SDK | `stoffel-rust-sdk` on crates.io / crate `stoffel` | Primary application API for compile/load/run, local clear checks, local MPC, bytecode helpers, and network configuration surfaces. |
+| Stoffel VM runtime | `stoffel-vm` on crates.io / `crates/stoffel-vm` | Register-based runtime with clear values, secret shares, builtins, hooks, FFI, and the `stoffel-run` helper. Most app developers reach it through the CLI or SDK. |
+| VM types and bytecode | `stoffel-vm-types` on crates.io / `crates/stoffel-vm-types` | Shared instruction, value, function, and `.stflb` compiled binary types. |
+| Stoffel Lang compiler crate | `stoffellang` on crates.io / `crates/stoffel-lang` | Compiler surface for Rust tools that need to compile Stoffel Lang directly. |
+| Runner crate | `stoffel-vm-runner` on crates.io / `crates/stoffel-vm-runner` | Installs the `stoffel-run` helper for local MPC and VM execution flows. |
 | MPC/network dependencies | `mpc-protocols`, `stoffel-networking`, `stoffel-mpc-coordinator` | Pulled by Cargo for protocol, networking, and coordination support; app developers normally use the CLI and SDK first. |
 
 ## Security review scope
@@ -65,12 +67,11 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-If your app needs local MPC runner flows, also build `stoffel-run` from source:
+If your app needs local MPC runner flows, install `stoffel-run` from crates.io:
 
 ```bash
-git clone https://github.com/Stoffel-Labs/stoffel.git
-cd stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 For Stoffel 0.1.0, `stoffel-run` is the local MPC helper used by SDK and CLI execution paths.
@@ -108,7 +109,7 @@ For local MPC development:
 
 ```bash
 stoffel dev \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner $HOME/.cargo/bin/stoffel-run \
   --parties 5 \
   --threshold 1 \
   --once

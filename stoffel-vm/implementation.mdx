@@ -97,7 +97,14 @@ The 0.1.0 CLI writes `.stflb` bytecode.
 
 ## VM helper binary
 
-`stoffel-run` is the helper binary used by local MPC flows:
+`stoffel-run` is the helper binary used by local MPC flows. Install it from crates.io:
+
+```bash
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
+```
+
+If you are working inside a source checkout, you can also build it from the repository:
 
 ```bash
 cargo build -p stoffel-vm --bin stoffel-run
@@ -107,8 +114,8 @@ cargo build -p stoffel-vm --bin stoffel-run
 Most developers should call it through the CLI or Rust SDK instead of invoking it directly:
 
 ```bash
-stoffel run --runner /path/to/stoffel/target/debug/stoffel-run
-stoffel dev --once --runner /path/to/stoffel/target/debug/stoffel-run
+stoffel run --runner $HOME/.cargo/bin/stoffel-run
+stoffel dev --once --runner $HOME/.cargo/bin/stoffel-run
 ```
 
 ## Embedding through the Rust SDK

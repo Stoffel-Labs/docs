@@ -166,11 +166,11 @@ Useful run flags:
 
 ## Local MPC development
 
-Build the local runner in your stoffel checkout:
+Install the local runner from crates.io:
 
 ```bash
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 Run the project once through the local MPC path:
@@ -178,7 +178,7 @@ Run the project once through the local MPC path:
 ```bash
 cd /path/to/hello-mpc
 stoffel dev \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner "$HOME/.cargo/bin/stoffel-run" \
   --parties 5 \
   --threshold 1 \
   --once
@@ -189,7 +189,7 @@ Run in watch mode by omitting `--once`:
 
 ```bash
 stoffel dev \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner "$HOME/.cargo/bin/stoffel-run" \
   --parties 5 \
   --threshold 1
 
@@ -216,7 +216,7 @@ cd /path/to/stoffel
 cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-Then pass `--runner /path/to/stoffel/target/debug/stoffel-run`.
+Then pass `--runner "$HOME/.cargo/bin/stoffel-run"`.
 
 ### I need exact current flags
 

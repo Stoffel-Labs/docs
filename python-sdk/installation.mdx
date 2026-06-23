@@ -21,12 +21,11 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-If the generated project needs local MPC runner flows, build `stoffel-run` from source:
+If the generated project needs local MPC runner flows, install `stoffel-run` from crates.io:
 
 ```bash
-git clone https://github.com/Stoffel-Labs/stoffel.git
-cd stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 Verify the Python template is available:

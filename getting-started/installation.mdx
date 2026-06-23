@@ -17,7 +17,8 @@ Start with the CLI installer. Clone `Stoffel-Labs/stoffel` when your app needs S
 
 - A Unix-like shell: Linux, macOS, or Windows with WSL2
 - `curl` or `wget`
-- Git, Rust, and Cargo when you build the runner or use the Rust SDK directly
+- Rust and Cargo when your app uses the Rust SDK or installs the local MPC runner from crates.io
+- Git only when you need the source repository, examples, or workspace development
 - 4 GB RAM minimum; 8 GB recommended for local MPC development
 
 ## Install the CLI
@@ -42,7 +43,7 @@ curl -fsSL https://get.stoffelmpc.com | sh -s -- --version 0.1.0
 curl -fsSL https://get.stoffelmpc.com | STOFFEL_INSTALL_DIR="$HOME/bin" sh
 ```
 
-## Optional: build from source
+## Add Rust crates from crates.io
 
 Install Rust if needed:
 
@@ -53,7 +54,34 @@ rustc --version
 cargo --version
 ```
 
-Then build the workspace and local MPC runner:
+Add the Rust SDK to your app from crates.io:
+
+```toml
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+```
+
+Other published crates are available when your app needs lower-level surfaces:
+
+| Crate | Use when |
+| --- | --- |
+| `stoffel-rust-sdk` | Build app integrations that compile, load, and run Stoffel programs. |
+| `stoffel-vm-runner` | Install the `stoffel-run` local MPC runner. |
+| `stoffellang` | Use the Stoffel Lang compiler from Rust. |
+| `stoffel-vm` | Embed the VM runtime directly. |
+| `stoffel-vm-types` | Work with bytecode, instructions, and runtime value types. |
+
+Install the local MPC runner from crates.io when your app needs local MPC execution:
+
+```bash
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
+```
+
+## Optional: build from source
+
+Use the source checkout when your product needs repository examples, workspace development, or local changes to the SDK/VM crates:
 
 ```bash
 git clone https://github.com/Stoffel-Labs/stoffel.git
@@ -62,21 +90,21 @@ cargo build
 cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-Use the source checkout when your product needs the SDK source, runner binary, examples, or workspace development. The CLI install above is enough to create, check, build, and run standard Stoffel projects.
+The CLI install and crates.io packages above are enough for the normal app dev loop.
 
 ## Local runner path
 
-The local MPC runner is built at:
+If you installed `stoffel-vm-runner` from crates.io, the runner is on your Cargo bin path as `stoffel-run`. If you built from source, the debug runner is at:
 
 ```text
 stoffel/target/debug/stoffel-run
 ```
 
-Pass that path when a command or SDK example needs the runner:
+Pass the runner path when a command or SDK example needs it:
 
 ```bash
 stoffel dev \
-  --runner "$HOME/path/to/stoffel/target/debug/stoffel-run" \
+  --runner "$HOME/.cargo/bin/stoffel-run" \
   --parties 5 \
   --threshold 1 \
   --once
@@ -100,13 +128,11 @@ stoffel/target/release/stoffel-run
 
 ## Add the Rust SDK to an application
 
-The Rust SDK library crate is named `stoffel` and currently lives inside the repository package `stoffel-rust-sdk`.
-
-Point your app at the released repository tag or a local checkout:
+The Rust SDK package on crates.io is `stoffel-rust-sdk`. Import it in Rust code as `stoffel` by renaming the package in `Cargo.toml`:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", tag = "cli-v0.1.0" }
+stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -119,7 +145,7 @@ tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
 <Note>
-Use the CLI installer for project commands. Use repository dependencies when your Rust app needs the SDK source.
+Use the CLI installer for project commands. Use crates.io for app dependencies, and use a repository path only when your Rust app needs local SDK source changes.
 </Note>
 
 ## Create a test project
@@ -148,17 +174,16 @@ Add that line to your shell profile if needed.
 
 ### Local MPC says `stoffel-run` is missing
 
-Build the runner and pass its path:
+Install the runner from crates.io or build it from source, then pass its path:
 
 ```bash
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
-stoffel dev --runner /path/to/stoffel/target/debug/stoffel-run --once
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel dev --runner "$HOME/.cargo/bin/stoffel-run" --once
 ```
 
-### Cargo fetches git dependencies slowly
+### Cargo builds take a while
 
-The repository depends on MPC, networking, and coordinator crates by git. The first build may take several minutes while Cargo fetches and compiles dependencies.
+The SDK and runner pull MPC, networking, and coordinator crates through Cargo. The first build may take several minutes while Cargo fetches and compiles dependencies.
 
 ### Native Windows issues
 

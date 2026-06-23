@@ -36,7 +36,8 @@ These are source-inspection references for app behavior, not instructions for ap
 
 - Rust stable and Cargo.
 - The `stoffel` CLI from the documented installation path.
-- A local checkout of the `stoffel` repository when you need source-based development.
+- Crates.io dependencies for Rust SDK and runner work.
+- A local checkout of the `stoffel` repository when you need repository examples or local crate changes.
 - For local MPC execution: a `stoffel-run` helper binary available through `PATH`, `--runner`, `STOFFEL_RUN_BIN`, or the SDK builder.
 
 ## Install
@@ -49,12 +50,11 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-Build the local MPC runner when your app needs it:
+Install the local MPC runner when your app needs it:
 
 ```sh
-git clone https://github.com/Stoffel-Labs/stoffel.git
-cd stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner --version 0.1.0 --locked
+stoffel-run --help
 ```
 
 ## Create the first app

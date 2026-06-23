@@ -1,11 +1,11 @@
 ---
 title: "Stoffel CLI Overview"
-description: "Current 0.1.0 commands for creating, checking, compiling, building, running, and developing Stoffel projects."
+description: "Use the Stoffel CLI to create, check, build, run, and iterate on private-computation projects."
 ---
 
 # Stoffel CLI Overview
 
-The `stoffel` CLI is the Cargo-like entry point for Stoffel 0.1.0 projects. Install the released CLI with the Stoffel installer:
+The `stoffel` CLI is the entry point for building with Stoffel. Use it to create projects, check source, build bytecode, run local checks, and exercise local MPC flows.
 
 ```bash
 curl -fsSL https://get.stoffelmpc.com | sh
@@ -17,7 +17,7 @@ The installer writes `stoffel` to `~/.local/bin` by default. Add it to your path
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-Check available commands:
+Check the available commands:
 
 ```bash
 stoffel --help
@@ -45,7 +45,7 @@ stoffel init hello-mpc
 cd hello-mpc
 ```
 
-Supported templates:
+Choose the template that matches your build path:
 
 ```bash
 stoffel init hello-mpc                         # default Stoffel/Rust project

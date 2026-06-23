@@ -1,22 +1,22 @@
 ---
 title: "Quick Start"
-description: "Run your first Stoffel 0.1.0 clear and local MPC computations."
+description: "Create a Stoffel project, run a clear check, and move into local MPC when your app needs it."
 ---
 
 # Quick Start
 
-This guide gets you from a fresh 0.1.0 installation to a working Stoffel computation. You will run the same tiny addition workflow two ways:
+This guide gets you from a fresh Stoffel install to a working computation. You will run the same small addition workflow two ways:
 
 1. clear local execution for fast logic checks;
-2. local MPC-style execution with secret inputs.
+2. local MPC execution for private values.
 
 ## Prerequisites
 
 Finish [Installation](./installation) first. You should have:
 
 - the `stoffel` CLI on your path;
-- a local `stoffel` checkout only if you plan to build `stoffel-run` for local MPC runs;
-- `target/debug/stoffel-run` built from that checkout for local MPC development commands.
+- a local `stoffel` checkout if you plan to build `stoffel-run`;
+- `target/debug/stoffel-run` built from that checkout for local MPC commands.
 
 Check the CLI:
 
@@ -46,7 +46,7 @@ hello-mpc/
     └── stoffel_bindings.rs
 ```
 
-Run the basic project lifecycle:
+Run the basic dev loop:
 
 ```bash
 stoffel check
@@ -54,7 +54,7 @@ stoffel build
 stoffel run
 ```
 
-Useful follow-up commands:
+Useful next commands:
 
 ```bash
 # Print bytecode metadata before running.
@@ -72,7 +72,7 @@ stoffel dev \
 
 ```
 
-Use the exact inputs expected by your generated `src/main.stfl`. Some templates use named function arguments, while ClientStore examples use `--client-input SLOT=VALUE`.
+Use the values expected by your generated `src/main.stfl`. Some templates use named function arguments. ClientStore examples use `--client-input SLOT=VALUE`.
 
 ## Option B: run the Rust SDK quickstart
 
@@ -202,7 +202,7 @@ Good first Stoffel applications identify which values should be secret-shared, w
 | Private set-style workflows | Client-provided shares, comparison/matching circuit, aggregate result |
 | Private analytics | Secret-shared records, aggregate metric, explicit opening step |
 | Threshold coordination | Parties, threshold, share generation, client-directed output |
-| Personalization with less custody | Secret features, scoring function, reconstructed label or decision |
+| Personalization with clear privacy boundaries | Secret features, scoring function, reconstructed label or decision |
 
 ## Next steps
 

@@ -1,13 +1,13 @@
 ---
 title: "Ecosystem Overview"
-description: "Stoffel 0.1.0 component map, repositories, and developer workflow."
+description: "Map the Stoffel components and choose the build path your app needs."
 ---
 
 # Ecosystem Overview
 
-Stoffel 0.1.0 is organized around [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel), the canonical repository for the CLI, compiler, Rust SDK, Stoffel VM runtime, and shared bytecode/type definitions.
+Stoffel 0.1.0 centers on [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel), the repository for the CLI, compiler, Rust SDK, VM runtime, and shared bytecode/type definitions.
 
-Stoffel’s 0.1.0 workflow is developer-accessible MPC: write the computation, mark sensitive values explicitly, run clear checks locally, then exercise secret-shared execution through the CLI or Rust SDK without becoming a protocol implementer.
+Stoffel gives you a direct path to private computation: write the workflow, mark sensitive values explicitly, run clear checks locally, then exercise secret-shared execution through the CLI or Rust SDK.
 
 ## Components in 0.1.0
 
@@ -22,7 +22,7 @@ Stoffel’s 0.1.0 workflow is developer-accessible MPC: write the computation, m
 
 ## Security review scope
 
-`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped when validating a deployment.
+`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped. Validate the full application, integration code, configuration, and threat model your product relies on.
 
 ## Component architecture
 
@@ -57,7 +57,7 @@ Stoffel’s 0.1.0 workflow is developer-accessible MPC: write the computation, m
 
 ### 1. Install the tools
 
-Install the released CLI:
+Install the CLI:
 
 ```bash
 curl -fsSL https://get.stoffelmpc.com | sh
@@ -65,7 +65,7 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-If you need local MPC runner flows, also build `stoffel-run` from the source repository:
+If your app needs local MPC runner flows, also build `stoffel-run` from source:
 
 ```bash
 git clone https://github.com/Stoffel-Labs/stoffel.git
@@ -73,7 +73,7 @@ cd stoffel
 cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-For Stoffel 0.1.0, `stoffel-run` is the local MPC helper used by SDK and CLI local execution paths.
+For Stoffel 0.1.0, `stoffel-run` is the local MPC helper used by SDK and CLI execution paths.
 
 ### 2. Create a project
 

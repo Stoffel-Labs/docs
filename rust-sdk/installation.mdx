@@ -1,24 +1,24 @@
 ---
 title: "Installation"
-description: "Install the 0.1.0 CLI and add the Rust SDK to an application."
+description: "Install the Stoffel CLI and add the Rust SDK to your app."
 ---
 
 # Rust SDK Installation
 
-The Rust SDK is the primary application API for Stoffel 0.1.0. Its Cargo package is `stoffel-rust-sdk`, and the library crate you import in Rust code is `stoffel`.
+The Rust SDK is the application API for building Stoffel into your product. Its Cargo package is `stoffel-rust-sdk`; the Rust crate you import is `stoffel`.
 
 <Note>
 **Stoffel 0.1.0 Rust SDK**
 
-Use the released CLI installer for project commands, then add the Rust SDK dependency shown below for applications and integrations.
+Install the CLI for project commands. Add the Rust SDK when your app needs to compile, load, or run Stoffel programs directly.
 </Note>
 
 ## Prerequisites
 
 - Rust and Cargo, latest stable recommended
-- The released `stoffel` CLI
-- A local or git checkout of [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) if you want the SDK source or local MPC runner
-- `stoffel-run` built if you want local MPC execution
+- The `stoffel` CLI
+- A local or git checkout of [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) when you need SDK source or the local MPC runner
+- `stoffel-run` built when your app needs local MPC execution
 
 Install the CLI:
 
@@ -28,7 +28,7 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-For local MPC execution, also build the runner from source:
+For local MPC execution, build the runner from source:
 
 ```bash
 git clone https://github.com/Stoffel-Labs/stoffel.git
@@ -46,7 +46,7 @@ tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 
 ## Add the SDK from a local checkout
 
-Use this while developing against the same checkout you built:
+Use a path dependency when you are developing against the same checkout you built:
 
 ```toml
 [dependencies]
@@ -54,7 +54,7 @@ stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Adjust the relative path to match your directory layout.
+Adjust the relative path to match your project layout.
 
 ## Verify clear execution
 

@@ -1,6 +1,6 @@
 ---
 title: "Installation"
-description: "Use the Python project template in the Stoffel 0.1.0 release."
+description: "Install the Stoffel CLI and create a Python-oriented project scaffold."
 ---
 
 # Installation
@@ -8,12 +8,12 @@ description: "Use the Python project template in the Stoffel 0.1.0 release."
 <Note>
 **Python integration starts with the CLI template.**
 
-Install the released `stoffel` CLI, then use its Python template for Python-oriented project scaffolding. Use the Rust SDK for verified application execution.
+Install the `stoffel` CLI, then use its Python template to scaffold your project. Use the Rust SDK when your app needs execution APIs.
 </Note>
 
 ## Prerequisites
 
-Install the 0.1.0 CLI first:
+Install the CLI first:
 
 ```bash
 curl -fsSL https://get.stoffelmpc.com | sh
@@ -21,7 +21,7 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-If you need local MPC runner flows for the generated project, also build `stoffel-run` from source:
+If the generated project needs local MPC runner flows, build `stoffel-run` from source:
 
 ```bash
 git clone https://github.com/Stoffel-Labs/stoffel.git
@@ -44,7 +44,7 @@ stoffel init my-python-project --template python
 cd my-python-project
 ```
 
-Then inspect the generated README and manifests:
+Inspect the generated README and manifests:
 
 ```bash
 ls
@@ -63,7 +63,7 @@ If your generated program expects different inputs, follow that template's `READ
 
 ## Python package status
 
-Stoffel 0.1.0 uses the CLI Python template rather than a Python SDK package. The documented install path is the released CLI plus the Rust SDK when you need application execution APIs.
+Stoffel 0.1.0 provides a CLI Python template rather than a Python SDK package. Use the CLI for scaffolding and the Rust SDK when your app needs execution APIs.
 
 ## Next steps
 

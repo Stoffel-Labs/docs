@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the public install snippets from these docs. When developing against a local checkout, make that workflow explicit.
 
 ## Use when
 
@@ -32,7 +32,7 @@ Use this playbook when a Rust application embeds Stoffel compilation, bytecode l
 
 ## Dependencies
 
-Preferred public flow after publication:
+Use the released SDK dependency when your app does not need a local checkout:
 
 ```toml
 [dependencies]
@@ -40,7 +40,7 @@ stoffel = { package = "stoffel-rust-sdk", version = "0.1" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Local checkout flow for source-based 0.1.0 development:
+Use a local checkout when your app needs SDK source or unreleased workspace changes:
 
 ```toml
 [dependencies]
@@ -69,7 +69,7 @@ fn main() -> stoffel::Result<()> {
 
 ## Local MPC execution
 
-Build or install the runner used by local coordinator-backed execution. Source-based 0.1.0 checkout path:
+Build the runner used by local coordinator-backed execution from your Stoffel checkout:
 
 ```sh
 cd /path/to/stoffel

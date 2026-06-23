@@ -41,20 +41,20 @@ These are source-inspection references for app behavior, not instructions for ap
 
 ## Install
 
-Preferred public flow after publication:
+Install the released CLI:
 
 ```sh
-cargo install stoffel-cli
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-Local checkout flow for source-based 0.1.0 development:
+Local checkout flow when you also need the local MPC runner:
 
 ```sh
-cd /path/to/stoffel
-cargo install --path crates/stoffel-cli
+git clone https://github.com/Stoffel-Labs/stoffel.git
+cd stoffel
 cargo build -p stoffel-vm --bin stoffel-run
-stoffel --help
 ```
 
 ## Create the first app

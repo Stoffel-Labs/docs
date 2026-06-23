@@ -15,8 +15,8 @@ This guide gets you from a fresh 0.1.0 installation to a working Stoffel computa
 Finish [Installation](./installation) first. You should have:
 
 - the `stoffel` CLI on your path;
-- a local `stoffel` checkout;
-- `target/debug/stoffel-run` built in that checkout for local MPC runs.
+- a local `stoffel` checkout only if you plan to build `stoffel-run` for local MPC runs;
+- `target/debug/stoffel-run` built from that checkout for local MPC development commands.
 
 Check the CLI:
 
@@ -87,7 +87,7 @@ Add dependencies in `Cargo.toml`:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", branch = "dev" }
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", tag = "cli-v0.1.0" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 

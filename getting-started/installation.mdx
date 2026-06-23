@@ -1,24 +1,48 @@
 ---
 title: "Installation"
-description: "Install the Stoffel 0.1.0 tools from the Stoffel repository."
+description: "Install the Stoffel 0.1.0 CLI and optional local runner."
 ---
 
 # Installation
 
-These docs describe the Stoffel 0.1.0 installation path from [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel).
+These docs describe the Stoffel 0.1.0 installation path. The released CLI installs from `https://get.stoffelmpc.com`; source and runner builds live in [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel).
 
 <Note>
 **Stoffel 0.1.0 docs**
 
-Start from `Stoffel-Labs/stoffel`; dependent MPC and networking crates are pulled by Cargo.
+Start with the released installer for the `stoffel` CLI. Clone `Stoffel-Labs/stoffel` only when you need the Rust SDK source, local runner, or workspace development.
 </Note>
 
 ## Prerequisites
 
-- Git
-- Rust and Cargo, latest stable recommended
 - A Unix-like shell: Linux, macOS, or Windows with WSL2
+- `curl` or `wget`
+- Git, Rust, and Cargo only if you are building from source or using the Rust SDK directly
 - 4 GB RAM minimum; 8 GB recommended for local MPC development
+
+## Install the released CLI
+
+```bash
+curl -fsSL https://get.stoffelmpc.com | sh
+```
+
+The installer downloads the latest released `stoffel` binary, verifies its checksum, and installs it to `~/.local/bin` by default. Add that directory to your shell path if needed:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --help
+```
+
+You should see commands such as `init`, `check`, `compile`, `build`, `run`, `dev`, `test`, `status`, `clean`, and `update`.
+
+To pin an exact CLI version or install somewhere else:
+
+```bash
+curl -fsSL https://get.stoffelmpc.com | sh -s -- --version 0.1.0
+curl -fsSL https://get.stoffelmpc.com | STOFFEL_INSTALL_DIR="$HOME/bin" sh
+```
+
+## Optional: build from source
 
 Install Rust if needed:
 
@@ -29,29 +53,16 @@ rustc --version
 cargo --version
 ```
 
-## Install from source
+Then build the workspace and local MPC runner:
 
 ```bash
 git clone https://github.com/Stoffel-Labs/stoffel.git
 cd stoffel
-
-# Build the workspace.
 cargo build
-
-# Install the project CLI as `stoffel`.
-cargo install --path crates/stoffel-cli
-
-# Build the local MPC runner used by SDK/CLI local execution.
 cargo build -p stoffel-vm --bin stoffel-run
 ```
 
-Verify the CLI is on your path:
-
-```bash
-stoffel --help
-```
-
-You should see commands such as `init`, `check`, `compile`, `build`, `run`, `dev`, `test`, `status`, `clean`, and `update`.
+Use the source checkout when you need the Rust SDK source, runner binary, examples, or workspace development. The released CLI install above is enough to create, check, build, and run standard Stoffel projects.
 
 ## Local runner path
 
@@ -73,13 +84,11 @@ stoffel dev \
 
 If you installed or built Stoffel in another directory, replace the path with your local checkout path.
 
-## Optional: release build
+## Optional: release runner build
 
-For faster local execution, build optimized binaries:
+For faster local MPC execution from a source checkout, build the runner in release mode:
 
 ```bash
-cargo build --release
-cargo install --path crates/stoffel-cli --force
 cargo build --release -p stoffel-vm --bin stoffel-run
 ```
 
@@ -97,7 +106,7 @@ For source-based 0.1.0 development, point your app at the repository path or git
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", branch = "dev" }
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", tag = "cli-v0.1.0" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -110,7 +119,7 @@ tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
 <Note>
-For Stoffel 0.1.0, the repository source install is the documented path.
+The released CLI installer is the recommended command-line install path. Use repository dependencies when your Rust application needs the SDK source.
 </Note>
 
 ## Create a test project

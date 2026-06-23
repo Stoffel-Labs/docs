@@ -53,7 +53,7 @@ stoffel --help
 Install the local MPC runner when your app needs it:
 
 ```sh
-cargo install stoffel-vm-runner --version 0.1.0 --locked
+cargo install stoffel-vm-runner
 stoffel-run --help
 ```
 

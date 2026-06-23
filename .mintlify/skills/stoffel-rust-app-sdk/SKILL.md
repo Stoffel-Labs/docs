@@ -72,7 +72,7 @@ fn main() -> stoffel::Result<()> {
 Install the runner used by local coordinator-backed execution from crates.io:
 
 ```sh
-cargo install stoffel-vm-runner --version 0.1.0 --locked
+cargo install stoffel-vm-runner
 stoffel-run --help
 ```
 
@@ -221,7 +221,7 @@ cargo run
 For local MPC app paths:
 
 ```sh
-cargo install stoffel-vm-runner --version 0.1.0 --locked
+cargo install stoffel-vm-runner
 cargo run
 ```
 

@@ -1,45 +1,52 @@
 ---
 title: "Installation"
-description: "Install the 0.1.0 Rust SDK from the Stoffel repository."
+description: "Install the Stoffel CLI and add the Rust SDK to your app."
 ---
 
 # Rust SDK Installation
 
-The Rust SDK is the primary application API for Stoffel 0.1.0. Its Cargo package is `stoffel-rust-sdk`, and the library crate you import in Rust code is `stoffel`.
+The Rust SDK is the application API for building Stoffel into your product. Its Cargo package is `stoffel-rust-sdk`; the Rust crate you import is `stoffel`.
 
 <Note>
 **Stoffel 0.1.0 Rust SDK**
 
-Use the source dependency shown below for 0.1.0 applications and integrations.
+Install the CLI for project commands. Add the Rust SDK when your app needs to compile, load, or run Stoffel programs directly.
 </Note>
 
 ## Prerequisites
 
 - Rust and Cargo, latest stable recommended
-- A local or git checkout of [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel)
-- `stoffel-run` built if you want local MPC execution
+- The `stoffel` CLI
+- `stoffel-rust-sdk` from crates.io
+- `stoffel-vm-runner` from crates.io when your app needs local MPC execution
+- A local checkout of [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) only when you need source examples or local crate changes
 
-Build the repository and runner:
+Install the CLI:
 
 ```bash
-git clone https://github.com/Stoffel-Labs/stoffel.git
-cd stoffel
-git checkout dev
-cargo build
-cargo build -p stoffel-vm --bin stoffel-run
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --help
 ```
 
-## Add the SDK from git
+For local MPC execution, install the runner from crates.io:
+
+```bash
+cargo install stoffel-vm-runner
+stoffel-run --help
+```
+
+## Add the SDK from crates.io
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", branch = "dev" }
+stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
-## Add the SDK from a local checkout
+## Optional: use a local checkout
 
-Use this while developing against the same checkout you built:
+Use a path dependency when your app needs local SDK source changes:
 
 ```toml
 [dependencies]
@@ -47,7 +54,7 @@ stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
-Adjust the relative path to match your directory layout.
+Adjust the relative path to match your project layout.
 
 ## Verify clear execution
 
@@ -80,11 +87,10 @@ Result: 100
 
 ## Verify local MPC execution
 
-Build the helper binary in the repository:
+Install the helper binary from crates.io:
 
 ```bash
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner
 ```
 
 Then use an async main with `Share` inputs:
@@ -180,25 +186,25 @@ cargo run -p stoffel-rust-sdk --example local_mpc_client_input
 
 ### `use stoffel::prelude::*` cannot resolve
 
-Confirm that your dependency renames the package to the library crate name:
+Confirm that your dependency renames the crates.io package to the library crate name:
 
 ```toml
-stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust-sdk" }
+stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
 ```
 
 ### Local MPC cannot find `stoffel-run`
 
-Build the runner in the repository:
+Install the runner from crates.io:
 
 ```bash
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner
 ```
 
-Keep your SDK app near the repository during development or use the CLI `--runner` flag for CLI local runs.
+For CLI local runs, pass the runner with `--runner "$HOME/.cargo/bin/stoffel-run"` if your shell cannot find it.
 
-### Git dependencies take a while
+### Cargo builds take a while
 
-The SDK pulls MPC, networking, and coordinator crates through Cargo git dependencies. The first build can take several minutes.
+The SDK and runner pull MPC, networking, and coordinator crates through Cargo. The first build can take several minutes.
 
 ## Next steps
 

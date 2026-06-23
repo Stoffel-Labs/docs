@@ -1,22 +1,22 @@
 ---
 title: "Quick Start"
-description: "Run your first Stoffel 0.1.0 clear and local MPC computations."
+description: "Create a Stoffel project, run a clear check, and move into local MPC when your app needs it."
 ---
 
 # Quick Start
 
-This guide gets you from a fresh 0.1.0 installation to a working Stoffel computation. You will run the same tiny addition workflow two ways:
+This guide gets you from a fresh Stoffel install to a working computation. You will run the same small addition workflow two ways:
 
 1. clear local execution for fast logic checks;
-2. local MPC-style execution with secret inputs.
+2. local MPC execution for private values.
 
 ## Prerequisites
 
 Finish [Installation](./installation) first. You should have:
 
 - the `stoffel` CLI on your path;
-- a local `stoffel` checkout;
-- `target/debug/stoffel-run` built in that checkout for local MPC runs.
+- `stoffel-vm-runner` installed from crates.io if you plan to run local MPC commands;
+- a local `stoffel` checkout only when you need repository examples or local crate changes.
 
 Check the CLI:
 
@@ -46,7 +46,7 @@ hello-mpc/
     └── stoffel_bindings.rs
 ```
 
-Run the basic project lifecycle:
+Run the basic dev loop:
 
 ```bash
 stoffel check
@@ -54,7 +54,7 @@ stoffel build
 stoffel run
 ```
 
-Useful follow-up commands:
+Useful next commands:
 
 ```bash
 # Print bytecode metadata before running.
@@ -65,14 +65,14 @@ stoffel compile --disassemble target/debug/hello-mpc.stflb
 
 # Run local MPC once instead of entering watch mode.
 stoffel dev \
-  --runner /path/to/stoffel/target/debug/stoffel-run \
+  --runner "$HOME/.cargo/bin/stoffel-run" \
   --parties 5 \
   --threshold 1 \
   --once
 
 ```
 
-Use the exact inputs expected by your generated `src/main.stfl`. Some templates use named function arguments, while ClientStore examples use `--client-input SLOT=VALUE`.
+Use the values expected by your generated `src/main.stfl`. Some templates use named function arguments. ClientStore examples use `--client-input SLOT=VALUE`.
 
 ## Option B: run the Rust SDK quickstart
 
@@ -87,11 +87,11 @@ Add dependencies in `Cargo.toml`:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel", branch = "dev" }
+stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 ```
 
-For development against a local checkout, use a path dependency:
+If your app needs local SDK source changes, use a path dependency:
 
 ```toml
 [dependencies]
@@ -171,11 +171,10 @@ Expected output after the local runner starts and accepts masked inputs:
 Local MPC named-input result: 100
 ```
 
-If the SDK cannot find the runner automatically, build it in your stoffel checkout:
+If the SDK cannot find the runner automatically, install it from crates.io:
 
 ```bash
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
+cargo install stoffel-vm-runner
 ```
 
 The `Share` and `ClientStore` examples are the recommended local MPC smoke tests because they exercise the local coordinator path.
@@ -202,7 +201,7 @@ Good first Stoffel applications identify which values should be secret-shared, w
 | Private set-style workflows | Client-provided shares, comparison/matching circuit, aggregate result |
 | Private analytics | Secret-shared records, aggregate metric, explicit opening step |
 | Threshold coordination | Parties, threshold, share generation, client-directed output |
-| Personalization with less custody | Secret features, scoring function, reconstructed label or decision |
+| Personalization with clear privacy boundaries | Secret features, scoring function, reconstructed label or decision |
 
 ## Next steps
 

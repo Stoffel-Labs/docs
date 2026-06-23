@@ -1,6 +1,6 @@
 ---
 name: stoffel-app-getting-started
-description: Install the Stoffel tooling, create a new app, run first local smoke tests, and choose the right development path.
+description: Install Stoffel, create your first app, run local checks, and choose the build path your product needs.
 license: MIT
 compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
@@ -18,7 +18,7 @@ metadata:
 
 ## Use when
 
-Use this playbook when a developer or coding agent needs the shortest path from an empty directory to a working Stoffel application.
+Use this playbook when a developer or coding agent needs the shortest path from an empty directory to a working Stoffel app.
 
 ## Current source of truth
 
@@ -35,26 +35,26 @@ These are source-inspection references for app behavior, not instructions for ap
 ## Prerequisites
 
 - Rust stable and Cargo.
-- The `stoffel` CLI from the documented 0.1.0 installation path.
-- A local checkout of the `stoffel` repository for source-based 0.1.0 development.
+- The `stoffel` CLI from the documented installation path.
+- Crates.io dependencies for Rust SDK and runner work.
+- A local checkout of the `stoffel` repository when you need repository examples or local crate changes.
 - For local MPC execution: a `stoffel-run` helper binary available through `PATH`, `--runner`, `STOFFEL_RUN_BIN`, or the SDK builder.
 
 ## Install
 
-Preferred public flow after publication:
+Install the CLI:
 
 ```sh
-cargo install stoffel-cli
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
 
-Local checkout flow for source-based 0.1.0 development:
+Install the local MPC runner when your app needs it:
 
 ```sh
-cd /path/to/stoffel
-cargo install --path crates/stoffel-cli
-cargo build -p stoffel-vm --bin stoffel-run
-stoffel --help
+cargo install stoffel-vm-runner
+stoffel-run --help
 ```
 
 ## Create the first app
@@ -68,7 +68,7 @@ stoffel build
 stoffel run --timeout-secs 180
 ```
 
-The default project template includes a Rust wrapper as well as `.stfl` source. For that wrapper, also run:
+The default project template includes a Rust wrapper as well as `.stfl` source. Run the wrapper too:
 
 ```sh
 cargo build
@@ -77,7 +77,7 @@ cargo run
 
 ## Know the app shape
 
-A new app normally has:
+A new app normally includes:
 
 - `Stoffel.toml`: app metadata, default source path, output target dir, and local MPC defaults.
 - `src/main.stfl`: the Stoffel program.
@@ -90,7 +90,7 @@ A new app normally has:
 
 - CLI-only path: mostly `.stfl` source and local smoke tests.
 - Rust SDK path: embedding compilation/execution, creating clients/servers, generating typed client IO bindings, or integrating with a Rust service.
-- Local MPC path: private/secret programs that need real local party execution before network/off-chain work.
+- Local MPC path: private workflows that need real local party execution before network/off-chain work.
 - Network/off-chain path: advanced client/server/coordinator integration after the local smoke passes.
 
 ## Fast examples to inspect

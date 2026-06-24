@@ -101,24 +101,6 @@ crates/stoffel-lang/examples/mpc_runtime_info/main.stfl
 
 ## Common errors
 
-### Old `proc` / `let` syntax
-
-Use current `def` functions and `var` bindings:
-
-```stoffel
-def add(a: int64, b: int64) -> int64:
-  var result = a + b
-  return result
-```
-
-### Old bytecode flags
-
-The 0.1.0 CLI does not require `--binary` for normal bytecode compilation. Use `.stflb` outputs:
-
-```bash
-stoffel compile src/main.stfl --output target/debug/main.stflb
-```
-
 ### Secret control flow
 
 Do not branch on secret values. Open only the output you intend to reveal, or keep values as `Share` and send them to a client output path.

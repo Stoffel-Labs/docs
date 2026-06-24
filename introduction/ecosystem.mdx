@@ -3,8 +3,6 @@ title: "Ecosystem Overview"
 description: "Map the Stoffel components and choose the build path your app needs."
 ---
 
-# Ecosystem Overview
-
 Stoffel 0.1.0 centers on [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel), the repository for the CLI, compiler, Rust SDK, VM runtime, and shared bytecode/type definitions.
 
 Stoffel gives you a direct path to private computation: write the workflow, mark sensitive values explicitly, run clear checks locally, then exercise secret-shared execution through the CLI or Rust SDK.
@@ -13,13 +11,12 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
 
 | Component | Location | Developer guidance |
 | --- | --- | --- |
-| Stoffel repository | [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) | Start here. It contains the CLI, compiler, Rust SDK, VM runtime, bytecode/types crates, runtime helper, C FFI, and examples. |
+| Stoffel repository | [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) | Start here. It contains the CLI, compiler, Rust SDK, VM runtime, bytecode/types crates, C FFI, and examples. |
 | Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project workflow for `init`, `check`, `compile`, `build`, `run`, `dev`, and tests. |
 | Rust SDK | `stoffel-rust-sdk` on crates.io / crate `stoffel` | Primary application API for compile/load/run, local clear checks, local MPC, bytecode helpers, and network configuration surfaces. |
-| Stoffel VM runtime | `stoffel-vm` on crates.io / `crates/stoffel-vm` | Register-based runtime with clear values, secret shares, builtins, hooks, FFI, and the `stoffel-run` helper. Most app developers reach it through the CLI or SDK. |
+| Stoffel VM runtime | `stoffel-vm` on crates.io / `crates/stoffel-vm` | Register-based runtime with clear values, secret shares, builtins, hooks, and FFI. Most app developers reach it through the CLI or SDK. |
 | VM types and bytecode | `stoffel-vm-types` on crates.io / `crates/stoffel-vm-types` | Shared instruction, value, function, and `.stflb` compiled binary types. |
 | Stoffel Lang compiler crate | `stoffellang` on crates.io / `crates/stoffel-lang` | Compiler surface for Rust tools that need to compile Stoffel Lang directly. |
-| Runner crate | `stoffel-vm-runner` on crates.io / `crates/stoffel-vm-runner` | Installs the `stoffel-run` helper for local MPC and VM execution flows. |
 | MPC/network dependencies | `mpc-protocols`, `stoffel-networking`, `stoffel-mpc-coordinator` | Pulled by Cargo for protocol, networking, and coordination support; app developers normally use the CLI and SDK first. |
 
 ## Security review scope
@@ -51,7 +48,7 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
               └───────────┬────────────┘
                           ▼
               ┌────────────────────────┐
-              │ MPC/network integrations│ local MPC helper and lower-level network surfaces
+              │ MPC/network integrations│ local MPC and lower-level network surfaces
               └────────────────────────┘
 ```
 
@@ -66,15 +63,6 @@ curl -fsSL https://get.stoffelmpc.com | sh
 export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
 ```
-
-If your app needs local MPC runner flows, install `stoffel-run` from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-stoffel-run --help
-```
-
-For Stoffel 0.1.0, `stoffel-run` is the local MPC helper used by SDK and CLI execution paths.
 
 ### 2. Create a project
 
@@ -109,7 +97,6 @@ For local MPC development:
 
 ```bash
 stoffel dev \
-  --runner $HOME/.cargo/bin/stoffel-run \
   --parties 5 \
   --threshold 1 \
   --once
@@ -175,7 +162,7 @@ The VM is a register-based runtime with clear values, secret shares, objects, ar
 
 ### MPC/network backends
 
-HoneyBadger MPC, AVSS, reliable broadcast, and QUIC networking integrations are wired into the repository through Rust dependencies. Local developer workflows normally use the SDK/CLI and `stoffel-run` rather than integrating those crates directly.
+HoneyBadger MPC, AVSS, reliable broadcast, and QUIC networking integrations are wired into the repository through Rust dependencies. Local developer workflows normally use the SDK/CLI rather than integrating those crates directly.
 
 ## Next steps
 

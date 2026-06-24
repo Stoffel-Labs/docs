@@ -3,8 +3,6 @@ title: "Examples"
 description: "Current Rust SDK examples for clear execution, local MPC, bytecode, ClientStore inputs, network config, and observability."
 ---
 
-# Rust SDK Examples
-
 These examples match the Stoffel 0.1.0 SDK in the `stoffel` repository.
 
 Run examples from the repository root:
@@ -61,9 +59,7 @@ async fn main() -> stoffel::Result<()> {
 
     match result {
         Ok(values) => println!("Private result: {}", values[0]),
-        Err(stoffel::Error::Unsupported(message)) if message.contains("stoffel-run") => {
-            println!("Build stoffel-run first to execute local MPC: {message}");
-        }
+        Err(stoffel::Error::Unsupported(message)) => println!("Local MPC unavailable: {message}"),
         Err(error) => return Err(error),
     }
 
@@ -96,9 +92,7 @@ def add_private_values(a: Share, b: Share) -> int64:
         .await
     {
         Ok(result) => println!("Local MPC named-input result: {}", result[0]),
-        Err(stoffel::Error::Unsupported(message)) if message.contains("stoffel-run") => {
-            println!("Build stoffel-run first to execute local MPC: {message}");
-        }
+        Err(stoffel::Error::Unsupported(message)) => println!("Local MPC unavailable: {message}"),
         Err(error) => return Err(error),
     }
 
@@ -140,9 +134,7 @@ def main() -> int64:
         .await
     {
         Ok(result) => println!("Local MPC result: {}", result[0]),
-        Err(stoffel::Error::Unsupported(message)) if message.contains("stoffel-run") => {
-            println!("Build stoffel-run first to execute local MPC: {message}");
-        }
+        Err(stoffel::Error::Unsupported(message)) => println!("Local MPC unavailable: {message}"),
         Err(error) => return Err(error),
     }
 

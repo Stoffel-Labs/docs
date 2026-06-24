@@ -3,8 +3,6 @@ title: Stoffel App Troubleshooting
 description: Diagnose app-level init, check, build, run, local MPC, binding, SDK, and network failures with evidence.
 ---
 
-# Stoffel App Troubleshooting
-
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
 > Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
@@ -86,8 +84,6 @@ Inspect `Stoffel.toml`:
 
 ## Local MPC checklist
 
-- Confirm `stoffel-run` is installed or provide `--runner` / `STOFFEL_RUN_BIN`.
-- Confirm the runner binary was built for the execution environment's OS/architecture.
 - Increase `--timeout-secs` before declaring protocol failure.
 - Avoid concurrent local party meshes that collide on ports/processes.
 - Verify whether the app uses named inputs or ClientStore inputs.
@@ -124,7 +120,6 @@ When handing off a failure, include:
 - whether bytecode was rebuilt
 - whether typed bindings were regenerated
 - exact `# run-args:` header if using an example
-- local MPC runner path/version if relevant
 - network/off-chain config shape with secrets redacted if relevant
 
 ## Common pitfalls

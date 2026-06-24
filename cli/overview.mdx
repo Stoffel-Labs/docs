@@ -3,8 +3,6 @@ title: "Stoffel CLI Overview"
 description: "Use the Stoffel CLI to create, check, build, run, and iterate on private-computation projects."
 ---
 
-# Stoffel CLI Overview
-
 The `stoffel` CLI is the entry point for building with Stoffel. Use it to create projects, check source, build bytecode, run local checks, and exercise local MPC flows.
 
 ```bash
@@ -161,24 +159,15 @@ Useful run flags:
 - `--local`: run on the local MPC simulator; this is the default unless `--network` or `--config` is set.
 - `--network --config FILE`: connect to an MPC network described by a network/off-chain client TOML file.
 - `--program-info`: print function and instruction metadata before executing.
-- `--runner PATH`: path to the `stoffel-run` helper binary for local execution.
 - `--timeout-secs N`: local MPC timeout; defaults to 180 seconds.
 
 ## Local MPC development
-
-Install the local runner from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-stoffel-run --help
-```
 
 Run the project once through the local MPC path:
 
 ```bash
 cd /path/to/hello-mpc
 stoffel dev \
-  --runner "$HOME/.cargo/bin/stoffel-run" \
   --parties 5 \
   --threshold 1 \
   --once
@@ -189,7 +178,6 @@ Run in watch mode by omitting `--once`:
 
 ```bash
 stoffel dev \
-  --runner "$HOME/.cargo/bin/stoffel-run" \
   --parties 5 \
   --threshold 1
 
@@ -206,17 +194,6 @@ The Rust SDK path is the primary 0.1.0 application workflow. Python and Solidity
 ### The command accepts an option but my generated project fails
 
 Check the generated `README.md` and `src/main.stfl`. Template programs vary: some expect named function inputs with `--input`, while ClientStore examples expect local client inputs with `--client-input`.
-
-### `stoffel-run` is missing
-
-Build it from the repository:
-
-```bash
-cd /path/to/stoffel
-cargo build -p stoffel-vm --bin stoffel-run
-```
-
-Then pass `--runner "$HOME/.cargo/bin/stoffel-run"`.
 
 ### I need exact current flags
 

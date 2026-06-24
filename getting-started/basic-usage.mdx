@@ -1,11 +1,9 @@
 ---
 title: "Basic Usage"
-description: "Daily Stoffel CLI workflows for checking, building, running, testing, and debugging 0.1.0 projects."
+description: "Daily Stoffel CLI workflows for checking, building, running, testing, and debugging Stoffel projects."
 ---
 
-# Basic Usage
-
-This page describes the Stoffel 0.1.0 CLI from `Stoffel-Labs/stoffel`. The `stoffel` binary is a Cargo-like project tool; the lower-level `stoffel-run` helper executes compiled bytecode for local MPC runs.
+This page describes the `stoffel` CLI. The `stoffel` binary is a Cargo-like project tool for creating, checking, building, running, and iterating on Stoffel apps. It is the developer-facing entry point for local MPC workflows.
 
 ## Core workflow
 
@@ -54,7 +52,7 @@ stoffel init my-library --lib
 stoffel init . --force
 ```
 
-`--lib` cannot be combined with `--template`. There is no separate `templates list` command on the 0.1.0 release; use `stoffel init --help` for supported template names.
+`--lib` cannot be combined with `--template`. Use `stoffel init --help` for supported template names.
 
 ## Project structure
 
@@ -75,7 +73,7 @@ Other templates place the Stoffel program under a nested `stoffel/` directory an
 
 ## `Stoffel.toml`
 
-`Stoffel.toml` is the project manifest. The 0.1.0 CLI reads package, build, and MPC settings from this file. A minimal shape looks like:
+`Stoffel.toml` is the project manifest. The CLI reads package, build, and MPC settings from this file. A minimal shape looks like:
 
 ```toml
 [package]
@@ -83,8 +81,8 @@ name = "my-project"
 version = "0.1.0"
 
 [build]
-source = "src"
-out_dir = "target/debug"
+source = "src/main.stfl"
+target_dir = "target"
 
 [mpc]
 backend = "honeybadger"
@@ -129,7 +127,7 @@ stoffel compile src/main.stfl -O3 --output target/release/main.stflb
 stoffel compile --disassemble target/debug/my-project.stflb
 ```
 
-The bytecode extension for 0.1.0 is `.stflb`.
+Stoffel bytecode uses the `.stflb` extension.
 
 Optimization flags accepted by `compile`, `build`, and source-backed `run` include:
 
@@ -144,7 +142,7 @@ stoffel build --release       # writes under target/release
 ## Running programs
 
 ```bash
-# Run the current project locally
+# Run the current project through local MPC
 stoffel run
 
 # Run a source file or bytecode file
@@ -165,30 +163,24 @@ stoffel run --input-file inputs.json
 stoffel run --program-info
 ```
 
-For programs that use `ClientStore.take_share`, provide local client inputs by numeric slot:
+For programs that use `ClientStore.take_share`, provide client-provided private inputs by numeric slot:
 
 ```bash
 stoffel run \
-  --local \
   --client-input 0=42 \
   --expected-output-clients 1 \
   --parties 5 \
   --threshold 1
 ```
 
-`--local` is the default unless `--network` or `--config` is set. Use `--runner` if the CLI cannot find `stoffel-run` automatically:
-
-```bash
-stoffel run --runner $HOME/.cargo/bin/stoffel-run
-```
+Local MPC is the default unless `--network` or `--config` is set. A local run spawns several MPC nodes/processes on your machine using the configured `parties` and `threshold`.
 
 ## Development watch mode
 
-`stoffel dev` runs a project once and then watches `Stoffel.toml` and source files for changes:
+`stoffel dev` runs a project through local MPC, then watches `Stoffel.toml` and source files for changes:
 
 ```bash
 stoffel dev \
-  --runner $HOME/.cargo/bin/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -196,7 +188,7 @@ stoffel dev \
 For scripts and CI, run once and exit:
 
 ```bash
-stoffel dev --once --runner $HOME/.cargo/bin/stoffel-run
+stoffel dev --once
 ```
 
 Tune watch latency with `--poll-ms`:
@@ -216,10 +208,10 @@ stoffel test --test addition
 stoffel test --verbose
 ```
 
-Use local MPC execution for tests that need the local runner path:
+Use local MPC execution for tests that need several local MPC nodes instead of the embedded no-network test runner:
 
 ```bash
-stoffel test --local --runner $HOME/.cargo/bin/stoffel-run
+stoffel test --local
 ```
 
 ## Status, clean, and update
@@ -246,8 +238,7 @@ stoffel update --self-from-source
 - Run `stoffel check --print-ir` before investigating runtime behavior.
 - Run `stoffel run --program-info` to inspect function and instruction metadata.
 - Use `stoffel compile --disassemble <file.stflb>` to inspect bytecode.
-- Install the runner with `cargo install stoffel-vm-runner` when local MPC commands report that `stoffel-run` is missing.
-- Prefer the Rust SDK examples for end-to-end local MPC smoke tests in the 0.1.0 workflow.
+- Use the Rust SDK wrapper when you want application code to compile and run the same Stoffel program.
 
 ## Next steps
 

@@ -1,21 +1,18 @@
 ---
 title: "Your First MPC Project"
-description: "Build and run a small secret-shared eligibility example with the Stoffel 0.1.0 CLI and Rust SDK workflow."
+description: "Build and run a small secret-shared eligibility example with the Stoffel CLI and Rust SDK workflow."
 ---
-
-# Your First MPC Project
 
 This tutorial builds a small eligibility-score computation. The goal is to model one client value as a share, compute over that share, and reconstruct the derived score explicitly.
 
 <Note>
-This workflow targets Stoffel 0.1.0. It is a small local example; use the same modeling steps with your own deployment and security validation when moving beyond the tutorial.
+This is a small local example. Use the same modeling steps with your own deployment and security validation when moving beyond the tutorial.
 </Note>
 
 ## What you will use
 
 - The `stoffel` CLI.
-- `stoffel-vm-runner` from crates.io for local MPC execution.
-- The Rust SDK from crates.io if you run the Rust wrapper path.
+- The Rust SDK from crates.io when you run or adapt the Rust wrapper path.
 - A `Share`-based StoffelLang program.
 
 Finish [Installation](./installation) before starting.
@@ -69,20 +66,11 @@ If your project name produces a different bytecode file name, list `target/debug
 
 ## Run locally with a client input
 
-Install the local runner from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-stoffel-run --help
-```
-
-Then run the project:
+Run the project through local MPC. This starts several MPC nodes/processes locally on your machine and feeds client slot `0` with the private input value:
 
 ```bash
 cd /path/to/eligibility-demo
 stoffel run \
-  --local \
-  --runner "$HOME/.cargo/bin/stoffel-run" \
   --client-input 0=42 \
   --parties 5 \
   --threshold 1
@@ -94,7 +82,6 @@ The returned value is `(42 + 25) * 2`, not the raw client input.
 
 ```bash
 stoffel dev \
-  --runner "$HOME/.cargo/bin/stoffel-run" \
   --client-input 0=42 \
   --parties 5 \
   --threshold 1
@@ -104,21 +91,14 @@ For scripts, add `--once`.
 
 ## Run the same idea from Rust
 
-The Rust SDK is the primary application API for 0.1.0. A local MPC runner can be invoked from a Rust wrapper:
+The Rust SDK is the primary application API for embedding Stoffel programs in Rust apps. Use the bytecode you already built from `src/main.stfl` instead of embedding a second sample program in Rust. In this example, `.execute_local().await?` performs local MPC testing by spawning several MPC nodes/processes on your machine:
 
 ```rust
 use stoffel::prelude::*;
 
 #[tokio::main]
 async fn main() -> stoffel::Result<()> {
-    let source = r#"
-def main() -> int64:
-  var share = ClientStore.take_share(0, 0)
-  var opened: int64 = share.open()
-  return opened + 5
-"#;
-
-    let result = Stoffel::compile(source)?
+    let result = Stoffel::load_file("target/debug/eligibility-demo.stflb")?
         .parties(5)
         .threshold(1)
         .with_client_input(0, &[42_i64])
@@ -129,6 +109,196 @@ def main() -> int64:
     Ok(())
 }
 ```
+
+## Shape it like an app integration
+
+A larger app usually separates the code that owns the MPC network from the code that handles user/client requests. MPC nodes run away from input and output clients; the client-facing app identifies the private portion of a request and hands that portion to the Stoffel-backed workflow.
+
+For this tutorial, keep everything on your development machine but split the project like an app would be split:
+
+```text
+src/
+├── app.rs                  # ordinary app types and non-private decision logic
+├── client.rs               # client/request handling boundary
+├── lib.rs                  # shared module exports
+├── main.stfl               # private MPC program
+└── bin/
+    ├── local_mpc.rs        # initializes the Stoffel program and local MPC loop
+    └── eligibility_client.rs # command-line client handler
+```
+
+Create `src/lib.rs`:
+
+```rust
+pub mod app;
+pub mod client;
+```
+
+Create `src/app.rs` for the ordinary application types:
+
+```rust
+#[derive(Debug, Clone)]
+pub struct EligibilityRequest {
+    pub account_id: String,
+    pub private_score: i64,
+    pub public_region: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct EligibilityDecision {
+    pub account_id: String,
+    pub public_region: String,
+    pub eligibility_score: i64,
+    pub approved: bool,
+}
+
+pub fn decision_from_score(
+    request: EligibilityRequest,
+    eligibility_score: i64,
+) -> EligibilityDecision {
+    EligibilityDecision {
+        account_id: request.account_id,
+        public_region: request.public_region,
+        eligibility_score,
+        approved: eligibility_score >= 100,
+    }
+}
+```
+
+Create `src/bin/main.rs`. This is the local development network owner: it loads the bytecode built from `src/main.stfl`, waits for client requests, and runs each private score through local MPC. Stop it with `Ctrl-C` when you are done.
+
+```rust
+use std::{fs, path::Path, time::Duration};
+
+use stoffel::prelude::*;
+use tokio::time::sleep;
+
+const WORK_DIR: &str = "target/dev-mpc";
+const REQUEST_FILE: &str = "target/dev-mpc/request.txt";
+const RESPONSE_FILE: &str = "target/dev-mpc/response.txt";
+
+#[tokio::main]
+async fn main() -> stoffel::Result<()> {
+    fs::create_dir_all(WORK_DIR)?;
+    let runtime = Stoffel::load_file("target/debug/eligibility-demo.stflb")?
+        .parties(5)
+        .threshold(1)
+        .build()?;
+
+    println!("Local MPC process ready. Waiting for requests in {REQUEST_FILE}.");
+
+    let mut last_request = String::new();
+    loop {
+        if Path::new(REQUEST_FILE).exists() {
+            let request = fs::read_to_string(REQUEST_FILE)?;
+            if request != last_request {
+                last_request = request.clone();
+                let private_score: i64 = request.trim().parse().map_err(|error| {
+                    Error::InvalidInput(format!("invalid private score: {error}"))
+                })?;
+
+                let result = runtime
+                    .clone()
+                    .with_client_input(0, &[private_score])
+                    .execute_local()
+                    .await?;
+
+                let eligibility_score = result[0]
+                    .as_i64()
+                    .ok_or_else(|| Error::InvalidInput("expected int64 eligibility score".into()))?;
+
+                fs::write(RESPONSE_FILE, eligibility_score.to_string())?;
+                println!("Handled private score for client slot 0.");
+            }
+        }
+
+        sleep(Duration::from_millis(250)).await;
+    }
+}
+```
+
+Create `src/client.rs`. This file is the client-handling boundary: it accepts an application request, sends only the private score to the local MPC side, then combines the returned score with ordinary app fields.
+
+```rust
+use std::{fs, path::Path, thread, time::Duration};
+
+use stoffel::prelude::*;
+
+use crate::app::{decision_from_score, EligibilityDecision, EligibilityRequest};
+
+const WORK_DIR: &str = "target/dev-mpc";
+const REQUEST_FILE: &str = "target/dev-mpc/request.txt";
+const RESPONSE_FILE: &str = "target/dev-mpc/response.txt";
+
+pub fn handle_eligibility_request(
+    request: EligibilityRequest,
+) -> stoffel::Result<EligibilityDecision> {
+    fs::create_dir_all(WORK_DIR)?;
+    if Path::new(RESPONSE_FILE).exists() {
+        fs::remove_file(RESPONSE_FILE)?;
+    }
+
+    fs::write(REQUEST_FILE, request.private_score.to_string())?;
+
+    let eligibility_score = loop {
+        if Path::new(RESPONSE_FILE).exists() {
+            let raw = fs::read_to_string(RESPONSE_FILE)?;
+            break raw.trim().parse::<i64>().map_err(|error| {
+                Error::InvalidInput(format!("invalid eligibility score: {error}"))
+            })?;
+        }
+        thread::sleep(Duration::from_millis(250));
+    };
+
+    Ok(decision_from_score(request, eligibility_score))
+}
+```
+
+Create `src/bin/eligibility_client.rs` as a command-line entry point for the client-handling code:
+
+```rust
+use eligibility_demo::app::EligibilityRequest;
+use eligibility_demo::client::handle_eligibility_request;
+
+fn main() -> stoffel::Result<()> {
+    let mut args = std::env::args().skip(1);
+    let account_id = args.next().unwrap_or_else(|| "acct_123".to_owned());
+    let private_score = args
+        .next()
+        .as_deref()
+        .unwrap_or("42")
+        .parse::<i64>()
+        .map_err(|error| stoffel::Error::InvalidInput(format!("invalid score: {error}")))?;
+    let public_region = args.next().unwrap_or_else(|| "ca".to_owned());
+
+    let decision = handle_eligibility_request(EligibilityRequest {
+        account_id,
+        private_score,
+        public_region,
+    })?;
+
+    println!("{decision:?}");
+    Ok(())
+}
+```
+
+Run the local MPC owner in one terminal:
+
+```bash
+cargo run --bin main
+```
+
+Then run the client handler from another terminal:
+
+```bash
+cargo run --bin eligibility_client -- acct_123 42 ca
+```
+
+The important separation is that ordinary app logic stays in Rust, client handling lives in its own module, and the Stoffel program owns the private computation. In this local tutorial, `main.rs` starts local MPC nodes on the same development machine. In a deployed setup, that network would run elsewhere, and the client-handling side would connect to it instead of using this local file-based handoff.
+
+<Note>
+Want to deploy MPC apps instead of running local development networks? [Sign up for Stoffel updates](https://buttondown.com/stoffel) to hear when we launch the platform for deploying MPC apps.
+</Note>
 
 ## Design notes
 

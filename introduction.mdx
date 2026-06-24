@@ -3,8 +3,6 @@ title: "Introduction"
 description: "Stoffel 0.1.0 release: approachable tools for building applications with secure multiparty computation."
 ---
 
-# Introduction
-
 <Note>
 **Stoffel 0.1.0 docs**
 
@@ -15,7 +13,7 @@ These docs track the Stoffel 0.1.0 release. Use component pages for current API,
 
 Stoffel is a developer stack for secure multiparty computation (MPC). It gives application developers a practical way to write programs that operate on secret-shared data, test them locally, and integrate them through familiar CLI and Rust SDK workflows.
 
-Most software privacy has a missing layer: we encrypt data at rest, encrypt data in transit, and then decrypt it to compute. MPC addresses that data-in-use gap by letting multiple parties jointly compute over shares of private inputs. Stoffel packages that model into developer tooling: a language, compiler, VM, local runner, and SDK surface that let you focus on the application logic instead of implementing MPC protocols from scratch.
+Most software privacy has a missing layer: we encrypt data at rest, encrypt data in transit, and then decrypt it to compute. MPC addresses that data-in-use gap by letting multiple parties jointly compute over shares of private inputs. Stoffel packages that model into developer tooling: a language, compiler, VM, CLI, and SDK surface that let you focus on the application logic instead of implementing MPC protocols from scratch.
 
 ## What is in 0.1.0
 
@@ -26,7 +24,7 @@ The 0.1.0 release ships the core developer workflow from [`Stoffel-Labs/stoffel`
 | Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project CLI for `init`, `check`, `compile`, `build`, `run`, `dev`, `test`, `status`, `clean`, and `update`. |
 | Stoffel Lang compiler | `crates/stoffel-lang` / crate `stoffellang` | Python-style language compiler that emits Stoffel VM bytecode. |
 | Rust SDK | `crates/stoffel-rust-sdk` / library crate `stoffel` | Primary application API for compile/load/run workflows, local clear execution, local MPC simulation, network configuration, observability, and on-chain coordinator handles. |
-| Stoffel VM | `crates/stoffel-vm` | Register-based VM runtime with builtins, secret-share values, networking/MPC integrations, C FFI, and the `stoffel-run` helper binary. |
+| Stoffel VM | `crates/stoffel-vm` | Register-based VM runtime with builtins, secret-share values, networking/MPC integrations, and C FFI. |
 | VM types and bytecode | `crates/stoffel-vm-types` | Shared value, instruction, function, and compiled `.stflb` bytecode types. |
 
 Start from the `stoffel` repository for the Stoffel 0.1.0 workflow.
@@ -36,7 +34,7 @@ Start from the `stoffel` repository for the Stoffel 0.1.0 workflow.
 - Write computations in Stoffel Lang with explicit `secret` values.
 - Use clear local execution for fast logic checks.
 - Use the Rust SDK as the primary app integration path.
-- Run local MPC-style smoke tests with the SDK or CLI and `stoffel-run`.
+- Run local MPC-style smoke tests with the SDK or CLI.
 - Generate, save, load, inspect, and execute `.stflb` bytecode.
 - Create project templates for Stoffel, Rust, Python, Foundry, and Hardhat workflows.
 

@@ -3,8 +3,6 @@ title: "Installation"
 description: "Install the Stoffel CLI and add the Rust SDK to your app."
 ---
 
-# Rust SDK Installation
-
 The Rust SDK is the application API for building Stoffel into your product. Its Cargo package is `stoffel-rust-sdk`; the Rust crate you import is `stoffel`.
 
 <Note>
@@ -18,7 +16,6 @@ Install the CLI for project commands. Add the Rust SDK when your app needs to co
 - Rust and Cargo, latest stable recommended
 - The `stoffel` CLI
 - `stoffel-rust-sdk` from crates.io
-- `stoffel-vm-runner` from crates.io when your app needs local MPC execution
 - A local checkout of [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) only when you need source examples or local crate changes
 
 Install the CLI:
@@ -27,13 +24,6 @@ Install the CLI:
 curl -fsSL https://get.stoffelmpc.com | sh
 export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
-```
-
-For local MPC execution, install the runner from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-stoffel-run --help
 ```
 
 ## Add the SDK from crates.io
@@ -87,13 +77,7 @@ Result: 100
 
 ## Verify local MPC execution
 
-Install the helper binary from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-```
-
-Then use an async main with `Share` inputs:
+Use an async main with `Share` inputs:
 
 ```rust
 use stoffel::prelude::*;
@@ -114,9 +98,7 @@ def add_private_values(a: Share, b: Share) -> int64:
         .await
     {
         Ok(result) => println!("Local MPC named-input result: {}", result[0]),
-        Err(stoffel::Error::Unsupported(message)) if message.contains("stoffel-run") => {
-            println!("Build stoffel-run first to execute local MPC: {message}");
-        }
+        Err(stoffel::Error::Unsupported(message)) => println!("Local MPC unavailable: {message}"),
         Err(error) => return Err(error),
     }
 
@@ -192,19 +174,9 @@ Confirm that your dependency renames the crates.io package to the library crate 
 stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
 ```
 
-### Local MPC cannot find `stoffel-run`
-
-Install the runner from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-```
-
-For CLI local runs, pass the runner with `--runner "$HOME/.cargo/bin/stoffel-run"` if your shell cannot find it.
-
 ### Cargo builds take a while
 
-The SDK and runner pull MPC, networking, and coordinator crates through Cargo. The first build can take several minutes.
+The SDK pulls MPC, networking, and coordinator crates through Cargo. The first build can take several minutes.
 
 ## Next steps
 

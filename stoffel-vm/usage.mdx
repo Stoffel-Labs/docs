@@ -1,26 +1,9 @@
 ---
 title: "VM Usage"
-description: "How to run Stoffel VM bytecode through the 0.1.0 CLI, Rust SDK, and stoffel-run helper."
+description: "How to run Stoffel VM bytecode through the 0.1.0 CLI and Rust SDK."
 ---
 
-# VM Usage
-
-Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK instead of invoking `stoffel-run` directly. The direct helper remains useful for debugging bytecode and local MPC internals.
-
-## Install the helper
-
-Install `stoffel-run` from crates.io:
-
-```bash
-cargo install stoffel-vm-runner
-stoffel-run --help
-```
-
-If you are working inside a source checkout, you can also build it from the repository:
-
-```bash
-cargo build -p stoffel-vm --bin stoffel-run
-```
+Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK. The CLI includes the local development workflow needed to run MPC on your machine.
 
 ## Compile bytecode
 
@@ -46,11 +29,10 @@ stoffel run src/main.stfl --input a=40 --input b=2
 stoffel run --program-info
 ```
 
-`stoffel run` defaults to local execution unless `--network` or `--config` is provided. If local MPC execution cannot locate the helper binary, pass it explicitly:
+`stoffel run` defaults to local execution unless `--network` or `--config` is provided:
 
 ```bash
 stoffel run \
-  --runner $HOME/.cargo/bin/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -70,7 +52,6 @@ stoffel run \
 
 ```bash
 stoffel dev \
-  --runner $HOME/.cargo/bin/stoffel-run \
   --parties 5 \
   --threshold 1
 ```
@@ -78,7 +59,7 @@ stoffel dev \
 Use one-shot mode for scripts:
 
 ```bash
-stoffel dev --once --runner $HOME/.cargo/bin/stoffel-run
+stoffel dev --once
 ```
 
 ## Run through the Rust SDK
@@ -98,7 +79,7 @@ fn main() -> stoffel::Result<()> {
 }
 ```
 
-Local MPC execution through the helper:
+Local MPC execution:
 
 ```rust
 use stoffel::prelude::*;
@@ -115,16 +96,6 @@ let result = Stoffel::compile(
 # Ok(())
 # }
 ```
-
-## Direct helper invocation
-
-Direct `stoffel-run` invocation is a lower-level path. Use the helper's installed help output for exact flags:
-
-```bash
-./target/debug/stoffel-run --help
-```
-
-When docs disagree with the helper's `--help`, the helper output is the source of truth for that checkout.
 
 ## Debugging
 

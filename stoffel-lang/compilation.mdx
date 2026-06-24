@@ -3,8 +3,6 @@ title: "Compilation"
 description: "How StoffelLang source is validated, compiled, optimized, disassembled, and executed on the 0.1.0 release."
 ---
 
-# Compilation
-
 StoffelLang source files (`.stfl`) compile to portable Stoffel bytecode files (`.stflb`). The current compiler lives in `crates/stoffel-lang`; the primary user-facing entry points are the `stoffel` CLI and Rust SDK.
 
 ## Pipeline
@@ -80,11 +78,10 @@ stoffel run src/main.stfl --input a=40 --input b=2
 stoffel run --program-info
 ```
 
-For local MPC runs, build `stoffel-run` and pass it if auto-discovery fails:
+For local MPC runs, use the CLI local execution path:
 
 ```bash
-cargo build -p stoffel-vm --bin stoffel-run
-stoffel run --runner $HOME/.cargo/bin/stoffel-run
+stoffel run
 ```
 
 ## Compiler source examples

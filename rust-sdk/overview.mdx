@@ -3,8 +3,6 @@ title: "Rust SDK Overview"
 description: "Primary 0.1.0 application API for compiling, loading, and running Stoffel programs from Rust."
 ---
 
-# Rust SDK Overview
-
 The Rust SDK is the primary application integration surface for Stoffel 0.1.0. It lives in the `stoffel` repository at `crates/stoffel-rust-sdk`.
 
 - Cargo package name: `stoffel-rust-sdk`
@@ -96,9 +94,7 @@ def add_private_values(a: Share, b: Share) -> int64:
         .await
     {
         Ok(result) => println!("Local MPC named-input result: {}", result[0]),
-        Err(stoffel::Error::Unsupported(message)) if message.contains("stoffel-run") => {
-            println!("Build stoffel-run first to execute local MPC: {message}");
-        }
+        Err(stoffel::Error::Unsupported(message)) => println!("Local MPC unavailable: {message}"),
         Err(error) => return Err(error),
     }
 
@@ -106,7 +102,7 @@ def add_private_values(a: Share, b: Share) -> int64:
 }
 ```
 
-The local MPC path uses the `stoffel-run` helper binary built from `crates/stoffel-vm`.
+The local MPC path is exposed through the SDK and the `stoffel` CLI workflows.
 
 ## Core APIs
 

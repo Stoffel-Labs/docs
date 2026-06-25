@@ -70,6 +70,16 @@
             ]
           },
           {
+            "group": "MPC Backends",
+            "pages": [
+              "mpc-protocols/overview",
+              "mpc-protocols/honeybadger-mpc",
+              "mpc-protocols/avss",
+              "mpc-protocols/implementation",
+              "architecture/mpc"
+            ]
+          },
+          {
             "group": "StoffelLang",
             "pages": [
               "stoffel-lang/overview",
@@ -153,22 +163,12 @@
         "tab": "Reference",
         "groups": [
           {
-            "group": "MPC Protocols",
-            "pages": [
-              "mpc-protocols/overview",
-              "mpc-protocols/honeybadger-mpc",
-              "mpc-protocols/avss",
-              "mpc-protocols/implementation"
-            ]
-          },
-          {
             "group": "Architecture",
             "pages": [
               "architecture/system",
               "architecture/rationale",
               "architecture/architecture",
               "architecture/vm",
-              "architecture/mpc",
               "architecture/sources"
             ]
           }

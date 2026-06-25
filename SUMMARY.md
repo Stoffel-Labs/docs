@@ -18,6 +18,13 @@
 - [Development Workflow](./cli/development.md)
 - [Building and Deployment](./cli/building.md)
 
+# MPC Backends
+- [Protocol Overview](./mpc-protocols/overview.md)
+- [HoneyBadgerMPC](./mpc-protocols/honeybadger-mpc.md)
+- [AVSS](./mpc-protocols/avss.md)
+- [Implementation Details](./mpc-protocols/implementation.md)
+- [MPC Integration](./architecture/mpc.md)
+
 # StoffelLang
 - [Language Overview](./stoffel-lang/overview.md)
 - [Syntax and Examples](./stoffel-lang/syntax.md)
@@ -48,18 +55,11 @@
 - [Access Control](./solidity-sdk/access-control.md)
 - [Input Manager](./solidity-sdk/input-manager.md)
 
-# MPC Protocols
-- [Protocol Overview](./mpc-protocols/overview.md)
-- [HoneyBadgerMPC](./mpc-protocols/honeybadger-mpc.md)
-- [AVSS](./mpc-protocols/avss.md)
-- [Implementation Details](./mpc-protocols/implementation.md)
-
 # Architecture
 - [System Architecture](./architecture/system.md)
 - [Design Rationale](./architecture/rationale.md)
 - [VM Technical Overview](./architecture/architecture.md)
 - [VM Architecture Details](./architecture/vm.md)
-- [MPC Integration](./architecture/mpc.md)
 - [Sources](./architecture/sources.md)
 
 # Development

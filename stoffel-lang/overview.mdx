@@ -5,14 +5,14 @@ description: "The current Stoffel language for clear local logic and MPC-aware c
 
 StoffelLang is the application language compiled by the `stoffellang` crate in the `stoffel` repository. It uses Python-like indentation, `def` functions, `var` bindings, static type annotations, lists, objects, closures, and explicit MPC share APIs.
 
-The Stoffel 0.1.0 language is practical and still evolving. Prefer examples from `crates/stoffel-lang/examples/` and the Rust SDK examples over syntax outside the documented 0.1.0 `def`/`var`/`.stflb` workflow.
+Prefer examples from `crates/stoffel-lang/examples/`, the generated project template, and the Rust SDK examples over older syntax outside the documented `def`/`var`/`.stflb` workflow.
 
 ## Design goals
 
 - Familiar Python-style control flow and indentation.
-- Static types with inference for local development ergonomics.
+- Static types with inference for local development ergonomics, including `secret T` annotations for share-typed private values.
 - Direct compilation to portable `.stflb` Stoffel VM bytecode.
-- Explicit share-oriented MPC APIs such as `Share.*`, `ClientStore.*`, `Mpc.*`, and `MpcOutput.*`.
+- Explicit share-oriented MPC APIs such as `Share.*`, `ClientStore.*`, `Mpc.*`, and `MpcOutput.*`, plus operator syntax for share arithmetic.
 - Host integration through the CLI and Rust SDK.
 
 ## A minimal program
@@ -54,9 +54,19 @@ Current primitive and runtime-facing types include:
 - `bool`
 - `string`
 - `None` / no-value returns
-- `Share` for MPC secret shares
+- `Share` and `secret T` types such as `secret int64` for MPC secret shares
 - `list[T]`
 - object and closure values used by the VM runtime
+
+The `secret` keyword is part of type annotations. Use it on parameters, return types, local variables, list elements, and object fields when a value is represented as an MPC share:
+
+```stoffel
+def weighted_score(raw: secret int64, weight: int64) -> secret int64:
+  var scaled: secret int64 = raw * weight
+  return scaled + 10
+```
+
+Do not put `secret` before `def` or `var`; write `var score: secret int64 = ...`, not `secret var score = ...`.
 
 ## Functions
 
@@ -126,20 +136,31 @@ def main() -> int64:
 
 ## MPC share APIs
 
-The 0.1.0 release models MPC values explicitly as `Share` values. Use `ClientStore` to read client-provided shares, `Share` methods/functions to compute, and `open()` or `MpcOutput.send_to_client` where your program intentionally reconstructs or delivers a result.
+StoffelLang models MPC values explicitly as share values. You can write those values with the generic `Share` type or with typed secret annotations such as `secret int64`, `secret bool`, or `secret fix64`. Use `ClientStore` to read client-provided shares, regular operators such as `+`, `-`, `*`, and `/` for arithmetic when they fit the value shape, and `reveal()`, `Share.open(...)`, or `MpcOutput.send_to_client` where your program intentionally reconstructs or delivers a result.
 
 ```stoffel
-def add_private_values(a: Share, b: Share) -> int64:
-  var sum = Share.add(a, b)
-  return sum.open()
+def add_private_values(a: secret int64, b: secret int64) -> int64:
+  var sum = a + b
+  return sum.reveal()
 ```
 
-Equivalent method-style calls are common in examples:
+Method-style calls are also available when you want to call a specific share builtin directly:
 
 ```stoffel
-def normalize(raw_score: Share) -> Share:
+def normalize(raw_score: secret int64) -> secret int64:
   var adjusted = raw_score.add_scalar(25)
-  return adjusted.mul_scalar(2)
+  return adjusted * 2
+```
+
+Boolean and fixed-point secret values use the same type-annotation pattern:
+
+```stoffel
+def gate(a: secret bool, b: secret bool) -> secret bool:
+  var not_a: secret bool = 1 - a
+  return not_a * b
+
+def half(value: secret fix64) -> secret fix64:
+  return value / 2.0
 ```
 
 ## ClientStore inputs
@@ -157,7 +178,7 @@ def main() -> int64:
 When running locally through the CLI, provide client-slot inputs with `--client-input`:
 
 ```bash
-stoffel run --local --client-input 0=42 --parties 5 --threshold 1
+stoffel run --client-input 0=42 --parties 5 --threshold 1
 ```
 
 With the Rust SDK, use `.with_client_input(0, &[42_i64])`.

@@ -2,7 +2,7 @@
 name: stoffel
 description: Build applications with Stoffel, a privacy-first MPC framework. Use these skills to create apps, write Stoffel-Lang, run local MPC, use the Rust SDK, generate typed client IO bindings, and troubleshoot app workflows.
 license: MIT
-compatibility: Requires Stoffel docs, Rust stable/Cargo for CLI and Rust SDK workflows, and a local `stoffel-run` binary for local MPC execution.
+compatibility: Requires Stoffel docs and Rust stable/Cargo for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -21,5 +21,6 @@ Stoffel exposes multiple focused skills under `.mintlify/skills/` and the `/.wel
 - `stoffel-local-mpc-dev-loop`: Run local MPC smoke tests, ClientStore input flows, hot reload, and SDK local coordinator-backed execution.
 - `stoffel-app-network-and-offchain-integration`: Move from local bytecode to client/server builders, network config, and off-chain coordinator integration.
 - `stoffel-app-troubleshooting`: Diagnose app-level init, check, build, run, local MPC, binding, SDK, and network failures with evidence.
+- `stoffel-ai-agent-implementation`: Give AI coding agents backend, input/output, validation, and cost-model context before they write Stoffel code.
 
 For human-readable versions, start at `/developer-skills/overview`.

@@ -3,7 +3,7 @@ title: "MPC Protocols"
 description: "Stoffel's MPC backend model, current HoneyBadgerMPC and AVSS support, and how to select a backend from the CLI or Rust SDK."
 ---
 
-Stoffel separates application code from the MPC protocol used to run it. Developer-facing tools call this an MPC backend. Product and marketing copy may call the same layer a privacy backend: it is the runtime protocol that turns secret values into distributed computation across MPC parties.
+Stoffel separates application code from the MPC protocol used to run it. The selected backend determines how secret values are shared, computed over, and reconstructed across MPC parties.
 
 Stoffel currently supports two asynchronous, robust MPC backend families:
 

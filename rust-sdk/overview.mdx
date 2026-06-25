@@ -22,7 +22,7 @@ The SDK gives Rust applications a single API for:
 - compiling Stoffel Lang source;
 - loading compiled `.stflb` bytecode;
 - running clear local checks;
-- running local MPC-style simulations;
+- running local MPC testing;
 - passing named function inputs;
 - passing ClientStore-style local client inputs;
 - saving, loading, and summarizing bytecode;
@@ -42,7 +42,7 @@ Stoffel::compile(...)
         │
         ├── build()                  runtime/program handle
         │
-        └── execute_local().await    local MPC-style run
+        └── execute_local().await    local MPC test run
 
 .stflb bytecode
         │
@@ -52,6 +52,21 @@ Stoffel::load(...) / Stoffel::load_file(...)
         ├── with_inputs(...)
         ├── with_client_input(...)
         └── execute_clear() / execute_local().await
+```
+
+For app integrations, a common flow is to build bytecode with the CLI and load that artifact from Rust:
+
+```bash
+stoffel build
+```
+
+```rust
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
 ```
 
 ## Clear local execution
@@ -71,7 +86,7 @@ fn main() -> stoffel::Result<()> {
 }
 ```
 
-## Local MPC-style execution
+## Local MPC execution
 
 Use local execution to test secret-value and MPC boundaries. The most reliable 0.1.0 smoke path uses `Share` inputs and opens only the intended output:
 
@@ -102,7 +117,7 @@ def add_private_values(a: Share, b: Share) -> int64:
 }
 ```
 
-The local MPC path is exposed through the SDK and the `stoffel` CLI workflows.
+The local MPC path is exposed through the SDK and the `stoffel` CLI workflows. It runs several MPC nodes/processes locally on the developer machine.
 
 ## Core APIs
 
@@ -129,8 +144,8 @@ Stoffel::load_file("target/debug/program.stflb")?
 
 ```rust
 .execute_clear()?                 // synchronous clear execution
-.execute_local().await            // async local MPC-style execution
-.execute_local_function("name")   // async local MPC-style named function execution
+.execute_local().await            // async local MPC execution
+.execute_local_function("name")   // async local MPC named-function execution
 ```
 
 ### MPC configuration

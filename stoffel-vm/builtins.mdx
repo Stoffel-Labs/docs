@@ -3,7 +3,7 @@ title: "Built-in Functions"
 description: "Current Stoffel VM standard and MPC builtin functions, including Share, ClientStore, Mpc, and MpcOutput APIs."
 ---
 
-Stoffel VM registers ordinary runtime builtins and MPC-focused module-style builtins. This page reflects the 0.1.0 release in the `stoffel` repository.
+Stoffel VM registers ordinary runtime builtins and MPC-focused module-style builtins. This page reflects the builtins exposed by the current `stoffel` repository.
 
 ## General runtime builtins
 
@@ -36,7 +36,7 @@ def main() -> int64:
 
 ## Share builtins
 
-`Share` values represent MPC secret shares. The VM registers these names on the 0.1.0 release:
+`Share` values represent MPC secret shares. The VM registers these Share builtins:
 
 ```text
 Share.from_clear
@@ -117,7 +117,7 @@ def main() -> int64:
 CLI local execution:
 
 ```bash
-stoffel run --local --client-input 0=42 --parties 5 --threshold 1
+stoffel run --client-input 0=42 --parties 5 --threshold 1
 ```
 
 Rust SDK local execution:
@@ -126,14 +126,12 @@ Rust SDK local execution:
 use stoffel::prelude::*;
 
 # async fn example() -> stoffel::Result<()> {
-let result = Stoffel::compile(
-    "def main() -> int64:\n  var share = ClientStore.take_share(0, 0)\n  return share.open()",
-)?
-.parties(5)
-.threshold(1)
-.with_client_input(0, &[42_i64])
-.execute_local()
-.await?;
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
 # Ok(())
 # }
 ```

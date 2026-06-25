@@ -1,165 +1,66 @@
 ---
 title: "API Reference"
-description: "Python SDK API reference for StoffelProgram compilation and StoffelClient MPC network communication."
+description: "Current Python SDK status and the supported CLI/Rust SDK alternatives."
 ---
 
 <Note>
-**Status: Python API design candidate**
-
-This page documents the target API design for the Python SDK. The API is subject to change as development progresses.
+Stoffel currently provides a Python project template, not a finalized Python SDK package API. Do not depend on design sketches such as `StoffelProgram`, `StoffelClient`, or `execute_with_inputs` as release APIs.
 </Note>
 
-## StoffelProgram
+## Supported Python-oriented workflow
 
-Handles StoffelLang compilation and VM operations.
+Use the CLI template to scaffold a Python project that contains a Stoffel program:
 
-```python
-class StoffelProgram:
-    def __init__(self, source_file: Optional[str] = None)
-
-    # Compilation
-    def compile(self, optimize: bool = True) -> str
-    def load_program(self) -> None
-
-    # Configuration
-    def set_execution_params(self, params: Dict[str, Any]) -> None
-    def get_computation_id(self) -> str
-    def get_program_info(self) -> Dict[str, Any]
-
-    # Local execution
-    def execute_locally(self, inputs: Dict[str, Any]) -> Any
+```bash
+stoffel init my-python-project --template python
+cd my-python-project
+stoffel check stoffel
+stoffel build stoffel
 ```
 
-### Usage Example
+Run the nested Stoffel program through the CLI:
 
-```python
-from stoffel import StoffelProgram
-
-program = StoffelProgram("my_program.stfl")
-program.compile(optimize=True)
-program.set_execution_params({
-    "computation_id": "my_computation",
-    "function_name": "main"
-})
-
-# Test locally
-result = program.execute_locally({"a": 10, "b": 20})
+```bash
+stoffel run stoffel --input a=40 --input b=2
+stoffel run stoffel --client-input 0=42 --parties 5 --threshold 1
 ```
 
-## StoffelClient
+Use the generated README and nested `Stoffel.toml` as the source of truth for the exact file names and inputs created by your installed CLI.
 
-Manages MPC network communication.
+## Executable application API
 
-```python
-class StoffelClient:
-    def __init__(self, network_config: Dict[str, Any])
+For applications that need to compile, load, or run Stoffel programs directly, use the Rust SDK:
 
-    # Primary API
-    async def execute_with_inputs(
-        self,
-        secret_inputs: Optional[Dict[str, Any]] = None,
-        public_inputs: Optional[Dict[str, Any]] = None
-    ) -> Any
+```rust
+use stoffel::prelude::*;
 
-    # Input management
-    def set_secret_input(self, name: str, value: Any) -> None
-    def set_public_input(self, name: str, value: Any) -> None
-    def set_inputs(
-        self,
-        secret_inputs: Optional[Dict[str, Any]] = None,
-        public_inputs: Optional[Dict[str, Any]] = None
-    ) -> None
-
-    # Connection management
-    async def connect(self) -> None
-    async def disconnect(self) -> None
-    def is_ready(self) -> bool
-    def get_connection_status(self) -> Dict[str, Any]
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
+# Ok(())
+# }
 ```
 
-### Usage Example
+A Python service can shell out to the CLI around a nested Stoffel project, or call a Rust service/library boundary that uses the Rust SDK.
 
-```python
-from stoffel import StoffelClient
+## Future Python package shape
 
-client = StoffelClient({
-    "nodes": ["http://node1:9000", "http://node2:9000"],
-    "client_id": "my_client",
-    "program_id": "my_computation"
-})
+A future Python package should mirror the same concepts as the CLI and Rust SDK:
 
-result = await client.execute_with_inputs(
-    secret_inputs={"private_value": 42},
-    public_inputs={"config": "standard"}
-)
+- loading `.stflb` bytecode;
+- passing named inputs and ClientStore slot inputs;
+- running local MPC development flows;
+- connecting to network configurations for deployed MPC nodes;
+- keeping private input boundaries explicit.
 
-await client.disconnect()
-```
+Until that package is finalized, treat Python API examples as design notes only.
 
-## Network Configuration
+## See also
 
-```python
-config = {
-    "nodes": [
-        "http://mpc-node1:9000",
-        "http://mpc-node2:9000",
-        "http://mpc-node3:9000"
-    ],
-    "client_id": "unique_client_id",
-    "program_id": "computation_identifier",
-    "coordinator_url": "http://coordinator:8080"  # Optional
-}
-```
-
-## Error Types
-
-```python
-from stoffel.errors import (
-    StoffelError,        # Base exception
-    CompilationError,    # StoffelLang compilation failures
-    RuntimeError,        # VM execution errors
-    NetworkError,        # Connection failures
-    MPCError,            # Protocol-level errors
-    ConfigurationError   # Invalid parameters
-)
-```
-
-## Low-Level VM Access (Advanced)
-
-For direct VM control:
-
-```python
-from stoffel.vm import VirtualMachine, StoffelValue
-
-vm = VirtualMachine()
-
-# Register custom functions
-def custom_op(a, b):
-    return a * b + 42
-
-vm.register_foreign_function("custom_op", custom_op)
-
-# Execute with typed arguments
-result = vm.execute_with_args("main", [
-    StoffelValue.integer(100),
-    StoffelValue.string("test")
-])
-```
-
-## Type Conversions
-
-| Python Type | StoffelLang Type |
-|-------------|------------------|
-| `int` | `int64` |
-| `float` | `float` (fixed-point) |
-| `str` | `string` |
-| `bool` | `bool` |
-| `None` | `nil` |
-| `list` | `array` |
-| `dict` | `object` |
-
-## See Also
-
-- **[Rust SDK API](../rust-sdk/api)**: Primary 0.1.0 API reference
-- **[SDK Overview](./overview)**: Architecture and design
-- **[Examples](./examples)**: Usage patterns
+- [Python SDK Overview](./overview)
+- [Rust SDK API](../rust-sdk/api)
+- [CLI Overview](../cli/overview)

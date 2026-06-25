@@ -81,7 +81,7 @@ def secure_sum(a: Share, b: Share) -> int64:
 stoffel init secure-demo
 stoffel check
 stoffel build
-stoffel run --local --parties 5 --threshold 1
+stoffel run --parties 5 --threshold 1
 ```
 
 ### 2. **Complete Ecosystem**
@@ -122,7 +122,7 @@ curve = "bls12-381"
 
 **Development Tools**
 - Hot-reloading development server
-- MPC simulation for local testing
+- Local MPC testing
 - Comprehensive debugging capabilities
 - Performance profiling and optimization
 
@@ -190,7 +190,7 @@ Bank consortium wants privacy-preserving fraud detection
 **With Stoffel**
 ```
 # Model the computation in StoffelLang
-# Test clear logic and local MPC-style execution
+# Test clear logic and local MPC testing
 # Integrate through Rust SDK deployment/config builders
 → Faster path from privacy requirement to validated prototype and deployment plan
 ```
@@ -245,7 +245,7 @@ Private voting system:
 **Workflow advantage**
 ```
 Setup:       CLI install and project creation
-Development: clear logic checks plus local MPC-style smoke tests
+Development: clear logic checks plus local MPC smoke tests
 Deployment:  explicit validation of protocol, SDK, infrastructure, and threat model
 Maintenance: versioned bytecode and documented 0.1.0 APIs
 ```
@@ -321,7 +321,7 @@ Stoffel: CLI, bytecode, VM, Rust SDK, and deployment/config builders for applica
 ## Getting Started Benefits
 
 **Day 1**: Install Stoffel and create a first project
-**Week 1**: Prototype clear and local MPC-style workflows
+**Week 1**: Prototype clear and local MPC workflows
 **Month 1**: Build an integration experiment with explicit shares, thresholds, openings, and deployment assumptions
 
 Compare this to traditional MPC development where Month 1 is typically spent just understanding the underlying cryptography!

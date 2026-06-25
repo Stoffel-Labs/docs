@@ -1,4 +1,83 @@
 ---
 title: "Development Workflow"
-description: "Development workflow for Stoffel applications including compilation, local execution, and MPC simulation."
+description: "Iterate on Stoffel programs with check, build, local MPC runs, watch mode, and Rust SDK app wrappers."
 ---
+
+Use the CLI for the edit/check/build/run loop, then use the Rust SDK when your application needs to call a Stoffel program from Rust.
+
+## Daily loop
+
+```bash
+stoffel check
+stoffel build
+stoffel run --client-input 0=42 --parties 5 --threshold 1
+```
+
+`stoffel check` validates source and MPC settings without writing bytecode. `stoffel build` writes `.stflb` bytecode. `stoffel run` executes the program through the local MPC test network unless you pass `--network` with a deployment config.
+
+## Watch mode
+
+Run once for scripts or CI:
+
+```bash
+stoffel dev --once --client-input 0=42 --parties 5 --threshold 1
+```
+
+Run continuously while editing:
+
+```bash
+stoffel dev --client-input 0=42 --parties 5 --threshold 1
+```
+
+`stoffel dev` watches `Stoffel.toml` and the configured `.stfl` sources, rebuilds, and reruns when files change. Tune file polling with `--poll-ms`.
+
+## Inputs
+
+Named function inputs use `--input`:
+
+```bash
+stoffel run --entry add --input a=40 --input b=2
+```
+
+ClientStore programs use client-slot inputs:
+
+```bash
+stoffel run --client-input 0=42 --expected-output-clients 1
+```
+
+In StoffelLang, `ClientStore.take_share(0, 0)` reads input index `0` from client slot `0`.
+
+## Rust app wrapper
+
+A practical Rust app flow is:
+
+1. Build the Stoffel program with the CLI.
+2. Load the produced `.stflb` artifact from Rust.
+3. Pass only the private portion of the request to Stoffel.
+4. Continue ordinary application logic with the returned output.
+
+```rust
+use stoffel::prelude::*;
+
+# async fn compute_private_score(private_score: i64) -> stoffel::Result<i64> {
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[private_score])
+    .execute_local()
+    .await?;
+
+result[0]
+    .as_i64()
+    .ok_or_else(|| Error::InvalidInput("expected int64 output".into()))
+# }
+```
+
+## Debugging commands
+
+```bash
+stoffel check --print-ir
+stoffel compile --disassemble target/debug/hello-mpc.stflb
+stoffel run --program-info
+stoffel status --verbose
+```

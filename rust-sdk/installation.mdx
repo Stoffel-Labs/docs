@@ -77,46 +77,30 @@ Result: 100
 
 ## Verify local MPC execution
 
-Use an async main with `Share` inputs:
+For an app-shaped local MPC check, build your Stoffel project first and load the bytecode from Rust:
+
+```bash
+stoffel build
+```
 
 ```rust
 use stoffel::prelude::*;
 
 #[tokio::main]
 async fn main() -> stoffel::Result<()> {
-    let source = r#"
-def add_private_values(a: Share, b: Share) -> int64:
-  var sum = Share.add(a, b)
-  return sum.open()
-"#;
-
-    match Stoffel::compile(source)?
+    let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
         .parties(5)
         .threshold(1)
-        .with_inputs(&[("a", 42_i64), ("b", 58_i64)])
-        .execute_local_function("add_private_values")
-        .await
-    {
-        Ok(result) => println!("Local MPC named-input result: {}", result[0]),
-        Err(stoffel::Error::Unsupported(message)) => println!("Local MPC unavailable: {message}"),
-        Err(error) => return Err(error),
-    }
+        .with_client_input(0, &[42_i64])
+        .execute_local()
+        .await?;
 
+    println!("Local MPC result: {}", result[0]);
     Ok(())
 }
 ```
 
-Run it:
-
-```bash
-cargo run
-```
-
-Expected output:
-
-```text
-Local MPC named-input result: 100
-```
+`.execute_local().await?` runs local MPC testing by spawning several MPC nodes/processes on your machine.
 
 ## Current SDK surface
 
@@ -127,7 +111,7 @@ The SDK currently includes:
 - `with_inputs(&[(name, value)])` for named function inputs.
 - `with_client_input(slot, &[values])` for ClientStore-style local MPC programs.
 - `execute_clear()` for fast local logic checks.
-- `execute_local().await` and `execute_local_function(name).await` for local MPC-style execution.
+- `execute_local().await` and `execute_local_function(name).await` for local MPC execution.
 - `parties(n)` and `threshold(t)` MPC configuration.
 - bytecode save/load and summary helpers.
 - network deployment/config builders for multi-node experiments.

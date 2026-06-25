@@ -1,4 +1,80 @@
 ---
 title: "Project Management"
-description: "Create and manage Stoffel projects using the CLI with templates for Python, Rust, TypeScript, and Solidity integration."
+description: "Create and manage Stoffel projects with CLI templates, manifests, build artifacts, and cleanup commands."
 ---
+
+Create projects with `stoffel init`, edit `src/main.stfl`, and keep project settings in `Stoffel.toml`.
+
+## Create a project
+
+```bash
+stoffel init hello-mpc
+cd hello-mpc
+```
+
+Useful template options:
+
+```bash
+stoffel init hello-mpc
+stoffel init my-lib --lib
+stoffel init rust-app --template rust
+stoffel init py-app --template python
+stoffel init contract-app --template solidity-foundry
+stoffel init hardhat-app --template solidity-hardhat
+```
+
+Use `--force` only when you intentionally want to write template files into an existing directory.
+
+## Default layout
+
+```text
+hello-mpc/
+├── Cargo.toml
+├── README.md
+├── Stoffel.toml
+└── src/
+    ├── main.rs
+    ├── main.stfl
+    └── stoffel_bindings.rs
+```
+
+`src/main.stfl` is the private computation. `src/main.rs` is the Rust wrapper for app-side execution. `stoffel_bindings.rs` contains generated program metadata used by Rust code.
+
+## Manifest
+
+```toml
+[package]
+name = "hello-mpc"
+version = "0.1.0"
+
+[mpc]
+backend = "honeybadger"
+parties = 5
+threshold = 1
+
+[build]
+source = "src/main.stfl"
+target_dir = "target"
+```
+
+Use CLI flags such as `--parties`, `--threshold`, `--backend`, and `--field` to override these settings for a single command.
+
+## Build artifacts
+
+```bash
+stoffel build
+stoffel build --release
+stoffel clean
+```
+
+Debug artifacts are written under `target/debug/`; release artifacts under `target/release/`. Compiled programs use the `.stflb` extension.
+
+## Project health
+
+```bash
+stoffel status
+stoffel status --verbose
+stoffel update --check
+```
+
+Use `status` to confirm the CLI can find project files, source files, and build output.

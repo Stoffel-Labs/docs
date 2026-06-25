@@ -1,6 +1,6 @@
 ---
 title: "Compilation"
-description: "How StoffelLang source is validated, compiled, optimized, disassembled, and executed on the 0.1.0 release."
+description: "How StoffelLang source is validated, compiled, optimized, disassembled, and executed in current Stoffel programs."
 ---
 
 StoffelLang source files (`.stfl`) compile to portable Stoffel bytecode files (`.stflb`). The current compiler lives in `crates/stoffel-lang`; the primary user-facing entry points are the `stoffel` CLI and Rust SDK.
@@ -78,10 +78,10 @@ stoffel run src/main.stfl --input a=40 --input b=2
 stoffel run --program-info
 ```
 
-For local MPC runs, use the CLI local execution path:
+For local MPC runs, use the CLI local MPC path and provide any required client-slot inputs:
 
 ```bash
-stoffel run
+stoffel run --client-input 0=42 --parties 5 --threshold 1
 ```
 
 ## Compiler source examples
@@ -98,9 +98,21 @@ crates/stoffel-lang/examples/mpc_runtime_info/main.stfl
 
 ## Common errors
 
+### `secret` placement
+
+Use `secret` inside type annotations for share values:
+
+```stoffel
+def compute(x: secret int64) -> secret int64:
+  var doubled: secret int64 = x * 2
+  return doubled
+```
+
+Do not use `secret` as a declaration modifier before `def` or `var`. The accepted form is `var x: secret int64 = ...`, not `secret var x = ...`.
+
 ### Secret control flow
 
-Do not branch on secret values. Open only the output you intend to reveal, or keep values as `Share` and send them to a client output path.
+Do not branch on secret values. Reveal/open only the output you intend to disclose, or keep values as `Share` / `secret T` and send them to a client output path.
 
 ## See also
 

@@ -1,4 +1,77 @@
 ---
 title: "Building and Deployment"
-description: "Build optimized release binaries and deploy Stoffel applications to MPC networks and cloud environments."
+description: "Build Stoffel bytecode, inspect artifacts, and prepare local or network execution workflows."
 ---
+
+The `stoffel` CLI builds `.stflb` bytecode from StoffelLang source. A built artifact can be run by the CLI, loaded from the Rust SDK, or used as the program artifact for a network deployment.
+
+## Build project bytecode
+
+From a Stoffel project directory:
+
+```bash
+stoffel check
+stoffel build
+```
+
+`stoffel build` reads `Stoffel.toml` and writes bytecode under `target/debug/` by default. Release builds write under `target/release/`:
+
+```bash
+stoffel build --release
+```
+
+## Compile a single source file
+
+Use `stoffel compile` when you want to select a source file and output path directly:
+
+```bash
+stoffel compile src/main.stfl --output target/debug/main.stflb
+stoffel compile src/main.stfl -O3 --output target/release/main.stflb
+```
+
+Use `--output` only when one source file is selected. Project builds should generally use `stoffel build`.
+
+## Optimization and MPC settings
+
+Useful build flags:
+
+```bash
+stoffel build --optimize
+stoffel build --release
+stoffel build --backend honeybadger --field bls12-381 --parties 5 --threshold 1
+```
+
+`--optimize` selects O2 unless `--release` selects O3. `--parties` and `--threshold` describe the local MPC topology encoded in the compiled program metadata. For HoneyBadger-style settings, use `parties >= 3 * threshold + 1`; five parties and threshold one is the common local default.
+
+## Inspect bytecode
+
+Disassemble a built program before debugging runtime behavior:
+
+```bash
+stoffel compile --disassemble target/debug/hello-mpc.stflb
+stoffel run --program-info
+```
+
+## Use built bytecode from Rust
+
+After `stoffel build`, application code can load the exact artifact that the CLI produced:
+
+```rust
+use stoffel::prelude::*;
+
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
+# Ok(())
+# }
+```
+
+This keeps the application wrapper aligned with the Stoffel program that was checked and built by the CLI.
+
+## Deployment handoff
+
+For local development, use `stoffel run`, `stoffel dev`, or SDK `.execute_local().await?`; these surfaces run a local MPC test network on your machine. For deployed systems, the MPC nodes run separately from input/output clients, and application clients connect using the network configuration for that deployment.

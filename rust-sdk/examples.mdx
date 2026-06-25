@@ -16,7 +16,7 @@ cargo run -p stoffel-rust-sdk --example local_mpc_client_input
 
 ## Clear local execution
 
-Use clear execution for fast logic checks before moving to MPC-style runs.
+Use clear execution for fast logic checks before moving to local MPC runs.
 
 ```rust
 use stoffel::prelude::*;
@@ -67,7 +67,7 @@ async fn main() -> stoffel::Result<()> {
 }
 ```
 
-Current 0.1.0 `dev` status: use the `Share` and `ClientStore` examples below as the recommended local MPC smoke tests. They exercise the local coordinator path reliably on the current repository branch.
+Use the `Share` and `ClientStore` examples below as local MPC smoke tests. They exercise explicit private inputs and deliberate reveal points.
 
 ## Named `Share` inputs
 

@@ -91,8 +91,6 @@ stoffel compile src/main.stfl --output target/debug/main.stflb
 stoffel compile --disassemble target/debug/main.stflb
 ```
 
-The 0.1.0 CLI writes `.stflb` bytecode.
-
 ## Embedding through the Rust SDK
 
 The recommended application API is the Rust SDK:
@@ -110,23 +108,23 @@ fn main() -> stoffel::Result<()> {
 }
 ```
 
-Local MPC execution uses the same builder:
+Local MPC execution from an application wrapper should normally load the bytecode built by the CLI:
 
 ```rust
 use stoffel::prelude::*;
 
 # async fn example() -> stoffel::Result<()> {
-let result = Stoffel::compile(
-    "def main() -> int64:\n  var share = ClientStore.take_share(0, 0)\n  return share.open()",
-)?
-.parties(5)
-.threshold(1)
-.with_client_input(0, &[42_i64])
-.execute_local()
-.await?;
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
 # Ok(())
 # }
 ```
+
+`.execute_local().await?` runs a local MPC test network on the developer machine. In deployment, MPC nodes run separately from input/output clients.
 
 ## Lower-level embedding
 
@@ -165,9 +163,9 @@ fn main() -> Result<(), String> {
 }
 ```
 
-## 0.1.0 status
+## Status
 
-The VM, compiler, CLI, and Rust SDK support local examples, template projects, `.stflb` inspection, and local MPC smoke tests. For 0.1.0, Rust SDK-first workflows are the documented application path; network and on-chain deployment flows are integration surfaces that should be validated against your application requirements.
+The VM, compiler, CLI, and Rust SDK support local examples, template projects, `.stflb` inspection, and local MPC smoke tests. Use the CLI and Rust SDK for application workflows; use direct VM construction for VM tests, bytecode tooling, or maintainer-level integrations.
 
 ## See also
 

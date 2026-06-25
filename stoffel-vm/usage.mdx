@@ -1,47 +1,35 @@
 ---
 title: "VM Usage"
-description: "How to run Stoffel VM bytecode through the 0.1.0 CLI and Rust SDK."
+description: "Run Stoffel VM bytecode through the CLI and Rust SDK without dropping into low-level VM internals."
 ---
 
-Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK. The CLI includes the local development workflow needed to run MPC on your machine.
+Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK. These surfaces compile/load `.stflb` bytecode and run it through clear checks, local MPC testing, or configured network execution.
 
 ## Compile bytecode
 
-The current bytecode extension is `.stflb`:
-
 ```bash
+stoffel build
 stoffel compile src/main.stfl --output target/debug/main.stflb
 stoffel compile --disassemble target/debug/main.stflb
 ```
 
-For project workflows, prefer:
-
-```bash
-stoffel build
-stoffel run
-```
+`stoffel build` is preferred for project workflows because it reads `Stoffel.toml` and writes under `target/debug/` or `target/release/`.
 
 ## Run through the CLI
 
 ```bash
+stoffel run
 stoffel run target/debug/main.stflb --entry main
 stoffel run src/main.stfl --input a=40 --input b=2
 stoffel run --program-info
 ```
 
-`stoffel run` defaults to local execution unless `--network` or `--config` is provided:
-
-```bash
-stoffel run \
-  --parties 5 \
-  --threshold 1
-```
+`stoffel run` uses the local MPC test network unless you pass `--network` and `--config`.
 
 For `ClientStore.take_share` programs, provide client-slot inputs:
 
 ```bash
 stoffel run \
-  --local \
   --client-input 0=42 \
   --expected-output-clients 1 \
   --parties 5 \
@@ -51,20 +39,13 @@ stoffel run \
 ## Watch mode
 
 ```bash
-stoffel dev \
-  --parties 5 \
-  --threshold 1
-```
-
-Use one-shot mode for scripts:
-
-```bash
-stoffel dev --once
+stoffel dev --client-input 0=42 --parties 5 --threshold 1
+stoffel dev --once --client-input 0=42 --parties 5 --threshold 1
 ```
 
 ## Run through the Rust SDK
 
-Clear local execution:
+Clear local execution is useful for ordinary logic checks:
 
 ```rust
 use stoffel::prelude::*;
@@ -79,27 +60,25 @@ fn main() -> stoffel::Result<()> {
 }
 ```
 
-Local MPC execution:
+For local MPC testing from an app wrapper, load the bytecode that the CLI built:
 
 ```rust
 use stoffel::prelude::*;
 
 # async fn example() -> stoffel::Result<()> {
-let result = Stoffel::compile(
-    "def main() -> int64:\n  var share = ClientStore.take_share(0, 0)\n  return share.open()",
-)?
-.parties(5)
-.threshold(1)
-.with_client_input(0, &[42_i64])
-.execute_local()
-.await?;
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
 # Ok(())
 # }
 ```
 
-## Debugging
+`.execute_local().await?` runs local MPC testing by spawning several MPC nodes/processes on your machine.
 
-Useful CLI-level debugging commands:
+## Debugging
 
 ```bash
 stoffel check --print-ir

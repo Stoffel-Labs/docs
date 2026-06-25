@@ -156,6 +156,8 @@
             "group": "MPC Protocols",
             "pages": [
               "mpc-protocols/overview",
+              "mpc-protocols/honeybadger-mpc",
+              "mpc-protocols/avss",
               "mpc-protocols/implementation"
             ]
           },

@@ -1,475 +1,192 @@
 ---
-title: "Implementation Details"
-description: "Technical details of HoneyBadger MPC implementation including message formats, state machines, and Rust SDK integration."
+title: "Protocol Implementation Notes"
+description: "How Stoffel carries MPC backend selection through bytecode, the VM, local runs, and SDK network/client configuration."
 ---
 
-This page provides technical details about the HoneyBadger MPC protocol implementation in Stoffel, including message formats, state machines, and integration points.
+Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers. This page explains that integration boundary. For the developer-facing protocol differences, start with [MPC Protocols](./overview).
 
-## Architecture
+## End-to-end path
 
-### Component Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Stoffel Application                     │
-├─────────────────────────────────────────────────────────────┤
-│                        Rust SDK                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │ StoffelClient│  │StoffelServer │  │  StoffelNode │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-├─────────────────────────────────────────────────────────────┤
-│                    mpc-protocols Crate                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │ HoneyBadger  │  │   TripleGen  │  │    Shamir    │       │
-│  │   Engine     │  │ Preprocessor │  │    Shares    │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-├─────────────────────────────────────────────────────────────┤
-│                    QUIC Transport Layer                      │
-│  ┌──────────────────────────────────────────────────┐       │
-│  │              quinn + rustls (TLS 1.3)            │       │
-│  └──────────────────────────────────────────────────┘       │
-└─────────────────────────────────────────────────────────────┘
+```text
+Stoffel.toml / CLI flags / Rust SDK builder
+        │
+        ▼
+Compiler options
+        │
+        ▼
+.stflb bytecode manifest
+        │
+        ├── VM local execution
+        ├── SDK local MPC test network
+        └── SDK network/off-chain client configuration
 ```
 
-### HoneyBadger Engine
+The important invariant is that the compiled bytecode and the runtime agree on:
 
-The core MPC engine (`HoneyBadgerMpcEngine`) manages:
+- backend: HoneyBadgerMPC or AVSS;
+- curve/field where applicable;
+- parties and threshold;
+- client input/output schemas;
+- preprocessing demand for operations such as multiplication and randomness.
 
-- Secret share distribution
-- Protocol message routing
-- Beaver triple consumption
-- Result reconstruction
+## Backend selectors
+
+At the SDK level, backend selection is represented as:
 
 ```rust
-pub struct HoneyBadgerMpcEngine {
-    party_id: PartyId,
-    n_parties: usize,
-    threshold: usize,
-    instance_id: u64,
-    preprocessing: PreprocessingMaterial,
-    network: Box<dyn NetworkTransport>,
-}
+MpcBackend::HoneyBadger
+MpcBackend::Avss { curve: Curve::Bls12_381 /* or another Curve */ }
 ```
 
-## Message Protocol
+At the CLI/config level, the accepted string selectors are:
 
-### Wire Format
+```text
+honeybadger
+avss
+avss:bls12_381
+avss:bn254
+avss:curve25519
+avss:ed25519
+avss:secp256k1
+avss:p-256
+```
 
-Messages are serialized using `bincode` for efficient binary encoding:
+`--field` / `curve = "..."` sets the AVSS curve. HoneyBadgerMPC does not take a curve selector in the SDK config; it uses the field configuration expected by the HoneyBadger path.
+
+## Current config validation
+
+Stoffel validates local and network MPC topology with:
+
+```text
+parties >= 4 * threshold + 1
+parties >= 5
+threshold > 0
+```
+
+This is the rule developers should use for project config, local runs, and network config. It is stricter than the baseline `3t + 1` threshold often used to introduce asynchronous Byzantine protocols because Stoffel's current end-to-end path includes preprocessing and robust execution requirements.
+
+SDK summaries also expose the minimum reconstruction shares:
+
+| Backend | Reported reconstruction threshold |
+| --- | --- |
+| HoneyBadgerMPC | `2 * threshold + 1` |
+| AVSS | `threshold + 1` |
+
+## Bytecode manifest
+
+The `.stflb` manifest stores backend metadata so a runtime can reject mismatched execution settings early.
+
+```text
+CompiledBinary
+└── ClientIoManifest
+    ├── mpc_backend: HoneyBadger | Avss
+    ├── mpc_curve: Bls12_381 | Bn254 | Curve25519 | Ed25519 | Secp256k1 | Secp256r1
+    ├── clients: input/output share schemas
+    └── preprocessing_demand
+```
+
+StoffelLang compilation writes this metadata from compiler options. The CLI and SDK set those options from project config or builder overrides.
+
+## Local MPC execution
+
+`stoffel run`, `stoffel dev`, and SDK `.execute_local().await?` run the compiled program against a local MPC test network on the developer machine.
+
+The local runner receives:
+
+- the compiled program;
+- entrypoint name;
+- backend kind;
+- curve config;
+- parties and threshold;
+- ClientStore inputs and expected output-client metadata.
+
+This lets the same source program be checked against HoneyBadgerMPC or AVSS by changing backend configuration instead of changing application code.
+
+## Network and off-chain client execution
+
+The Rust SDK can generate network deployment configs and build client/server handles. Backend selection is part of those configs:
 
 ```rust
-#[derive(Serialize, Deserialize)]
-pub enum MPCaaSMessage {
-    /// Server sends configuration to client after connection
-    ServerInfo {
-        n_parties: usize,
-        threshold: usize,
-        instance_id: u64,
-        party_id: PartyId,
-    },
-
-    /// Client announces readiness with input count
-    ClientReady {
-        client_id: ClientId,
-        num_inputs: usize,
-    },
-
-    /// Coordinate computation start across servers
-    ComputationTrigger {
-        session_id: SessionId,
-    },
-
-    /// Signal computation completion
-    ComputationComplete,
-}
+# use stoffel::prelude::*;
+# fn example() -> stoffel::Result<()> {
+let deployment = NetworkDeployment::builder([
+    "127.0.0.1:19200",
+    "127.0.0.1:19201",
+    "127.0.0.1:19202",
+    "127.0.0.1:19203",
+    "127.0.0.1:19204",
+])
+.expected_clients(1)
+.threshold(1)
+.backend(MpcBackend::HoneyBadger)
+.preprocessing(1000, 500)
+.build()?;
+# Ok(())
+# }
 ```
 
-### NetEnvelope Wrapper
-
-All network messages are wrapped in a `NetEnvelope`:
+AVSS can be selected in the same builder:
 
 ```rust
-#[derive(Serialize, Deserialize)]
-pub enum NetEnvelope {
-    /// HoneyBadger protocol messages
-    HoneyBadger(HoneyBadgerMessage),
-
-    /// Signaling/coordination messages
-    Signaling(SignalingMessage),
-
-    /// Client-server MPCaaS messages
-    MPCaaS(MPCaaSMessage),
-}
+# use stoffel::prelude::*;
+# fn example() -> stoffel::Result<()> {
+let deployment = NetworkDeployment::builder([
+    "127.0.0.1:19200",
+    "127.0.0.1:19201",
+    "127.0.0.1:19202",
+    "127.0.0.1:19203",
+    "127.0.0.1:19204",
+])
+.expected_clients(1)
+.threshold(1)
+.backend(MpcBackend::Avss { curve: Curve::Bls12_381 })
+.preprocessing(1000, 500)
+.build()?;
+# Ok(())
+# }
 ```
 
-### Message Flow
+The current SDK off-chain client I/O path supports HoneyBadgerMPC and AVSS over `bls12_381`. Other AVSS curves are still selectable for bytecode/runtime paths and curve-aware StoffelLang protocol examples; validate the specific client/network path you plan to use.
 
-```
-Client                    Server 1                  Server 2
-   │                          │                          │
-   │──── Connect ────────────>│                          │
-   │<─── ServerInfo ──────────│                          │
-   │                          │                          │
-   │──── ClientReady ────────>│                          │
-   │                          │                          │
-   │──── InputShares ────────>│                          │
-   │                          │                          │
-   │                          │<── HoneyBadger ─────────>│
-   │                          │    (peer protocol)       │
-   │                          │                          │
-   │<─── ComputationComplete ─│                          │
-   │<─── OutputShares ────────│                          │
-```
+## VM boundary
 
-## State Machines
+The VM does not expose different application syntax for each backend. Secret-register operations and builtins yield backend-specific work through the MPC runtime:
 
-### Server State Machine
+| VM operation | Backend effect |
+| --- | --- |
+| clear-to-secret input | Creates backend share data. |
+| secret multiplication | Uses backend multiplication/preprocessing path. |
+| opening/reveal | Reconstructs according to backend share type. |
+| `Share.random` / `Share.random_int` | Produces backend random share data. |
+| `Share.get_commitment` | Returns commitment bytes when the backend share carries commitments. |
+| `Avss.*` helpers | Inspect AVSS share metadata and commitments. |
 
-```rust
-pub enum ServerState {
-    /// Just created, not yet started
-    Initialized,
+This separation lets developers write StoffelLang around `secret T`, `Share`, `ClientStore`, `Mpc`, and `MpcOutput` while selecting the backend in config.
 
-    /// Binding to network port
-    Starting,
+## Backend-specific notes
 
-    /// Establishing peer mesh connections
-    ConnectingPeers,
+### HoneyBadgerMPC
 
-    /// Generating preprocessing material
-    Preprocessing,
+HoneyBadgerMPC share data is field-oriented and supports the general arithmetic path. Its local/network execution path uses robust field-share reconstruction and preprocessing for multiplication-heavy workloads.
 
-    /// Ready to accept client connections
-    Ready,
+### AVSS
 
-    /// Actively computing on client inputs
-    Computing,
+AVSS share data can carry Feldman commitment material. StoffelLang exposes `AvssShare` helpers and `Share.get_commitment(...)` for commitment-oriented workflows such as threshold cryptography. Curve selection matters because scalar-field and group encodings must match the cryptographic protocol being built.
 
-    /// Graceful shutdown in progress
-    ShuttingDown,
-}
-```
+## Troubleshooting
 
-**State transitions:**
+| Symptom | Check |
+| --- | --- |
+| Config says the threshold is invalid | Confirm `parties >= 4 * threshold + 1` and `parties >= 5`. |
+| HoneyBadger rejects a curve selector | Use `backend = "honeybadger"` without a curve, or switch to AVSS for curve workflows. |
+| AVSS client I/O fails on a non-BLS curve | The current SDK off-chain client I/O path supports AVSS over `bls12_381`; test other curves through supported local/runtime paths. |
+| Runtime backend mismatch | Rebuild `.stflb` after changing `[mpc]` config or pass matching SDK/CLI backend overrides. |
+| Multiplication exhausts preprocessing | Increase preprocessing in network config or reduce secret multiplications. |
 
-```
-Initialized
-     │
-     ▼ start()
-Starting
-     │
-     ▼ bind successful
-ConnectingPeers
-     │
-     ▼ all peers connected
-Preprocessing
-     │
-     ▼ triples generated
-Ready ◄────────────────┐
-     │                 │
-     ▼ client input    │
-Computing              │
-     │                 │
-     ▼ result sent     │
-     └─────────────────┘
-```
+## See also
 
-### Client State Machine
-
-```rust
-pub enum ClientState {
-    /// Connected to servers, ready to submit
-    Connected,
-
-    /// Currently sending input shares
-    Submitting,
-
-    /// Waiting for computation result
-    Computing,
-
-    /// Session ended
-    Disconnected,
-}
-```
-
-## Preprocessing Implementation
-
-### TripleGen Protocol
-
-Beaver triple generation uses a specialized protocol with stricter requirements:
-
-```rust
-pub struct TripleGenConfig {
-    n_parties: usize,
-    threshold: usize,  // Must satisfy: n >= 4t + 1
-    n_triples: usize,
-    n_random_shares: usize,
-}
-```
-
-**Triple generation phases:**
-
-1. **Random polynomial generation**: Each party generates random degree-t polynomials
-2. **Share exchange**: Parties exchange evaluations at their indices
-3. **Triple computation**: Compute `c = a * b` using Beaver's protocol
-4. **Verification**: Zero-knowledge proofs ensure correctness
-
-### Preprocessing Material
-
-```rust
-pub struct PreprocessingMaterial {
-    /// Beaver triples: (a, b, c) where c = a*b
-    triples: Vec<BeaverTriple>,
-
-    /// Random secret-shared values
-    random_shares: Vec<Share>,
-
-    /// Current consumption indices
-    triple_index: usize,
-    random_index: usize,
-}
-
-pub struct BeaverTriple {
-    a: Share,
-    b: Share,
-    c: Share,  // c = a * b
-}
-```
-
-## Secure Multiplication
-
-### Beaver Triple Protocol
-
-When multiplying secret values `[x]` and `[y]`:
-
-```rust
-fn secure_multiply(x: Share, y: Share, triple: BeaverTriple) -> Share {
-    let (a, b, c) = triple;
-
-    // 1. Compute masked values
-    let d = x - a;  // Local subtraction
-    let e = y - b;  // Local subtraction
-
-    // 2. Open masked values (requires communication)
-    let d_open = reconstruct(d);
-    let e_open = reconstruct(e);
-
-    // 3. Compute result locally
-    // z = xy = (d+a)(e+b) = de + db + ea + ab
-    //        = de + d*[b] + e*[a] + [c]
-    let z = d_open * e_open + d_open * b + e_open * a + c;
-
-    z
-}
-```
-
-**Security**: `d` and `e` are uniformly random (masked by `a` and `b`), revealing nothing about `x` or `y`.
-
-## Share Representation
-
-### Shamir Share Structure
-
-```rust
-pub struct Share {
-    /// The share value in the finite field
-    value: FieldElement,
-
-    /// The evaluation point (party index)
-    index: PartyIndex,
-
-    /// Degree of the sharing polynomial
-    degree: usize,
-}
-```
-
-### Field Operations
-
-All operations are performed in a finite field:
-
-```rust
-impl Share {
-    /// Local addition (no communication)
-    fn add(&self, other: &Share) -> Share {
-        Share {
-            value: self.value + other.value,
-            index: self.index,
-            degree: max(self.degree, other.degree),
-        }
-    }
-
-    /// Scalar multiplication (no communication)
-    fn scalar_mul(&self, scalar: FieldElement) -> Share {
-        Share {
-            value: self.value * scalar,
-            index: self.index,
-            degree: self.degree,
-        }
-    }
-}
-```
-
-## Network Transport
-
-### QUIC Implementation
-
-```rust
-pub trait NetworkTransport: Send + Sync {
-    /// Send message to specific party
-    async fn send(&self, party: PartyId, message: NetEnvelope) -> Result<()>;
-
-    /// Receive next message from any party
-    async fn receive(&self) -> Result<(PartyId, NetEnvelope)>;
-
-    /// Broadcast message to all parties
-    async fn broadcast(&self, message: NetEnvelope) -> Result<()>;
-}
-```
-
-### Connection Management
-
-```rust
-pub struct QuicNetworkManager {
-    /// Our party's endpoint
-    endpoint: Endpoint,
-
-    /// Connections to all other parties
-    connections: DashMap<PartyId, Connection>,
-
-    /// Stream multiplexing
-    streams: DashMap<StreamId, BiStream>,
-}
-```
-
-**Connection establishment:**
-
-```rust
-// Server side: accept incoming connections
-async fn accept_connection(&self) -> Result<Connection> {
-    let incoming = self.endpoint.accept().await?;
-    let connection = incoming.await?;
-    Ok(connection)
-}
-
-// Client side: connect to peer
-async fn connect_to_peer(&self, addr: SocketAddr) -> Result<Connection> {
-    let connection = self.endpoint.connect(addr, "peer")?.await?;
-    Ok(connection)
-}
-```
-
-## Synchronization Requirements
-
-### Critical Parameters
-
-All servers in an MPC cluster must agree on:
-
-| Parameter | Description | Consequence of Mismatch |
-|-----------|-------------|------------------------|
-| `instance_id` | Unique computation identifier | Parties won't recognize each other |
-| `n_parties` | Number of compute nodes | Protocol messages misrouted |
-| `threshold` | Byzantine fault tolerance | Security guarantees violated |
-| `preprocessing_start_epoch` | Unix timestamp for sync | Preprocessing fails |
-
-### Synchronization Protocol
-
-```rust
-// All servers must use identical values
-let config = MPCConfig {
-    instance_id: 12345,  // Same across all
-    n_parties: 5,        // Same across all
-    threshold: 1,        // Same across all
-
-    // Must be synchronized to wall clock
-    preprocessing_start_epoch: SystemTime::now()
-        .duration_since(UNIX_EPOCH)?
-        .as_secs() + 20,  // 20 seconds in future
-};
-```
-
-## FFI Exports
-
-The MPC engine exports C-compatible functions for language bindings:
-
-```c
-// From stoffel-vm cffi.rs
-HoneyBadgerMpcEngine* honeybadger_engine_new(
-    uint8_t party_id,
-    size_t n_parties,
-    size_t threshold,
-    uint64_t instance_id
-);
-
-int honeybadger_engine_add_share(
-    HoneyBadgerMpcEngine* engine,
-    const uint8_t* share_data,
-    size_t share_len
-);
-
-int honeybadger_engine_compute(
-    HoneyBadgerMpcEngine* engine,
-    uint8_t** result_data,
-    size_t* result_len
-);
-
-void honeybadger_engine_free(HoneyBadgerMpcEngine* engine);
-```
-
-## Error Handling
-
-### Error Categories
-
-```rust
-pub enum MPCError {
-    /// Network communication failure
-    NetworkError(String),
-
-    /// Preprocessing material exhausted
-    PreprocessingExhausted,
-
-    /// Protocol violation detected
-    ProtocolViolation(String),
-
-    /// Threshold exceeded (too many failures)
-    ThresholdExceeded,
-
-    /// Configuration mismatch between parties
-    ConfigurationMismatch(String),
-
-    /// Timeout waiting for peers
-    Timeout,
-}
-```
-
-### Recovery Strategies
-
-| Error | Recovery |
-|-------|----------|
-| `NetworkError` | Retry with exponential backoff |
-| `PreprocessingExhausted` | Generate more triples, restart |
-| `ProtocolViolation` | Identify malicious party, exclude |
-| `ThresholdExceeded` | Cannot recover, abort computation |
-| `Timeout` | Increase timeout, check connectivity |
-
-## Performance Characteristics
-
-### Communication Complexity
-
-| Operation | Messages | Rounds |
-|-----------|----------|--------|
-| Addition | 0 | 0 (local) |
-| Multiplication | O(n) | 1 |
-| Comparison | O(n log n) | O(log n) |
-| Reconstruction | O(n) | 1 |
-
-### Latency Factors
-
-1. **Network RTT**: Dominates for small computations
-2. **Triple generation**: Pre-computed, amortized
-3. **Reconstruction**: Requires threshold+1 responses
-4. **Computation**: Linear in program complexity
-
-## Next Steps
-
-- [Protocol Overview](./overview): High-level protocol concepts
-- [Rust SDK API](../rust-sdk/api): Use these protocols in applications
-- [Solidity SDK](../solidity-sdk/overview): On-chain coordination
+- [MPC Protocols](./overview)
+- [HoneyBadgerMPC](./honeybadger-mpc)
+- [AVSS](./avss)
+- [Stoffel VM builtins](../stoffel-vm/builtins)
+- [Rust SDK API](../rust-sdk/api)

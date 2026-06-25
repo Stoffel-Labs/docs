@@ -1,59 +1,95 @@
 ---
 title: "MPC Integration"
-description: "How Stoffel integrates with MPC protocols including HoneyBadger, secret sharing, and cryptographic field support."
+description: "How Stoffel integrates with MPC backends, secret sharing, client inputs, and backend-specific security models."
 ---
 
-This section covers how the Stoffel ecosystem integrates with Multi-Party Computation protocols.
+Stoffel is designed around a consistent programming surface with selectable MPC backends underneath it. Developers write StoffelLang programs with `secret T`, `Share`, `ClientStore`, and `MpcOutput`; the CLI and Rust SDK compile those programs to bytecode that records which MPC backend should execute them.
 
-## Protocol Architecture
+## Protocol architecture
 
-Stoffel is designed to be protocol-agnostic, allowing integration with different MPC protocols while maintaining a consistent interface.
+```text
+StoffelLang program
+    │
+    ▼
+Compiled bytecode manifest
+    │
+    ├── backend: HoneyBadgerMPC | AVSS
+    ├── curve/field metadata
+    ├── client input/output schema
+    └── preprocessing demand
+        │
+        ▼
+VM + selected MPC backend
+```
 
-### Current Protocol Support
+## Current backend support
 
-- **HoneyBadger MPC**: Primary protocol implementation in Rust
-- **Configurable Security**: Adjustable threshold parameters
-- **Multiple Fields**: Support for BLS12-381, BN254, and other cryptographic fields
+| Backend | Purpose | Developer selector |
+| --- | --- | --- |
+| HoneyBadgerMPC | Default asynchronous/robust field-MPC backend for private arithmetic. | `honeybadger` / `MpcBackend::HoneyBadger` |
+| AVSS | Computational AVSS backend for verifiable shares, commitments, and threshold elliptic-curve cryptography. | `avss`, `avss:<curve>` / `MpcBackend::Avss { curve }` |
 
-## Integration Points
+Both backends use the same high-level Stoffel application model, but they are not interchangeable at the cryptographic layer. HoneyBadgerMPC is field-arithmetic oriented. AVSS is group/scalar oriented and is the backend to use when commitments or elliptic-curve compatibility are part of the application.
 
-### Stoffel VM Integration
-- Secret register operations map to MPC protocol primitives
-- Automatic secret sharing for values moved to secret registers
-- Reveal operations for transitioning from secret to clear
+## Integration points
 
-### Network Communication
-- Direct node communication for MPC operations
-- Optional coordinator for metadata exchange
-- Efficient batching of operations for reduced communication rounds
+### Stoffel VM
 
-### Python SDK Integration
-- High-level API abstracts protocol complexity
-- Clear separation between secret and public inputs
-- Automatic result reconstruction from secret shares
+- Secret register operations map to backend share operations.
+- Clear-to-secret transitions create backend share data.
+- Reveal/open operations reconstruct values through the selected backend.
+- `Share.random`, `Share.open`, `Share.get_commitment`, and `Mpc.*` builtins route through backend capabilities.
 
-## Security Model
+### CLI and bytecode
 
-### Threat Model
-- Assumes honest majority with up to `(n-1)/3` corrupted parties
-- Protects against semi-honest adversaries
-- Configurable security parameters for different scenarios
+- `Stoffel.toml` stores `[mpc] backend`, optional `curve`, `parties`, and `threshold`.
+- CLI flags such as `--backend`, `--field`, `--parties`, and `--threshold` override project settings.
+- `.stflb` bytecode records backend and curve/field metadata so execution can validate the runtime configuration.
 
-### Data Protection
-- Input privacy through secret sharing
-- Computation privacy through secure protocols
-- Output privacy with selective reveal operations
+### Rust SDK
 
-## Performance Considerations
+- `MpcConfig::builder()` configures parties, threshold, instance ID, and backend.
+- Program builders accept `.backend(...)` and `.curve(...)`.
+- `NetworkDeployment` and off-chain client configs carry backend selection into generated network/client TOML.
 
-### Communication Optimization
-- Batched operations to reduce round complexity
-- Efficient serialization of protocol messages
-- Network topology optimization for latency
+## Security model
 
-### Computational Efficiency
-- Native field arithmetic operations
-- Optimized secret sharing algorithms
-- Parallel computation where possible
+Each backend has its own threat model and assumptions. Do not treat “MPC backend” as a single security claim.
 
-This integration enables secure multi-party computation while maintaining developer-friendly abstractions.
+| Backend | Security posture |
+| --- | --- |
+| HoneyBadgerMPC | Asynchronous, Byzantine-robust, field-based MPC. Primarily information-theoretic/statistical at the share arithmetic layer, with ordinary computational assumptions for concrete transport/authentication and implementation details. |
+| AVSS | Asynchronous verifiable secret sharing with Feldman-style commitments. Computational security under discrete-log assumptions; best suited to high-entropy scalar secrets and threshold cryptography. |
+
+Current Stoffel local/network config validates:
+
+```text
+parties >= 4 * threshold + 1
+```
+
+Use five parties and threshold one for local development unless you are intentionally testing a larger topology.
+
+## Data protection flow
+
+- Inputs become secret shares through ClientStore or direct secret-value paths.
+- Computation proceeds over backend share data.
+- Intermediate secret values remain secret unless the program opens/reveals them.
+- Outputs are returned, opened, or sent to client slots only where the program explicitly does so.
+
+## Performance considerations
+
+| Operation shape | Notes |
+| --- | --- |
+| Local share arithmetic | Addition, subtraction, and scalar operations are usually cheap. |
+| Secret multiplication | Requires backend protocol work and preprocessing. |
+| Opening/reveal | Requires reconstruction from enough parties. |
+| Comparisons and bit-heavy logic | More expensive than field arithmetic because they lower into additional share operations. |
+| Curve/commitment workflows | Use AVSS when the application needs group elements or threshold-signature primitives. |
+
+## See also
+
+- [MPC Protocols](../mpc-protocols/overview)
+- [HoneyBadgerMPC](../mpc-protocols/honeybadger-mpc)
+- [AVSS](../mpc-protocols/avss)
+- [Stoffel VM Overview](../stoffel-vm/overview)
+- [Rust SDK API](../rust-sdk/api)

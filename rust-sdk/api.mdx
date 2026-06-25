@@ -48,11 +48,15 @@ Common settings:
 | Method | Purpose |
 | --- | --- |
 | `.parties(n)` | Number of MPC parties/nodes for local or network execution. |
-| `.threshold(t)` | Fault/security threshold. For HoneyBadger-style settings use `n >= 3t + 1`. |
+| `.threshold(t)` | Fault/security threshold. Current local/network config validates `n >= 4t + 1`. |
 | `.instance_id(id)` | Computation instance identifier. |
-| `.backend(MpcBackend::HoneyBadger)` | Select MPC backend. |
+| `.backend(MpcBackend::HoneyBadger)` | Select HoneyBadgerMPC, the default field-arithmetic backend. |
+| `.backend(MpcBackend::Avss { curve })` | Select AVSS for group/scalar workflows and threshold-cryptography examples. |
+| `.curve(Curve::Secp256k1)` | Shortcut for selecting AVSS with a specific curve. |
 | `.compiler_options(options)` | Adjust compilation when compiling source. |
 | `.network_config(config)` / `.network_config_file(path)` | Configure network client execution. |
+
+Supported AVSS curves include `Curve::Bls12_381`, `Curve::Bn254`, `Curve::Curve25519`, `Curve::Ed25519`, `Curve::Secp256k1`, and `Curve::Secp256r1`. See [MPC Protocols](../mpc-protocols/overview) for backend selection guidance.
 
 ## Inputs
 
@@ -165,6 +169,8 @@ let client = StoffelClient::builder().network_config(&config).build()?;
 
 For most application developers, start with CLI builds and `.execute_local().await?` before using network configuration directly.
 
+Use `MpcBackend::Avss { curve: Curve::Bls12_381 }` for AVSS network/client experiments that use the current SDK off-chain client I/O path. Other AVSS curves are selectable for bytecode/runtime paths and curve-aware StoffelLang examples; validate the client/network path before relying on a specific curve.
+
 ## Errors and observability
 
 ```rust
@@ -183,3 +189,4 @@ println!("tracing={:?}", tracing.summary());
 - [Rust SDK Overview](./overview)
 - [Examples](./examples)
 - [CLI Overview](../cli/overview)
+- [MPC Protocols](../mpc-protocols/overview)

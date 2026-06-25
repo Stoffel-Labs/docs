@@ -50,6 +50,8 @@
 
 # MPC Protocols
 - [Protocol Overview](./mpc-protocols/overview.md)
+- [HoneyBadgerMPC](./mpc-protocols/honeybadger-mpc.md)
+- [AVSS](./mpc-protocols/avss.md)
 - [Implementation Details](./mpc-protocols/implementation.md)
 
 # Architecture

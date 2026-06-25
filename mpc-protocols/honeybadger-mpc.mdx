@@ -1,0 +1,145 @@
+---
+title: "HoneyBadgerMPC"
+description: "HoneyBadgerMPC backend details for asynchronous, robust, field-based MPC in Stoffel."
+---
+
+HoneyBadgerMPC is Stoffel's default MPC backend. Use it for ordinary private computation over field-compatible values: secret integers, fixed-point values, private aggregation, scoring, tallying, and arithmetic circuits.
+
+It is an asynchronous, robust MPC protocol family. In practical terms, Stoffel can run a known set of MPC parties without relying on a fixed network round clock, while tolerating Byzantine parties up to the configured threshold.
+
+## What it is good for
+
+HoneyBadgerMPC is the right starting point when your program mostly does arithmetic on secret values:
+
+- add, subtract, multiply, and open secret integers or fixed-point values;
+- combine client inputs into private aggregates;
+- run policy, scoring, or matching logic over private inputs;
+- build local MPC smoke tests before moving to a networked deployment.
+
+It is less natural for applications where the main object is an elliptic-curve key, a public curve commitment, or a threshold signature transcript. Use AVSS for those workflows.
+
+## Protocol model
+
+HoneyBadgerMPC-style protocols are built around finite-field secret sharing:
+
+- secrets are encoded as field elements;
+- parties hold shares of those field elements;
+- addition and subtraction are local operations on shares;
+- multiplication consumes preprocessed material such as Beaver triples;
+- opening/revealing reconstructs a clear value from enough valid shares.
+
+The sharing model is closely related to Shamir secret sharing and Reed-Solomon/error-correcting-code ideas: polynomial evaluations are shares, and interpolation/reconstruction can detect or tolerate faulty shares under the protocol threshold.
+
+## Security posture
+
+For developer configuration, remember three points:
+
+1. HoneyBadgerMPC is designed for asynchronous, Byzantine-robust MPC.
+2. The field-MPC layer is primarily information-theoretic/statistical, while concrete deployments still rely on ordinary computational cryptography for transport, authentication, signatures, and implementation details.
+3. Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
+
+That last rule is what developers should use when choosing local or network topology values, even though the underlying asynchronous MPC literature often starts from `n >= 3t + 1` thresholds.
+
+## Configure HoneyBadgerMPC
+
+`honeybadger` is the default backend.
+
+```toml
+[mpc]
+backend = "honeybadger"
+parties = 5
+threshold = 1
+```
+
+CLI override:
+
+```bash
+stoffel build --backend honeybadger --parties 5 --threshold 1
+stoffel run --backend honeybadger --client-input 0=42 --parties 5 --threshold 1
+```
+
+Rust SDK:
+
+```rust
+use stoffel::prelude::*;
+
+# fn example() -> stoffel::Result<()> {
+let config = MpcConfig::builder()
+    .parties(5)
+    .threshold(1)
+    .honeybadger()
+    .build()?;
+# Ok(())
+# }
+```
+
+Program builder:
+
+```rust
+# use stoffel::prelude::*;
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .backend(MpcBackend::HoneyBadger)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
+# Ok(())
+# }
+```
+
+## Preprocessing
+
+Multiplication of two secret shares needs preprocessed material. Stoffel records preprocessing demand in the bytecode manifest and exposes preprocessing configuration in the Rust SDK network builders.
+
+```rust
+# use stoffel::prelude::*;
+# fn example() -> stoffel::Result<()> {
+let deployment = NetworkDeployment::builder([
+    "127.0.0.1:19200",
+    "127.0.0.1:19201",
+    "127.0.0.1:19202",
+    "127.0.0.1:19203",
+    "127.0.0.1:19204",
+])
+.expected_clients(1)
+.threshold(1)
+.backend(MpcBackend::HoneyBadger)
+.preprocessing(1000, 500)
+.build()?;
+# Ok(())
+# }
+```
+
+Local CLI/SDK paths hide most of this setup. If a program consumes more multiplication/randomness material than the run prepared, increase preprocessing configuration or simplify the circuit.
+
+## Operation costs
+
+| Operation | Cost shape |
+| --- | --- |
+| Secret addition/subtraction | Local share operation. |
+| Secret plus/minus public scalar | Local share operation. |
+| Secret multiplication | Consumes multiplication preprocessing and requires protocol work. |
+| Opening/reveal | Requires enough parties to reconstruct the value. |
+| Comparisons/bit-heavy logic | Encoded into field operations and generally more expensive than arithmetic. |
+
+## Use-case examples
+
+Good HoneyBadgerMPC examples:
+
+```stoffel
+def main() -> int64:
+  var salary: secret int64 = ClientStore.take_share(0, 0)
+  var debt: secret int64 = ClientStore.take_share(1, 0)
+  var score: secret int64 = salary - debt
+  return score.reveal()
+```
+
+This is a field-arithmetic private computation: clients supply private inputs, parties compute over shares, and the program reveals only the intended result.
+
+## Further reading
+
+- Andrew Miller et al., “HoneyBadgerMPC and AsynchroMix: Practical Asynchronous MPC and its Application to Anonymous Communication”: https://eprint.iacr.org/2016/1066
+- Ben-Or, Canetti, Goldreich, “Asynchronous Secure Computation”: https://doi.org/10.1145/167088.167109
+- Shamir, “How to Share a Secret”: https://doi.org/10.1145/359168.359176

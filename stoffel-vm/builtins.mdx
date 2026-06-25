@@ -227,9 +227,18 @@ The VM also registers module-style helpers used by advanced protocol and cryptog
 | `Crypto.*` | Hashing and signature-related helper functions used by protocol examples. |
 | `Field.*` | Field-oriented helper functions. |
 | `Rbc.*` | Reliable broadcast helpers. |
-| `Avss.*` | AVSS and certificate-oriented helpers. |
+| `Avss.*` | AVSS share inspection helpers for commitments and key names. See [AVSS](../mpc-protocols/avss). |
 
 Treat these as lower-level integration surfaces. Prefer checked examples in `crates/stoffel-lang/examples/` before documenting production-facing patterns around them.
+
+Current AVSS helper names:
+
+```text
+Avss.get_commitment
+Avss.get_key_name
+Avss.commitment_count
+Avss.is_avss_share
+```
 
 ## See also
 

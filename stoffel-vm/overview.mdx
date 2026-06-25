@@ -1,4 +1,123 @@
 ---
 title: "Virtual Machine Overview"
-description: "Overview of Stoffel VM, a register-based virtual machine for MPC with dual clear/secret register architecture."
+description: "How Stoffel VM executes bytecode, manages clear and secret registers, and connects StoffelLang programs to local or network MPC runtimes."
 ---
+
+Stoffel VM is the runtime for compiled Stoffel programs. StoffelLang source compiles to `.stflb` bytecode, and the CLI or Rust SDK loads that bytecode into the VM for clear checks, local MPC testing, or configured network execution.
+
+Most application developers should use the CLI and Rust SDK. The VM pages are for understanding what the compiler emits, what the runtime executes, and where MPC-specific behavior enters the system.
+
+## Where the VM fits
+
+```text
+StoffelLang source (.stfl)
+    ↓ stoffel-lang compiler
+Stoffel bytecode (.stflb)
+    ↓ stoffel-vm-types loader
+CompiledBinary + VMFunction metadata
+    ↓ stoffel-vm runtime
+clear VM execution, local MPC testing, or network MPC execution
+```
+
+The VM is split across two crates:
+
+| Crate | Role |
+| --- | --- |
+| `stoffel-vm-types` | Shared instruction, value, register, function, activation, and `.stflb` bytecode types. Used by the compiler and runtime. |
+| `stoffel-vm` | Runtime execution engine, standard library, MPC builtins, async MPC effects, local/network MPC runner internals, storage, and FFI surfaces. |
+
+## Runtime shape
+
+The public `VirtualMachine` wraps an internal `VMState`. `VirtualMachine::new()` registers the standard library and MPC builtins by default; `VirtualMachine::without_builtins()` is available for low-level tests and custom embedding.
+
+At runtime, VM state contains:
+
+- a program/function registry;
+- an activation stack of call frames;
+- per-frame register files;
+- separate clear and secret register banks;
+- a volatile argument stack for calls;
+- a stable per-frame spill area for `LDS` / `STS`;
+- object/array table memory;
+- foreign-object storage;
+- optional hooks;
+- optional MPC runtime metadata and engine handles;
+- optional local storage;
+- an output sink used by `print`.
+
+## Registers and secrecy
+
+Bytecode operands use absolute frame register indices. The default ABI boundary is register `16`:
+
+- registers below `16` are clear registers;
+- registers `16` and above are secret registers;
+- `r0` is the return register.
+
+This is a boundary, not a fixed 32-register limit. Each `VMFunction` declares or derives the frame register count it needs. The function registration path normalizes that count against parameter count, the return-register ABI, and the highest referenced register.
+
+Writes across the clear/secret boundary are meaningful:
+
+- clear-to-secret writes create or move share values into the secret bank;
+- secret-to-clear moves become reveal/open operations;
+- pending reveals are tracked as register-slot state, not as ordinary `Value` variants.
+
+## Values
+
+The VM value model includes scalar values, table references, closures, foreign objects, unit, and share values.
+
+| Family | Examples |
+| --- | --- |
+| Signed integers | `I64`, `I32`, `I16`, `I8` |
+| Unsigned integers | `U64`, `U32`, `U16`, `U8` |
+| Other scalars | `Float(F64)`, `Bool`, `String`, `Unit` |
+| VM-managed references | `Object(ObjectRef)`, `Array(ArrayRef)`, `Foreign(ForeignObjectRef)`, `Closure(...)` |
+| MPC values | `Share(ShareType, ShareData)` |
+
+`Float(F64)` is a VM floating-point value. Secret fixed-point values are represented through `ShareType::SecretFixedPoint`, not by storing public floats as fixed-point integers.
+
+Share metadata is typed by shape:
+
+- `SecretInt { bit_length }`
+- `SecretUInt { bit_length }`
+- `SecretFixedPoint { precision }`
+
+`ShareData` can be opaque serialized share data or Feldman share data with commitments, depending on the MPC backend and operation.
+
+## Instructions and function execution
+
+The VM has two instruction representations:
+
+- symbolic `Instruction` values, which use labels, function names, and immediate `Value`s;
+- resolved/lowered instructions, which use numeric instruction targets, constant indices, and call target indices for execution.
+
+The current instruction set covers:
+
+- `NOP`, `LD`, `LDI`, `MOV`;
+- arithmetic: `ADD`, `SUB`, `MUL`, `DIV`, `MOD`;
+- bitwise: `AND`, `OR`, `XOR`, `NOT`, `SHL`, `SHR`;
+- control flow: `CMP`, `JMP`, `JMPEQ`, `JMPNEQ`, `JMPLT`, `JMPGT`;
+- calls: `PUSHARG`, `CALL`, `RET`;
+- spill slots: `LDS`, `STS`.
+
+Synchronous execution runs local VM work until a function returns or errors. Async execution can run local instructions in slices and yield typed MPC effects when an operation requires an MPC engine, such as input sharing, multiplication, opening, randomness, or client output delivery.
+
+## Builtins and MPC boundary
+
+The standard library provides general-purpose runtime functions for arrays, objects, strings, closures, local storage, assertions, printing, and ClientStore input access.
+
+MPC-focused builtins expose module-style APIs:
+
+- `Share.*` for share construction, arithmetic, random shares, opening, batching, commitments, and client output helpers;
+- `ClientStore.*` for client-provided private inputs;
+- `Mpc.*` for party/runtime metadata and capability checks;
+- `MpcOutput.*` for output delivery to client slots;
+- lower-level `Bytes.*`, `Crypto.*`, `Field.*`, `Rbc.*`, and `Avss.*` helpers for advanced protocol and cryptographic workflows.
+
+For app-facing docs, prefer StoffelLang syntax and SDK/CLI workflows over direct VM internals. For example, write `var total: secret int64 = a + b` in StoffelLang and let the compiler emit the corresponding VM operations.
+
+## See also
+
+- [Instructions and Types](./instructions)
+- [VM Implementation](./implementation)
+- [VM Usage](./usage)
+- [Built-in Functions](./builtins)

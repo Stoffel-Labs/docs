@@ -1,19 +1,40 @@
 ---
 title: "VM Usage"
-description: "Run Stoffel VM bytecode through the CLI and Rust SDK without dropping into low-level VM internals."
+description: "Run Stoffel VM bytecode through the CLI and Rust SDK, inspect generated artifacts, and know when to avoid low-level VM internals."
 ---
 
 Most developers should use `stoffel run`, `stoffel dev`, or the Rust SDK. These surfaces compile/load `.stflb` bytecode and run it through clear checks, local MPC testing, or configured network execution.
 
-## Compile bytecode
+Use direct `stoffel-vm` APIs only for VM tests, bytecode tooling, custom embedding, or runtime instrumentation.
+
+## Build bytecode
+
+For projects, prefer `stoffel build`:
 
 ```bash
+stoffel check
 stoffel build
-stoffel compile src/main.stfl --output target/debug/main.stflb
-stoffel compile --disassemble target/debug/main.stflb
+stoffel build --release
 ```
 
-`stoffel build` is preferred for project workflows because it reads `Stoffel.toml` and writes under `target/debug/` or `target/release/`.
+`stoffel build` reads `Stoffel.toml` and writes `.stflb` artifacts under `target/debug/` or `target/release/`.
+
+For one selected source file, use `stoffel compile` with an explicit output path:
+
+```bash
+stoffel compile src/main.stfl --output target/debug/main.stflb
+stoffel compile src/main.stfl -O3 --output target/release/main.stflb
+```
+
+## Inspect bytecode
+
+```bash
+stoffel compile --disassemble target/debug/main.stflb
+stoffel run --program-info
+stoffel check --print-ir
+```
+
+Use these commands to inspect function metadata, generated instructions, bytecode shape, and runtime program information before debugging low-level behavior.
 
 ## Run through the CLI
 
@@ -21,12 +42,11 @@ stoffel compile --disassemble target/debug/main.stflb
 stoffel run
 stoffel run target/debug/main.stflb --entry main
 stoffel run src/main.stfl --input a=40 --input b=2
-stoffel run --program-info
 ```
 
-`stoffel run` uses the local MPC test network unless you pass `--network` and `--config`.
+`stoffel run` uses the local MPC test network unless you pass `--network` and `--config` for a deployed network configuration.
 
-For `ClientStore.take_share` programs, provide client-slot inputs:
+For `ClientStore` programs, provide client-slot inputs:
 
 ```bash
 stoffel run \
@@ -36,6 +56,8 @@ stoffel run \
   --threshold 1
 ```
 
+The first number in `--client-input 0=42` is the client slot. Repeating the same slot appends inputs for that client slot in order.
+
 ## Watch mode
 
 ```bash
@@ -43,9 +65,11 @@ stoffel dev --client-input 0=42 --parties 5 --threshold 1
 stoffel dev --once --client-input 0=42 --parties 5 --threshold 1
 ```
 
+Use `--once` for CI/scripts. Omit it while editing to rebuild and rerun when files change.
+
 ## Run through the Rust SDK
 
-Clear local execution is useful for ordinary logic checks:
+Clear execution is useful for fast logic checks without MPC networking:
 
 ```rust
 use stoffel::prelude::*;
@@ -60,7 +84,7 @@ fn main() -> stoffel::Result<()> {
 }
 ```
 
-For local MPC testing from an app wrapper, load the bytecode that the CLI built:
+For app-shaped local MPC testing, load the bytecode that the CLI built:
 
 ```rust
 use stoffel::prelude::*;
@@ -78,17 +102,30 @@ let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
 
 `.execute_local().await?` runs local MPC testing by spawning several MPC nodes/processes on your machine.
 
-## Debugging
+## When to use direct VM APIs
 
-```bash
-stoffel check --print-ir
-stoffel run --program-info
-stoffel compile --disassemble target/debug/main.stflb
-stoffel status --verbose
-```
+Use direct `VirtualMachine` / `VMFunction` APIs when you are:
+
+- writing VM unit tests;
+- building bytecode-generation tooling;
+- testing the instruction set directly;
+- experimenting with hooks or custom output sinks;
+- integrating a custom table-memory or local-storage backend.
+
+Do not use direct VM APIs as the first path for application docs. For applications, build bytecode with the CLI and load it through the Rust SDK.
+
+## Debugging checklist
+
+- Use `stoffel check --print-ir` before bytecode generation.
+- Use `stoffel compile --disassemble ...` to inspect instructions.
+- Use `stoffel run --program-info` to inspect loaded functions and metadata.
+- For MPC programs, confirm `parties`, `threshold`, client inputs, and `--expected-output-clients` match the program's `ClientStore` and output behavior.
+- Use VM hooks or direct VM construction only when CLI/SDK-level inspection is not enough.
 
 ## See also
 
+- [Virtual Machine Overview](./overview)
+- [Instructions and Types](./instructions)
 - [CLI Overview](../cli/overview)
 - [Basic Usage](../getting-started/basic-usage)
 - [Rust SDK Examples](../rust-sdk/examples)

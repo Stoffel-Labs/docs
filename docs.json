@@ -81,6 +81,7 @@
           {
             "group": "Stoffel VM",
             "pages": [
+              "stoffel-vm/overview",
               "stoffel-vm/implementation",
               "stoffel-vm/instructions",
               "stoffel-vm/usage",

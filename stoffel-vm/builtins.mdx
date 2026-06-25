@@ -1,28 +1,23 @@
 ---
 title: "Built-in Functions"
-description: "Current Stoffel VM standard and MPC builtin functions, including Share, ClientStore, Mpc, and MpcOutput APIs."
+description: "Current Stoffel VM standard and MPC builtin functions, including Share, ClientStore, Mpc, MpcOutput, storage, and protocol helper modules."
 ---
 
-Stoffel VM registers ordinary runtime builtins and MPC-focused module-style builtins. This page reflects the builtins exposed by the current `stoffel` repository.
+Stoffel VM registers standard runtime builtins and MPC-focused module-style builtins. In normal application code, prefer StoffelLang method/operator syntax where available; this page names the VM functions those features lower to.
 
 ## General runtime builtins
 
-| Builtin | Purpose |
+The standard library includes object, array/list, closure, local storage, formatting, assertion, and output helpers.
+
+| Builtin group | Names |
 | --- | --- |
-| `print(value)` | Print a value during VM execution. |
-| `type(value)` | Return a runtime type name. |
-| `to_string(value)` | Convert a value to its string form. |
-| `create_object(...)` | Create an object value. |
-| `create_array(...)` | Create an array/list value. |
-| `get_field(object, key)` | Read an object field or array/list index. |
-| `set_field(object, key, value)` | Write an object field or array/list index. |
-| `array_length(array)` | Return array/list length. |
-| `array_push(array, value, ...)` | Append one or more values. |
-| `slice(value, start, end)` | Slice arrays/strings; negative bounds are supported. |
-| `contains(container, value)` | Membership test backing the `in` operator. |
-| `assert(condition)` | Abort execution if a condition is false. |
-| `create_closure`, `call_closure` | Closure creation and invocation support. |
-| `get_upvalue`, `set_upvalue` | Captured-variable access for closures. |
+| Objects and arrays | `create_object`, `create_array`, `get_field`, `get_or_create_array_field`, `set_field`, `array_length`, `array_push`, `array_concat`, `array_repeat`, `array_equals` |
+| List-style aliases | `append`, `extend`, `copy`, `count`, `index`, `pop`, `remove`, `insert`, `clear`, `reverse`, `sort`, `delete`, `len`, `range` |
+| Closures/upvalues | `create_closure`, `call_closure`, `get_upvalue`, `set_upvalue` |
+| Runtime helpers | `print`, `type`, `to_string`, `slice`, `contains`, `assert` |
+| Local storage | `LocalStorage.store`, `LocalStorage.load`, `LocalStorage.retrieve`, `LocalStorage.delete`, `LocalStorage.exists` |
+
+`print` is variadic: it formats arguments, joins them with spaces, and writes one line through the VM's configured output sink.
 
 In StoffelLang, prefer method syntax where the language exposes it:
 
@@ -36,7 +31,7 @@ def main() -> int64:
 
 ## Share builtins
 
-`Share` values represent MPC secret shares. The VM registers these Share builtins:
+`Share` values represent MPC secret shares. The VM exposes these canonical share operations:
 
 ```text
 Share.from_clear
@@ -49,6 +44,7 @@ Share.neg
 Share.add_scalar
 Share.mul_scalar
 Share.mul
+Share.batch_mul
 Share.open
 Share.batch_open
 Share.send_to_client
@@ -69,20 +65,29 @@ Share.open_field
 Share.open_exp_custom
 ```
 
-Most share functions are also available as methods in StoffelLang examples:
+StoffelLang also supports typed secret values and operators. Prefer this shape in app examples when the scalar type is known:
+
+```stoffel
+def compute(a: secret int64, b: secret int64) -> int64:
+  var sum: secret int64 = a + b
+  var product: secret int64 = sum * 2
+  return product.reveal()
+```
+
+Method/function forms remain useful when you want to call a specific builtin directly:
 
 ```stoffel
 def compute(a: Share, b: Share) -> int64:
-  var sum = a.add(b)
+  var sum = Share.add(a, b)
   var scaled = sum.mul_scalar(2)
   return scaled.open()
 ```
 
-Opening a share reconstructs the value into the execution context. Use `open()` deliberately at the point where your program needs a clear result.
+Opening or revealing a share reconstructs a clear value. Do this only at the point where the program intentionally discloses a result.
 
-## Batch open
+## Batch operations
 
-Use batch operations when a program naturally returns multiple shares:
+Use batch operations when a program naturally computes or returns several shares.
 
 ```stoffel
 def main() -> list[int64]:
@@ -92,16 +97,19 @@ def main() -> list[int64]:
   return Share.batch_open(values)
 ```
 
+`Share.batch_mul` is the VM builtin for batched share multiplication; use it when the algorithm already has aligned share arrays and should consume MPC multiplication material in batch form.
+
 ## ClientStore builtins
 
-`ClientStore` bridges external client input material into a Stoffel program.
+`ClientStore` bridges external client input material into a Stoffel program. VM-level client slots are ordinal positions in the configured/sorted client roster, not necessarily raw network client IDs.
 
 | Builtin | Purpose |
 | --- | --- |
 | `ClientStore.get_number_clients()` | Total known client slots. |
-| `ClientStore.get_number_input_clients()` | Clients with input material. |
-| `ClientStore.get_number_output_clients()` | Output-capable clients. |
-| `ClientStore.take_share(client_slot, input_index)` | Load an integer share from a client slot. |
+| `ClientStore.get_number_input_clients()` | Number of clients with input material. |
+| `ClientStore.get_number_output_clients()` | Number of output-capable client slots. |
+| `ClientStore.take_share(client_slot, input_index)` | Load a default integer share from a client slot. |
+| `ClientStore.take_share_bool(client_slot, input_index)` | Load a one-bit boolean share from a client slot. |
 | `ClientStore.take_share_fixed(client_slot, input_index)` | Load a fixed-point share from a client slot. |
 
 Example:
@@ -109,9 +117,8 @@ Example:
 ```stoffel
 def main() -> int64:
   var client_count = ClientStore.get_number_clients()
-  var share = ClientStore.take_share(0, 0)
-  var opened: int64 = share.open()
-  return opened + client_count
+  var share: secret int64 = ClientStore.take_share(0, 0)
+  return share.reveal() + client_count
 ```
 
 CLI local execution:
@@ -138,7 +145,7 @@ let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
 
 ## Mpc builtins
 
-`Mpc` exposes runtime metadata and capability checks:
+`Mpc` exposes runtime metadata, readiness, capabilities, and public randomness helpers.
 
 ```text
 Mpc.party_id
@@ -154,6 +161,25 @@ Mpc.capabilities
 Mpc.rand
 Mpc.rand_int
 ```
+
+`Mpc.rand` and `Mpc.rand_int` produce local public randomness. For jointly generated secret-shared randomness, use `Share.random` or `Share.random_int`.
+
+Capability names include:
+
+```text
+multiplication
+elliptic-curves
+client-input
+consensus
+open-in-exponent
+reservation
+client-output
+randomness
+field-open
+preprocessing-persistence
+```
+
+`Mpc.has_capability(...)` accepts common aliases such as `mul`, `rbc`, `open-exp`, and `preproc-store`.
 
 Example:
 
@@ -174,29 +200,40 @@ def main() -> int64:
 
 ## MpcOutput builtins
 
-Use `MpcOutput.send_to_client` when a program should deliver share outputs to client slots through the coordinator/output path:
+Use `MpcOutput.send_to_client` when a program should deliver share outputs to client slots through the coordinator/output path.
+
+It accepts a client slot and either a single share or a non-empty homogeneous array/list of shares:
 
 ```stoffel
 def main() -> int64:
   var client_count = ClientStore.get_number_clients()
-  var result = ClientStore.take_share(0, 0).add_scalar(5)
+  var result: secret int64 = ClientStore.take_share(0, 0) + 5
 
   if Mpc.has_capability("client-output"):
-    var outputs: list[Share] = []
-    outputs.append(result)
-    MpcOutput.send_to_client(0, outputs)
+    MpcOutput.send_to_client(0, [result])
 
   return client_count
 ```
 
 `Share.send_to_client(client_slot)` is also available for single-share output flows.
 
-## Crypto, Bytes, Rbc, and Avss modules
+## Lower-level protocol helper modules
 
-The VM also includes module-style builtins for cryptographic helpers, byte-array operations, reliable broadcast helpers, and AVSS-specific operations. These are lower-level integration surfaces; prefer checked examples in `crates/stoffel-lang/examples/` for production-facing patterns.
+The VM also registers module-style helpers used by advanced protocol and cryptographic examples:
+
+| Module | Purpose |
+| --- | --- |
+| `Bytes.*` | Byte-array construction, concatenation, conversion, slicing, and length helpers. |
+| `Crypto.*` | Hashing and signature-related helper functions used by protocol examples. |
+| `Field.*` | Field-oriented helper functions. |
+| `Rbc.*` | Reliable broadcast helpers. |
+| `Avss.*` | AVSS and certificate-oriented helpers. |
+
+Treat these as lower-level integration surfaces. Prefer checked examples in `crates/stoffel-lang/examples/` before documenting production-facing patterns around them.
 
 ## See also
 
+- [Virtual Machine Overview](./overview)
 - [StoffelLang Overview](../stoffel-lang/overview)
 - [Rust SDK Examples](../rust-sdk/examples)
 - [Stoffel VM Implementation](./implementation)

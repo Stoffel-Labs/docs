@@ -3,7 +3,7 @@ title: "Stoffel CLI Overview"
 description: "Use the Stoffel CLI to create, check, build, run, and iterate on private-computation projects."
 ---
 
-The `stoffel` CLI is the entry point for building with Stoffel. Use it to create projects, check source, build bytecode, run local checks, and exercise local MPC flows.
+The `stoffel` CLI is the entry point for building with Stoffel. Use it to create projects, check source, build bytecode, run clear checks, and exercise local MPC development flows.
 
 ```bash
 curl -fsSL https://get.stoffelmpc.com | sh
@@ -156,14 +156,14 @@ Useful run flags:
 - `--client-input SLOT=VALUE`: local ClientStore input for programs that call `ClientStore.take_share`.
 - `--client-input-file FILE`: load ClientStore inputs from `.json`, `.csv`, or `.txt`.
 - `--expected-output-clients N`: declare local output-capable client slots `0..N-1`.
-- `--local`: run on the local MPC simulator; this is the default unless `--network` or `--config` is set.
+- `--local`: run on the local MPC test network; this is the default unless `--network` or `--config` is set.
 - `--network --config FILE`: connect to an MPC network described by a network/off-chain client TOML file.
 - `--program-info`: print function and instruction metadata before executing.
 - `--timeout-secs N`: local MPC timeout; defaults to 180 seconds.
 
 ## Local MPC development
 
-Run the project once through the local MPC path:
+Run the project once through the local MPC test network:
 
 ```bash
 cd /path/to/hello-mpc
@@ -185,9 +185,15 @@ stoffel dev \
 
 `stoffel dev` watches `Stoffel.toml` and the configured source tree, rebuilds, and reruns when a `.stfl` file or project config changes. Use `--poll-ms` to tune reload latency.
 
-## Template maturity
+## Rust wrapper
 
-The Rust SDK path is the primary 0.1.0 application workflow. Python and Solidity templates are useful for exploration and integration planning, and should be verified against the Stoffel repository before relying on generated code in a deployment.
+The default Rust template includes `src/main.rs` as an application wrapper. It imports `stoffel::prelude::*`, loads the generated binding metadata, compiles or loads the project program, sets local MPC topology with `parties` and `threshold`, and calls `.execute_local().await?` for local MPC testing.
+
+For application-style examples, prefer building bytecode with `stoffel build` and loading the resulting `.stflb` from Rust with `Stoffel::load_file("target/debug/<project>.stflb")?`.
+
+## Template status
+
+The Rust SDK path is the primary application workflow. Python and Solidity templates are useful for integration planning; use their generated README files and the current repository when validating a deployment.
 
 ## Troubleshooting
 

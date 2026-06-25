@@ -23,38 +23,46 @@
 
   var variant = getVariant();
   var label = variant === "privacy_backends" ? VARIANT_LABEL : CONTROL_LABEL;
-  var lastExposurePath = null;
+  var capturedExposurePaths = {};
 
   function maybeCaptureExposure() {
     var path = window.location.pathname;
-    if (lastExposurePath === path) {
+    if (capturedExposurePaths[path]) {
       return;
     }
-    lastExposurePath = path;
-
-    if (window.posthog && typeof window.posthog.capture === "function") {
-      window.posthog.capture("docs_nav_group_label_exposure", {
-        test_name: TEST_NAME,
-        variant: variant,
-        group_label: label,
-        path: path
-      });
+    if (!window.posthog || typeof window.posthog.capture !== "function") {
+      return;
     }
+
+    capturedExposurePaths[path] = true;
+    window.posthog.capture("docs_nav_group_label_exposure", {
+      test_name: TEST_NAME,
+      variant: variant,
+      group_label: label,
+      path: path
+    });
+  }
+
+  function getRewriteRoots() {
+    var roots = Array.prototype.slice.call(document.querySelectorAll("nav"));
+    return roots.length ? roots : [document.body];
   }
 
   function rewriteLabel() {
     var didRewrite = false;
-    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    var node;
-    while ((node = walker.nextNode())) {
-      var text = node.nodeValue && node.nodeValue.trim();
-      if (labels.indexOf(text) !== -1 && node.nodeValue !== label) {
-        node.nodeValue = node.nodeValue.replace(text, label);
-        didRewrite = true;
-      } else if (text === label) {
-        didRewrite = true;
+    getRewriteRoots().forEach(function (root) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      var node;
+      while ((node = walker.nextNode())) {
+        var text = node.nodeValue && node.nodeValue.trim();
+        if (labels.indexOf(text) !== -1 && node.nodeValue !== label) {
+          node.nodeValue = node.nodeValue.replace(text, label);
+          didRewrite = true;
+        } else if (text === label) {
+          didRewrite = true;
+        }
       }
-    }
+    });
 
     if (didRewrite) {
       maybeCaptureExposure();
@@ -83,6 +91,8 @@
     if (window.location.pathname !== lastPath) {
       lastPath = window.location.pathname;
       scheduleRewrite();
+    } else {
+      maybeCaptureExposure();
     }
   }, 500);
 })();

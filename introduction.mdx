@@ -23,7 +23,7 @@ The 0.1.0 release ships the core developer workflow from [`Stoffel-Labs/stoffel`
 | --- | --- | --- |
 | Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project CLI for `init`, `check`, `compile`, `build`, `run`, `dev`, `test`, `status`, `clean`, and `update`. |
 | Stoffel Lang compiler | `crates/stoffel-lang` / crate `stoffellang` | Python-style language compiler that emits Stoffel VM bytecode. |
-| Rust SDK | `crates/stoffel-rust-sdk` / library crate `stoffel` | Primary application API for compile/load/run workflows, local clear execution, local MPC simulation, network configuration, observability, and on-chain coordinator handles. |
+| Rust SDK | `crates/stoffel-rust-sdk` / library crate `stoffel` | Primary application API for compile/load/run workflows, local clear execution, local MPC testing, network configuration, observability, and on-chain coordinator handles. |
 | Stoffel VM | `crates/stoffel-vm` | Register-based VM runtime with builtins, secret-share values, networking/MPC integrations, and C FFI. |
 | VM types and bytecode | `crates/stoffel-vm-types` | Shared value, instruction, function, and compiled `.stflb` bytecode types. |
 
@@ -34,7 +34,7 @@ Start from the `stoffel` repository for the Stoffel 0.1.0 workflow.
 - Write computations in Stoffel Lang with explicit `secret` values.
 - Use clear local execution for fast logic checks.
 - Use the Rust SDK as the primary app integration path.
-- Run local MPC-style smoke tests with the SDK or CLI.
+- Run local MPC smoke tests with the SDK or CLI.
 - Generate, save, load, inspect, and execute `.stflb` bytecode.
 - Create project templates for Stoffel, Rust, Python, Foundry, and Hardhat workflows.
 

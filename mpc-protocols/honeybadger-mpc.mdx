@@ -126,17 +126,41 @@ Local CLI/SDK paths hide most of this setup. If a program consumes more multipli
 
 ## Use-case examples
 
-Good HoneyBadgerMPC examples:
+HoneyBadgerMPC is the best fit when the application is mostly field arithmetic over private inputs. The protocol's share representation makes additions and scalar shifts local, while multiplication uses the backend's preprocessed multiplication material.
+
+### Private weighted scoring
+
+Use this shape for credit, risk, eligibility, or matching flows where several private features combine into one opened decision value:
 
 ```stoffel
 def main() -> int64:
-  var salary: secret int64 = ClientStore.take_share(0, 0)
+  var income: secret int64 = ClientStore.take_share(0, 0)
   var debt: secret int64 = ClientStore.take_share(1, 0)
-  var score: secret int64 = salary - debt
+  var cashflow: secret int64 = ClientStore.take_share(2, 0)
+
+  var score = income * 3 - debt * 2 + cashflow
   return score.reveal()
 ```
 
-This is a field-arithmetic private computation: clients supply private inputs, parties compute over shares, and the program reveals only the intended result.
+This leverages HoneyBadgerMPC's field-arithmetic path: each client contributes a private field value, parties compute the weighted expression over shares, and only the final score is reconstructed.
+
+### Private aggregate with threshold policy
+
+Use this shape when parties need a private aggregate but only a coarse result should leave the MPC computation:
+
+```stoffel
+def main() -> bool:
+  var votes_for: secret int64 = ClientStore.take_share(0, 0)
+  var votes_against: secret int64 = ClientStore.take_share(1, 0)
+  var abstentions: secret int64 = ClientStore.take_share(2, 0)
+
+  var total = votes_for + votes_against + abstentions
+  var margin = votes_for * 2 - total
+  var opened_margin = margin.reveal()
+  return opened_margin > 0
+```
+
+This keeps the individual counts private and reveals only whether the proposal crossed the majority threshold. It is a natural HoneyBadgerMPC workload because it is dominated by additions, scalar multiplication, and one explicit reveal.
 
 ## Further reading
 

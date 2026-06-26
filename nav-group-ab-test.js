@@ -44,12 +44,21 @@
   }
 
   function getRewriteRoots() {
-    var roots = Array.prototype.slice.call(document.querySelectorAll("nav"));
+    var roots = Array.prototype.slice.call(document.querySelectorAll("nav, main h1"));
     return roots.length ? roots : [document.body];
+  }
+
+  function rewriteDocumentTitle() {
+    labels.forEach(function (existingLabel) {
+      if (document.title.indexOf(existingLabel) !== -1) {
+        document.title = document.title.replace(existingLabel, label);
+      }
+    });
   }
 
   function rewriteLabel() {
     var didRewrite = false;
+    rewriteDocumentTitle();
     getRewriteRoots().forEach(function (root) {
       var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       var node;

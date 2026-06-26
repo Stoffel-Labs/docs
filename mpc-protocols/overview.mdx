@@ -56,19 +56,9 @@ Read [AVSS](./avss) next when the main question is:
 
 If the decision depends on cost, read [Performance and circuit shaping](./performance-and-circuit-shaping). If the decision depends on config, bytecode, local runs, or network execution, read [How backend selection works](./implementation).
 
-## AI-agent implementation checklist
+## Building with an AI agent
 
-If you are using an AI coding agent, give it concrete implementation context before asking it to write Stoffel code:
-
-1. Which values are secret.
-2. Which values are public.
-3. Who supplies each input.
-4. Who receives each output.
-5. Whether the output is an opened value, client-output share, public commitment, curve-encoded value, or signature-related artifact.
-6. Which backend you selected and why.
-7. The validation command to run, usually `stoffel check` for source snippets or `npx mintlify validate` for docs changes.
-
-Ask the agent to implement the smallest StoffelLang program that exercises the required client input, reveal, commitment, or client-output boundary before expanding the application.
+If you are using an AI coding agent, give it the backend choice, secret/public input boundary, output boundary, and validation command before asking it to write code. The full prompt template lives in [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation).
 
 ## Select a backend in `Stoffel.toml`
 

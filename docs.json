@@ -155,7 +155,8 @@
               "developer-skills/stoffel-typed-client-io-bindings",
               "developer-skills/stoffel-local-mpc-dev-loop",
               "developer-skills/stoffel-app-network-and-offchain-integration",
-              "developer-skills/stoffel-app-troubleshooting"
+              "developer-skills/stoffel-app-troubleshooting",
+              "developer-skills/stoffel-ai-agent-implementation"
             ]
           }
         ]

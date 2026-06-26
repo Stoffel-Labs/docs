@@ -135,15 +135,7 @@ The Rust SDK's off-chain client I/O path currently supports AVSS client I/O over
 
 ## Circuit-shaping for AVSS
 
-The general advice from [Performance and circuit-shaping guidance](./overview#performance-and-circuit-shaping) applies to AVSS too, but do not copy the HoneyBadgerMPC preprocessing checklist directly. AVSS is the right choice when the application needs verifiable scalar shares, group commitments, or curve-compatible threshold-cryptography building blocks. Optimize the cryptographic transcript, not just a generic multiplication budget:
-
-- Keep public transcript work public. Message encoding, domain separators, curve names, public keys, and transcript hashes should usually stay as clear bytes/fields until a secret scalar operation actually needs them.
-- Use `Crypto.hash_to_field(..., Mpc.curve())` at the boundary where public transcript data becomes a curve-field challenge. Avoid turning public transcript material into secret shares earlier than necessary.
-- Persist long-lived key shares with `LocalStorage` instead of regenerating them on every run. For signing protocols, never persist or reuse per-signature nonces unless the protocol explicitly requires and protects that state.
-- Use commitments deliberately. `get_commitment(0)` gives the public group commitment associated with the scalar share; it is useful for public keys, nonce commitments, audit handles, and verification transcripts.
-- Minimize openings. Opening scalar responses or intermediate fields is sometimes part of a signature protocol, but unnecessary openings weaken privacy boundaries and add protocol work.
-- Choose the curve for the external protocol first. `ed25519`, `secp256k1`, `p-256`, `bn254`, and `bls12_381` are not interchangeable if the output must verify against an existing wallet, certificate, proof system, or signature stack.
-- Do not use AVSS as a generic replacement for private arithmetic over low-entropy values. If the workload is aggregation, scoring, comparison-heavy policy logic, or private analytics, HoneyBadgerMPC is usually the better starting point.
+AVSS is the right choice when the application needs verifiable scalar shares, group commitments, or curve-compatible threshold-cryptography building blocks. The optimization target is the cryptographic transcript: keep public transcript work public, choose the curve for the external protocol, use commitments deliberately, and minimize unnecessary openings. See [Performance and circuit shaping](./performance-and-circuit-shaping#avss-transcript-shaping-intuition) for the full checklist.
 
 ## StoffelLang AVSS helpers
 
@@ -236,6 +228,7 @@ This is not a complete production signing protocol by itself. It shows the AVSS-
 
 ## Further reading
 
+- [Performance and circuit shaping](./performance-and-circuit-shaping)
 - Feldman, “A Practical Scheme for Non-interactive Verifiable Secret Sharing”: https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
 - Cachin, Kursawe, Lysyanskaya, Strobl, “Asynchronous Verifiable Secret Sharing and Proactive Cryptosystems”: https://doi.org/10.1145/586110.586122
 - Gennaro, Jarecki, Krawczyk, Rabin, “Secure Distributed Key Generation for Discrete-Log Based Cryptosystems”: https://doi.org/10.1007/3-540-48910-X_21

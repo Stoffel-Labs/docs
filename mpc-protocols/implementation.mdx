@@ -1,9 +1,9 @@
 ---
-title: "Protocol Implementation Notes"
-description: "How Stoffel carries MPC backend selection through bytecode, the VM, local runs, and SDK network/client configuration."
+title: "How Backend Selection Works"
+description: "How Stoffel carries MPC backend selection through config, bytecode, the VM, local runs, and SDK network/client configuration."
 ---
 
-Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers. This page explains that integration boundary. For the developer-facing protocol differences, start with [MPC Protocols](./overview).
+Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers. This page explains that integration boundary. For backend selection guidance, start with [MPC Backends](./overview).
 
 ## End-to-end path
 

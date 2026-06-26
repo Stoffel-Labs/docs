@@ -73,6 +73,7 @@
             "group": "MPC Backends",
             "pages": [
               "mpc-protocols/overview",
+              "mpc-protocols/performance-and-circuit-shaping",
               "mpc-protocols/honeybadger-mpc",
               "mpc-protocols/avss",
               "mpc-protocols/implementation",

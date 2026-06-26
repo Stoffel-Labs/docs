@@ -20,9 +20,10 @@
 
 # MPC Backends
 - [Protocol Overview](./mpc-protocols/overview.md)
+- [Performance and Circuit Shaping](./mpc-protocols/performance-and-circuit-shaping.md)
 - [HoneyBadgerMPC](./mpc-protocols/honeybadger-mpc.md)
 - [AVSS](./mpc-protocols/avss.md)
-- [Implementation Details](./mpc-protocols/implementation.md)
+- [How Backend Selection Works](./mpc-protocols/implementation.md)
 - [MPC Integration](./architecture/mpc.md)
 
 # StoffelLang

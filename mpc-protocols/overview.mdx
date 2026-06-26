@@ -1,16 +1,16 @@
 ---
-title: "MPC Protocols"
-description: "Stoffel's MPC backend model, current HoneyBadgerMPC and AVSS support, and how to select a backend from the CLI or Rust SDK."
+title: "MPC Backends"
+description: "Choose the Stoffel MPC backend that matches your program's secret value representation, cost model, and verifier-facing outputs."
 ---
 
 Stoffel separates application code from the MPC protocol used to run it. The selected backend determines how secret values are shared, computed over, and reconstructed across MPC parties.
 
 Stoffel currently supports two asynchronous, robust MPC backend families:
 
-| Backend | Selector | Best fit | Notes |
+| Backend | Selector | Use when | Main design lens |
 | --- | --- | --- | --- |
-| HoneyBadgerMPC | `honeybadger` | Field-arithmetic MPC: private aggregation, scoring, voting/tallying, and general arithmetic circuits over secret shares. | Information-theoretic/statistical MPC over fields. Multiplication uses preprocessing such as Beaver triples. |
-| AVSS | `avss` or `avss:<curve>` | Threshold cryptography and group/scalar workflows, especially elliptic-curve keys and signatures. | Computational MPC/VSS built around Feldman-style commitments over prime-order groups. |
+| HoneyBadgerMPC | `honeybadger` | Your program is mostly private field arithmetic over application values. | Circuit shape: multiplication count, multiplication depth, type choices, reveals, and preprocessing capacity. |
+| AVSS | `avss` or `avss:<curve>` | Your program needs committed scalar shares, public commitments, curve-compatible outputs, or threshold-cryptography building blocks. | Protocol transcript: curve selection, commitments, transcript-to-field boundaries, openings, and verifier-facing artifacts. |
 
 Both backends are designed for asynchronous/robust settings: parties do not rely on a fixed network round clock, and the run can tolerate Byzantine parties up to the configured threshold. The backend choice determines which share representation, curve/field, preprocessing, and client I/O path Stoffel records in the bytecode manifest.
 
@@ -18,55 +18,25 @@ Both backends are designed for asynchronous/robust settings: parties do not rely
 `mpc-protocols` has received an external audit from Zellic. Audit scope matters: validate the specific protocol version, integration code, deployment configuration, and threat model you rely on. Other Stoffel components have also had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped when evaluating a deployment.
 </Note>
 
-## How to choose
+## Choose by workload shape
 
-Use HoneyBadgerMPC when your program is primarily an arithmetic MPC application:
+Start from the shape of the secret work, not the name of the application.
 
-- secret integer or fixed-point arithmetic;
-- private aggregation, scoring, and policy logic;
-- computations where multiplication/opening costs are acceptable;
-- deployments where field-based information-theoretic MPC is the right primitive.
+Choose [HoneyBadgerMPC](./honeybadger-mpc) when the secret values are application data represented as field values:
 
-Use AVSS when the secret values are cryptographic scalars and the output needs group or elliptic-curve compatibility:
+- secret integers or fixed-point values;
+- private aggregation, scoring, matching, tallying, or policy logic;
+- circuits where multiplication, comparison, or reveal boundaries determine cost;
+- workflows where public parameters can stay public and secret values remain ordinary MPC shares.
 
-- distributed key generation;
-- threshold Schnorr, EdDSA, ECDSA-style workflows;
-- verifiable share commitments;
-- certificate/key workflows that need curve points or public commitments.
+Choose [AVSS](./avss) when the secret values are cryptographic scalars:
 
-If you are not sure, start with HoneyBadgerMPC for ordinary private computation. Reach for AVSS when the application is specifically about threshold cryptography or group-backed shares.
+- distributed key material;
+- public commitments to secret shares;
+- transcript data that must become a curve-field challenge;
+- outputs that need to verify against a specific curve, signature stack, certificate flow, wallet, or proof system.
 
-## Performance and circuit-shaping guidance
-
-The same high-level MPC intuition applies to both backends: reduce secret-dependent work, make public work public, and avoid serial interactive layers when the math can be rearranged. The details differ by backend:
-
-| Question | HoneyBadgerMPC intuition | AVSS intuition |
-| --- | --- | --- |
-| What tends to be expensive? | Secret × secret multiplication, comparisons, bit decomposition, and nonlinear functions. | Scalar-share operations that participate in threshold-signature/key workflows, openings, commitments, and curve-specific transcript steps. |
-| What is usually cheap? | Additions, subtractions, and share × clear-scalar operations. | Public transcript hashing, public curve encodings, and commitment handling once the committed share exists. |
-| What should you optimize first? | Multiplication count, multiplication depth, and the amount of preprocessing material needed for the largest input shape. | The protocol transcript: keep messages public where possible, avoid unnecessary openings, persist long-lived key shares, and avoid using AVSS for generic low-entropy private arithmetic. |
-
-For both backends:
-
-- Count secret-dependent operations first. Public constants, hashes, encodings, and normalization factors should usually be computed outside the MPC circuit.
-- Distinguish total operation count from dependency depth. Independent work can often be batched or planned together; long dependent chains create extra interactive layers.
-- Prefer public parameters when they are not part of the private input. For example, public model weights usually make a private scoring circuit cheaper than secret model weights.
-- Treat comparisons, bit-level logic, and nonlinear functions as expensive until measured. They often compile into more field operations than the source code suggests.
-- Size network/runtime configuration for the largest expected input shape, not the happy-path demo input.
-
-### Type choices and preprocessing demand
-
-Types affect preprocessing demand because they influence which VM and share operations the compiler emits:
-
-- Clear/public values stay local. Public `int64`, `fix64`, `bytes`, curve names, constants, hashes, and encodings should remain clear until a secret operation actually needs them.
-- Secret values enter the MPC circuit. `secret int64`, `secret bool`, fixed-point shares, and `Share` values can consume preprocessing when an operation requires interaction.
-- Public weights are cheaper than secret weights. A private score with public coefficients is mostly share × clear-scalar work; making the coefficients secret turns those terms into secret × secret multiplications.
-- Fixed-point addition is usually close to integer share addition, but fixed-point multiplication can require extra scaling, truncation, or rounding logic. Use fixed-point where the application needs it, but avoid secret fixed-point products when a clear scaling factor is enough.
-- `secret bool`, comparisons, range checks, and bit decomposition are often larger than they look. A single source-level comparison can expand into many lower-level field operations.
-- Containers multiply the cost of their element operations. A `list[secret int64]` is not expensive by itself; a loop that multiplies each element by another secret value consumes work per element.
-- Width matters for low-level share helpers. Operations over 64-bit ranges generally require more bit work than the same operation over an 8- or 16-bit domain, so use the smallest safe width when writing explicit comparison or bit-decomposition code.
-
-For AVSS, the important type question is whether the value is really a cryptographic scalar that needs a curve commitment or threshold-signature transcript. If the value is ordinary low-entropy application data such as age, income, vote counts, or policy scores, start with HoneyBadgerMPC unless the application specifically needs AVSS commitments or curve compatibility.
+If you are not sure, start with HoneyBadgerMPC for ordinary private computation. Reach for AVSS when the external system needs curve compatibility, commitments, or threshold-cryptography artifacts.
 
 ## Choose the next implementation path
 
@@ -86,7 +56,21 @@ Read [AVSS](./avss) next when the main question is:
 - where transcript bytes become a curve-field challenge;
 - which scalar values are safe or necessary to open.
 
-If you are using an AI coding agent, give it the same framing: identify the secret value representation, list the public inputs and verifier-facing outputs, choose the backend, then implement the smallest StoffelLang program that exercises the required client input, reveal, commitment, or client-output boundary.
+If the decision depends on cost, read [Performance and circuit shaping](./performance-and-circuit-shaping). If the decision depends on config, bytecode, local runs, or network execution, read [How backend selection works](./implementation).
+
+## AI-agent implementation checklist
+
+If you are using an AI coding agent, give it concrete implementation context before asking it to write Stoffel code:
+
+1. Which values are secret.
+2. Which values are public.
+3. Who supplies each input.
+4. Who receives each output.
+5. Whether the output is an opened value, client-output share, public commitment, curve-encoded value, or signature-related artifact.
+6. Which backend you selected and why.
+7. The validation command to run, usually `stoffel check` for source snippets or `npx mintlify validate` for docs changes.
+
+Ask the agent to implement the smallest StoffelLang program that exercises the required client input, reveal, commitment, or client-output boundary before expanding the application.
 
 ## Select a backend in `Stoffel.toml`
 
@@ -202,21 +186,11 @@ That means the common developer default is five parties with threshold one. The 
 
 The protocol literature often describes asynchronous Byzantine thresholds in terms of `n >= 3t + 1`. Stoffel's current configuration layer enforces the stricter `4t + 1` rule because the implemented local/network path includes preprocessing and robust execution requirements.
 
-## Bytecode manifest
-
-Compiled `.stflb` bytecode records:
-
-- selected backend: HoneyBadgerMPC or AVSS;
-- selected curve/field where applicable;
-- parties, threshold, and client input/output metadata;
-- preprocessing demand such as triples and random shares.
-
-This lets the CLI, Rust SDK, VM, and network clients validate that the compiled program and runtime backend agree before execution.
-
 ## Further reading
 
+- [Performance and circuit shaping](./performance-and-circuit-shaping)
 - [HoneyBadgerMPC](./honeybadger-mpc)
 - [AVSS](./avss)
-- [Protocol implementation notes](./implementation)
+- [How backend selection works](./implementation)
 - [CLI overview](../cli/overview)
 - [Rust SDK API](../rust-sdk/api)

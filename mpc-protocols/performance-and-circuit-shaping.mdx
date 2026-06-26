@@ -3,9 +3,9 @@ title: "Performance and Circuit Shaping"
 description: "How to reason about secret-dependent work, preprocessing demand, type choices, and transcript shape across Stoffel MPC backends."
 ---
 
-Use this page when a Stoffel program works but you need to choose a backend, reduce cost, size preprocessing, or give an AI coding agent enough context to build the right circuit.
+Use this page after the basic backend decision is clear and the next question is how to shape the work that runs inside MPC. For backend selection, start with [MPC Backends](./overview). For config, bytecode, local runs, and network execution, use [How Backend Selection Works](./implementation). For backend-specific examples, see [HoneyBadgerMPC](./honeybadger-mpc) and [AVSS](./avss).
 
-The shared rule is simple: keep public work public, minimize secret-dependent work, and expose only the boundary the application actually needs.
+This page focuses on the cost model behind those choices: what becomes secret-dependent work, which type choices change preprocessing demand, and how HoneyBadgerMPC circuit costs differ from AVSS transcript costs.
 
 ## Backend cost model
 

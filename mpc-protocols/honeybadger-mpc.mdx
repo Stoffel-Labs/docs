@@ -126,41 +126,74 @@ Local CLI/SDK paths hide most of this setup. If a program consumes more multipli
 
 ## Use-case examples
 
-HoneyBadgerMPC is the best fit when the application is mostly field arithmetic over private inputs. The protocol's share representation makes additions and scalar shifts local, while multiplication uses the backend's preprocessed multiplication material.
+HoneyBadgerMPC is the best fit when the application is mostly field arithmetic over private inputs. The protocol's share representation makes additions and scalar shifts local, while multiplication uses the backend's preprocessed multiplication material. The examples below use Stoffel features that matter in real applications: typed fixed-point shares, loops, variable client counts, client-output channels, and explicit reveal boundaries.
 
-### Private weighted scoring
+### Federated fixed-point aggregation
 
-Use this shape for credit, risk, eligibility, or matching flows where several private features combine into one opened decision value:
+Use this shape when clients contribute model updates, risk vectors, or analytics rows and the application needs per-position aggregates without revealing individual contributions:
 
 ```stoffel
+def federated_average_2x3() -> list[fix64]:
+  var matrix_size: int64 = 6
+  var num_clients: int64 = ClientStore.get_number_clients()
+  var result: list[fix64] = []
+  var output_shares: list[Share] = []
+
+  var element_index: int64 = 0
+  while element_index < matrix_size:
+    var element_sum = ClientStore.take_share_fixed(0, element_index)
+
+    var client_index: int64 = 1
+    while client_index < num_clients:
+      var share = ClientStore.take_share_fixed(client_index, element_index)
+      element_sum = element_sum.add(share)
+      client_index = client_index + 1
+
+    var revealed_sum: fix64 = element_sum.open_fixed()
+    result.append(revealed_sum / num_clients)
+    output_shares.append(element_sum)
+    element_index = element_index + 1
+
+  if num_clients > 0 and Mpc.has_capability("client-output"):
+    MpcOutput.send_to_client(0, output_shares)
+
+  return result
+
+def main() -> list[fix64]:
+  return federated_average_2x3()
+```
+
+This uses HoneyBadgerMPC for a field-heavy workload: each matrix element is summed as a fixed-point share, the aggregate can be routed back to an output client as shares, and only the average values selected by the program are opened.
+
+### Private score routing with client-specific outputs
+
+Use this shape when the host application should learn only coordination metadata while selected clients receive private result shares:
+
+```stoffel
+def normalize_score(raw_score: Share) -> Share:
+  var adjusted = raw_score.add_scalar(50)
+  return adjusted.mul_scalar(2)
+
 def main() -> int64:
-  var income: secret int64 = ClientStore.take_share(0, 0)
-  var debt: secret int64 = ClientStore.take_share(1, 0)
-  var cashflow: secret int64 = ClientStore.take_share(2, 0)
+  var client_count = ClientStore.get_number_clients()
+  var income_score = ClientStore.take_share(0, 0)
+  var eligibility = normalize_score(income_score)
 
-  var score = income * 3 - debt * 2 + cashflow
-  return score.reveal()
+  if client_count > 1:
+    var coapplicant_score = ClientStore.take_share(1, 0)
+    eligibility = eligibility.add(coapplicant_score)
+
+  if Mpc.has_capability("client-output"):
+    var client_outputs: list[Share] = []
+    client_outputs.append(eligibility)
+    MpcOutput.send_to_client(0, client_outputs)
+    if client_count > 1:
+      eligibility.send_to_client(1)
+
+  return client_count
 ```
 
-This leverages HoneyBadgerMPC's field-arithmetic path: each client contributes a private field value, parties compute the weighted expression over shares, and only the final score is reconstructed.
-
-### Private aggregate with threshold policy
-
-Use this shape when parties need a private aggregate but only a coarse result should leave the MPC computation:
-
-```stoffel
-def main() -> bool:
-  var votes_for: secret int64 = ClientStore.take_share(0, 0)
-  var votes_against: secret int64 = ClientStore.take_share(1, 0)
-  var abstentions: secret int64 = ClientStore.take_share(2, 0)
-
-  var total = votes_for + votes_against + abstentions
-  var margin = votes_for * 2 - total
-  var opened_margin = margin.reveal()
-  return opened_margin > 0
-```
-
-This keeps the individual counts private and reveals only whether the proposal crossed the majority threshold. It is a natural HoneyBadgerMPC workload because it is dominated by additions, scalar multiplication, and one explicit reveal.
+This keeps the score as a share instead of opening it to the host application. HoneyBadgerMPC is doing the general private arithmetic, while Stoffel's `ClientStore`, `Mpc.has_capability`, and `MpcOutput` APIs define which clients supply and receive private values.
 
 ## Further reading
 

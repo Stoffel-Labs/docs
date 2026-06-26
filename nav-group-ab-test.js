@@ -44,7 +44,7 @@
   }
 
   function getRewriteRoots() {
-    var roots = Array.prototype.slice.call(document.querySelectorAll("nav, main h1"));
+    var roots = Array.prototype.slice.call(document.querySelectorAll("nav, main"));
     return roots.length ? roots : [document.body];
   }
 

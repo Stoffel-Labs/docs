@@ -3,6 +3,8 @@ title: "MPC Integration"
 description: "How Stoffel integrates with MPC backends, secret sharing, client inputs, and backend-specific security models."
 ---
 
+Use this page to understand how private client inputs move through Stoffel: input collection, secret sharing, VM execution, openings, and client-output delivery. If you are deciding which backend to use, start with [MPC Backends](../mpc-protocols/overview). If you already chose a backend and need config or runtime details, use [How Backend Selection Works](../mpc-protocols/implementation).
+
 Stoffel is designed around a consistent programming surface with selectable MPC backends underneath it. Developers write StoffelLang programs with `secret T`, `Share`, `ClientStore`, and `MpcOutput`; the CLI and Rust SDK compile those programs to bytecode that records which MPC backend should execute them.
 
 ## Protocol architecture
@@ -89,6 +91,7 @@ Use five parties and threshold one for local development unless you are intentio
 ## See also
 
 - [MPC Protocols](../mpc-protocols/overview)
+- [How Backend Selection Works](../mpc-protocols/implementation)
 - [HoneyBadgerMPC](../mpc-protocols/honeybadger-mpc)
 - [AVSS](../mpc-protocols/avss)
 - [Stoffel VM Overview](../stoffel-vm/overview)

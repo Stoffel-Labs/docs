@@ -24,7 +24,6 @@
 - [HoneyBadgerMPC](./mpc-protocols/honeybadger-mpc.md)
 - [AVSS](./mpc-protocols/avss.md)
 - [How Backend Selection Works](./mpc-protocols/implementation.md)
-- [MPC Integration](./architecture/mpc.md)
 
 # StoffelLang
 - [Language Overview](./stoffel-lang/overview.md)
@@ -57,6 +56,7 @@
 - [Input Manager](./solidity-sdk/input-manager.md)
 
 # Architecture
+- [MPC Integration](./architecture/mpc.md)
 - [System Architecture](./architecture/system.md)
 - [Design Rationale](./architecture/rationale.md)
 - [VM Technical Overview](./architecture/architecture.md)

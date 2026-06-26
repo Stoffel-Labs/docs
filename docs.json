@@ -76,8 +76,7 @@
               "mpc-protocols/performance-and-circuit-shaping",
               "mpc-protocols/honeybadger-mpc",
               "mpc-protocols/avss",
-              "mpc-protocols/implementation",
-              "architecture/mpc"
+              "mpc-protocols/implementation"
             ]
           },
           {
@@ -97,6 +96,17 @@
               "stoffel-vm/instructions",
               "stoffel-vm/usage",
               "stoffel-vm/builtins"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/mpc",
+              "architecture/system",
+              "architecture/rationale",
+              "architecture/architecture",
+              "architecture/vm",
+              "architecture/sources"
             ]
           }
         ]
@@ -157,21 +167,6 @@
               "developer-skills/stoffel-app-network-and-offchain-integration",
               "developer-skills/stoffel-app-troubleshooting",
               "developer-skills/stoffel-ai-agent-implementation"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Reference",
-        "groups": [
-          {
-            "group": "Architecture",
-            "pages": [
-              "architecture/system",
-              "architecture/rationale",
-              "architecture/architecture",
-              "architecture/vm",
-              "architecture/sources"
             ]
           }
         ]

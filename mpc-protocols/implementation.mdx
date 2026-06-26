@@ -3,7 +3,9 @@ title: "How Backend Selection Works"
 description: "How Stoffel carries MPC backend selection through config, bytecode, the VM, local runs, and SDK network/client configuration."
 ---
 
-Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers. This page explains that integration boundary. For backend selection guidance, start with [MPC Backends](./overview).
+Use this page after choosing a backend to see how that choice flows through `Stoffel.toml`, CLI flags, Rust SDK builders, bytecode metadata, local execution, and network/client configuration. If you need the app-level input, execution, and output flow, use [MPC Integration](../architecture/mpc). For backend selection guidance, start with [MPC Backends](./overview).
+
+Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers.
 
 ## End-to-end path
 

@@ -114,6 +114,16 @@ let deployment = NetworkDeployment::builder([
 
 Local CLI/SDK paths hide most of this setup. If a program consumes more multiplication/randomness material than the run prepared, increase preprocessing configuration or simplify the circuit.
 
+For advanced MPC workloads, use the preprocessing warning as a signal to inspect the circuit shape:
+
+- Count secret × secret multiplications first. Additions, subtractions, and share × clear-scalar operations are usually local share operations; they should not drive triple demand the way secret multiplication does.
+- Separate multiplication count from multiplication depth. More independent multiplications mainly require more preprocessing material. Long dependent chains also increase the number of interactive multiplication layers, so they affect latency as well as total demand.
+- Batch independent work. Prefer vector/matrix-style loops where independent products can be planned together, rather than serializing products through an accumulator when the math does not require it.
+- Move clear work out of the MPC circuit. Precompute public constants, lookup tables, hashes, encodings, and normalization factors before they become secret-dependent values.
+- Replace secret × secret products with share × clear-scalar operations when one side is public. For scoring and linear models, keep weights public when the weights are not part of the private input.
+- Be careful with comparisons, bit decomposition, and nonlinear functions. They compile into many field operations and often dominate preprocessing demand more than the top-level source code suggests.
+- If the circuit is already appropriate, increase preprocessing capacity in the network configuration. Treat `.preprocessing(multiplication_count, random_count)` as a budget for the backend material the run can consume, and size it with headroom for the largest expected input shape.
+
 ## Operation costs
 
 | Operation | Cost shape |

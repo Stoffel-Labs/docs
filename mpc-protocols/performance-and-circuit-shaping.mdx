@@ -21,7 +21,7 @@ For both backends:
 
 - Count secret-dependent operations first. Public constants, hashes, encodings, and normalization factors should usually be computed outside the MPC circuit.
 - Distinguish total operation count from dependency depth. Independent work can often be batched or planned together; long dependent chains create extra interactive layers.
-- Prefer public parameters when they are not part of the private input. Public model weights usually make a private scoring circuit cheaper than secret model weights.
+- Prefer public parameters when they are not part of the private input. Public coefficients usually make a private weighted computation cheaper than secret coefficients.
 - Treat comparisons, bit-level logic, and nonlinear functions as expensive until measured. They often compile into more field operations than the source code suggests.
 - Size network/runtime configuration for the largest expected input shape, not the happy-path demo input.
 
@@ -49,7 +49,7 @@ Use preprocessing warnings as a signal to inspect the circuit shape:
 - Separate multiplication count from multiplication depth. More independent multiplications mainly require more preprocessing material. Long dependent chains also increase the number of interactive multiplication layers, so they affect latency as well as total demand.
 - Batch independent work. Prefer vector/matrix-style loops where independent products can be planned together, rather than serializing products through an accumulator when the math does not require it.
 - Move clear work out of the MPC circuit. Precompute public constants, lookup tables, hashes, encodings, and normalization factors before they become secret-dependent values.
-- Replace secret × secret products with share × clear-scalar operations when one side is public. For scoring and linear models, keep weights public when the weights are not part of the private input.
+- Replace secret × secret products with share × clear-scalar operations when one side is public. For weighted computations, keep coefficients public when they are not part of the private input.
 - Be careful with comparisons, bit decomposition, and nonlinear functions. They compile into many field operations and often dominate preprocessing demand more than the top-level source code suggests.
 - If the circuit is already appropriate, increase preprocessing capacity in the network configuration. Treat `.preprocessing(multiplication_count, random_count)` as a budget for the backend material the run can consume, and size it with headroom for the largest expected input shape.
 
@@ -62,8 +62,8 @@ AVSS uses scalar shares and public commitments. The optimization target is usual
 - Persist long-lived key shares with `LocalStorage` instead of regenerating them on every run. For signing protocols, never persist or reuse per-signature nonces unless the protocol explicitly requires and protects that state.
 - Use commitments deliberately. `get_commitment(0)` gives the public group commitment associated with the scalar share; it is useful for public keys, nonce commitments, audit handles, and verification transcripts.
 - Minimize openings. Opening scalar responses or intermediate fields is sometimes part of a signature protocol, but unnecessary openings weaken privacy boundaries and add protocol work.
-- Choose the curve for the external protocol first. `ed25519`, `secp256k1`, `p-256`, `bn254`, and `bls12_381` are not interchangeable if the output must verify against an existing wallet, certificate, proof system, or signature stack.
-- Do not use AVSS as a generic replacement for private arithmetic over low-entropy values. If the workload is aggregation, scoring, comparison-heavy policy logic, or private analytics, HoneyBadgerMPC is usually the better starting point.
+- Choose the curve for the external protocol first. `ed25519`, `secp256k1`, `p-256`, `bn254`, and `bls12_381` are not interchangeable when another system needs to verify a public commitment, encoded group element, scalar response, or signature-related artifact.
+- Do not use AVSS as a generic replacement for private arithmetic over low-entropy values. If the secret values are ordinary application data and the output boundary is an opened result or client-output shares, HoneyBadgerMPC is usually the better starting point.
 
 ## AI-agent prompt shape
 

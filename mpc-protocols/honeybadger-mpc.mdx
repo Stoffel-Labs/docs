@@ -3,20 +3,20 @@ title: "HoneyBadgerMPC"
 description: "HoneyBadgerMPC backend details for asynchronous, robust, field-based MPC in Stoffel."
 ---
 
-HoneyBadgerMPC is Stoffel's default MPC backend. Use it for ordinary private computation over field-compatible values: secret integers, fixed-point values, private aggregation, scoring, tallying, and arithmetic circuits.
+HoneyBadgerMPC is Stoffel's default MPC backend. Use it when secret application values are represented as field-compatible shares and the outside system consumes an opened result or client-output shares from private computation.
 
 It is an asynchronous, robust MPC protocol family. In practical terms, Stoffel can run a known set of MPC parties without relying on a fixed network round clock, while tolerating Byzantine parties up to the configured threshold.
 
 ## What it is good for
 
-HoneyBadgerMPC is the right starting point when your program mostly does arithmetic on secret values:
+HoneyBadgerMPC is the right starting point when the secret values are application data represented as field-compatible shares:
 
-- add, subtract, multiply, and open secret integers or fixed-point values;
-- combine client inputs into private aggregates;
-- run policy, scoring, or matching logic over private inputs;
-- build local MPC smoke tests before moving to a networked deployment.
+- the program computes over secret integers, fixed-point values, or other field-compatible values;
+- public parameters can stay public while private inputs remain ordinary MPC shares;
+- the main cost questions are multiplication count, multiplication depth, comparisons, and reveal boundaries;
+- the output boundary is an opened value or client-output shares.
 
-It is less natural for applications where the main object is an elliptic-curve key, a public curve commitment, or a threshold signature transcript. Use AVSS for those workflows.
+It is less natural when the output boundary is a public commitment, curve-encoded value, opened scalar response, or signature-related artifact. Use AVSS when the secret value is a cryptographic scalar that must match an external curve or verifier.
 
 ## Protocol model
 

@@ -171,7 +171,7 @@ HoneyBadgerMPC share data is field-oriented and supports the general arithmetic 
 
 ### AVSS
 
-AVSS share data can carry Feldman commitment material. StoffelLang exposes `AvssShare` helpers and `Share.get_commitment(...)` for commitment-oriented workflows such as threshold cryptography. Curve selection matters because scalar-field and group encodings must match the cryptographic protocol being built.
+AVSS share data can carry Feldman commitment material. StoffelLang exposes `AvssShare` helpers and `Share.get_commitment(...)` when the output boundary needs public commitments, curve-encoded values, or scalar responses. Curve selection matters because scalar-field and group encodings must match the external verifier or protocol boundary.
 
 ## Troubleshooting
 

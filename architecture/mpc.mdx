@@ -26,10 +26,10 @@ VM + selected MPC backend
 
 | Backend | Purpose | Developer selector |
 | --- | --- | --- |
-| HoneyBadgerMPC | Default asynchronous/robust field-MPC backend for private arithmetic. | `honeybadger` / `MpcBackend::HoneyBadger` |
-| AVSS | Computational AVSS backend for verifiable shares, commitments, and threshold elliptic-curve cryptography. | `avss`, `avss:<curve>` / `MpcBackend::Avss { curve }` |
+| HoneyBadgerMPC | Default asynchronous/robust backend for field-compatible secret application values. | `honeybadger` / `MpcBackend::HoneyBadger` |
+| AVSS | Computational AVSS backend for verifiable scalar shares, public commitments, and curve-compatible outputs. | `avss`, `avss:<curve>` / `MpcBackend::Avss { curve }` |
 
-Both backends use the same high-level Stoffel application model, but they are not interchangeable at the cryptographic layer. HoneyBadgerMPC is field-arithmetic oriented. AVSS is group/scalar oriented and is the backend to use when commitments or elliptic-curve compatibility are part of the application.
+Both backends use the same high-level Stoffel application model, but they are not interchangeable at the cryptographic layer. HoneyBadgerMPC is field-arithmetic oriented. AVSS is group/scalar oriented and is the backend to use when the output boundary needs public commitments, curve-encoded values, or scalar responses that match an external verifier.
 
 ## Integration points
 
@@ -59,7 +59,7 @@ Each backend has its own threat model and assumptions. Do not treat “MPC backe
 | Backend | Security posture |
 | --- | --- |
 | HoneyBadgerMPC | Asynchronous, Byzantine-robust, field-based MPC. Primarily information-theoretic/statistical at the share arithmetic layer, with ordinary computational assumptions for concrete transport/authentication and implementation details. |
-| AVSS | Asynchronous verifiable secret sharing with Feldman-style commitments. Computational security under discrete-log assumptions; best suited to high-entropy scalar secrets and threshold cryptography. |
+| AVSS | Asynchronous verifiable secret sharing with Feldman-style commitments. Computational security under discrete-log assumptions; best suited to high-entropy scalar secrets that need commitments or curve-compatible outputs. |
 
 Current Stoffel local/network config validates:
 
@@ -84,7 +84,7 @@ Use five parties and threshold one for local development unless you are intentio
 | Secret multiplication | Requires backend protocol work and preprocessing. |
 | Opening/reveal | Requires reconstruction from enough parties. |
 | Comparisons and bit-heavy logic | More expensive than field arithmetic because they lower into additional share operations. |
-| Curve/commitment workflows | Use AVSS when the application needs group elements or threshold-signature primitives. |
+| Curve/commitment workflows | Use AVSS when the output boundary needs public commitments, curve-encoded values, or opened scalar responses. |
 
 ## See also
 

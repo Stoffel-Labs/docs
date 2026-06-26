@@ -1,22 +1,20 @@
 ---
 title: "AVSS"
-description: "AVSS backend details for computational MPC, Feldman commitments, and threshold elliptic-curve cryptography in Stoffel."
+description: "AVSS backend details for computational MPC, Feldman commitments, and curve-compatible scalar workflows in Stoffel."
 ---
 
-AVSS is Stoffel's backend for group/scalar-oriented MPC workflows. Use it when your program needs verifiable shares, public commitments, or elliptic-curve compatibility for threshold cryptography.
+AVSS is Stoffel's backend for group/scalar-oriented MPC workflows. Use it when secret values are cryptographic scalars that need verifiable shares, public commitments, or curve-compatible outputs.
 
 AVSS stands for asynchronous verifiable secret sharing. In Stoffel, the AVSS path uses Feldman-style commitments: shares are scalar values, commitments are group elements, and parties can check that a share is consistent with the committed polynomial under the discrete-log assumption.
 
 ## What it is good for
 
-AVSS is the right backend when the secret is naturally a cryptographic scalar:
+AVSS is the right backend when the secret value is a cryptographic scalar whose share needs a public commitment or curve-compatible output:
 
-- distributed key generation;
-- threshold Schnorr or EdDSA-style signing flows;
-- threshold ECDSA-style demos and building blocks;
-- public-key or certificate workflows;
-- auditing share commitments;
-- protocol code that needs curve points or scalar-field compatibility.
+- the program exposes public commitments to secret shares;
+- the backend must use a curve selected by an external verifier or protocol;
+- public transcript bytes must become curve-field challenges;
+- the outside system consumes a commitment, curve-encoded value, opened scalar response, or signature-related artifact.
 
 For ordinary private arithmetic over integers or fixed-point values, start with [HoneyBadgerMPC](./honeybadger-mpc).
 
@@ -62,7 +60,7 @@ Stoffel accepts AVSS curve selectors through the CLI and Rust SDK:
 | `secp256k1` | `Curve::Secp256k1` |
 | `p-256` / `secp256r1` | `Curve::Secp256r1` |
 
-Use the curve that matches the cryptographic protocol you are building. For example, secp256k1 maps to Bitcoin/Ethereum-style ECDSA experiments, P-256 maps to many WebPKI/TLS ecosystems, and Ed25519 maps to Schnorr/EdDSA-style flows.
+Use the curve required by the external verifier or protocol boundary. Curve selectors are not interchangeable when another system needs to verify a public commitment, encoded group element, scalar response, or signature-related artifact.
 
 ## Configure AVSS
 
@@ -75,7 +73,7 @@ parties = 5
 threshold = 1
 ```
 
-Use an explicit curve for elliptic-curve workflows:
+Use an explicit curve for curve-compatible workflows:
 
 ```toml
 [mpc]

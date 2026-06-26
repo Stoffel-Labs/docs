@@ -24,17 +24,17 @@ Start from the shape of the secret work, not the name of the application.
 
 Choose [HoneyBadgerMPC](./honeybadger-mpc) when the secret values are application data represented as field values:
 
-- secret integers or fixed-point values;
-- private aggregation, scoring, matching, tallying, or policy logic;
-- circuits where multiplication, comparison, or reveal boundaries determine cost;
-- workflows where public parameters can stay public and secret values remain ordinary MPC shares.
+- the program computes over secret integers, fixed-point values, or field-compatible shares;
+- the main cost questions are multiplication count, multiplication depth, comparisons, and reveal boundaries;
+- public parameters can stay public while private inputs remain ordinary MPC shares;
+- the outside system consumes an opened result or client-output shares from private computation.
 
 Choose [AVSS](./avss) when the secret values are cryptographic scalars:
 
-- distributed key material;
-- public commitments to secret shares;
-- transcript data that must become a curve-field challenge;
-- outputs that need to verify against a specific curve, signature stack, certificate flow, wallet, or proof system.
+- the program needs public commitments to secret shares;
+- the backend must use a curve that matches an external verifier or protocol;
+- public transcript bytes must become curve-field challenges;
+- the outside system consumes a commitment, curve-encoded value, opened scalar response, or signature-related artifact.
 
 If you are not sure, start with HoneyBadgerMPC for ordinary private computation. Reach for AVSS when the external system needs curve compatibility, commitments, or threshold-cryptography artifacts.
 

@@ -68,7 +68,25 @@ Types affect preprocessing demand because they influence which VM and share oper
 
 For AVSS, the important type question is whether the value is really a cryptographic scalar that needs a curve commitment or threshold-signature transcript. If the value is ordinary low-entropy application data such as age, income, vote counts, or policy scores, start with HoneyBadgerMPC unless the application specifically needs AVSS commitments or curve compatibility.
 
-Use [HoneyBadgerMPC](./honeybadger-mpc) for detailed preprocessing guidance. Use [AVSS](./avss) for curve, commitment, and threshold-cryptography guidance.
+## Choose the next implementation path
+
+Use the backend pages as implementation checklists, not just protocol background.
+
+Read [HoneyBadgerMPC](./honeybadger-mpc) next when the main question is:
+
+- how much private arithmetic the program performs;
+- which operations consume preprocessing;
+- whether type choices or public parameters can reduce circuit cost;
+- where values should be opened or returned as client-output shares.
+
+Read [AVSS](./avss) next when the main question is:
+
+- which curve the external protocol needs;
+- which commitments become public;
+- where transcript bytes become a curve-field challenge;
+- which scalar values are safe or necessary to open.
+
+If you are using an AI coding agent, give it the same framing: identify the secret value representation, list the public inputs and verifier-facing outputs, choose the backend, then implement the smallest StoffelLang program that exercises the required client input, reveal, commitment, or client-output boundary.
 
 ## Select a backend in `Stoffel.toml`
 

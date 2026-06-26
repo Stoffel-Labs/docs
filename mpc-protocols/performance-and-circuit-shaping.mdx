@@ -13,7 +13,7 @@ This page focuses on the cost model behind those choices: what becomes secret-de
 | --- | --- | --- |
 | What tends to be expensive? | Secret × secret multiplication, comparisons, bit decomposition, and nonlinear functions. | Scalar-share operations that participate in threshold-signature/key workflows, openings, commitments, and curve-specific transcript steps. |
 | What is usually cheap? | Additions, subtractions, and share × clear-scalar operations. | Public transcript hashing, public curve encodings, and commitment handling once the committed share exists. |
-| What should you optimize first? | Multiplication count, multiplication depth, and the amount of preprocessing material needed for the largest input shape. | The protocol transcript: keep messages public where possible, avoid unnecessary openings, persist long-lived key shares, and avoid using AVSS for generic low-entropy private arithmetic. |
+| What should you optimize first? | Multiplication count, multiplication depth, and the amount of preprocessing material needed for the largest input shape. | The protocol transcript: keep messages public where possible, avoid unnecessary openings, persist long-lived key shares, and avoid using AVSS for ordinary application data that only needs private computation. |
 
 ## Circuit-shaping checklist
 
@@ -37,7 +37,7 @@ Types affect preprocessing demand because they influence which VM and share oper
 - Containers multiply the cost of their element operations. A `list[secret int64]` is not expensive by itself; a loop that multiplies each element by another secret value consumes work per element.
 - Width matters for low-level share helpers. Operations over 64-bit ranges generally require more bit work than the same operation over an 8- or 16-bit domain, so use the smallest safe width when writing explicit comparison or bit-decomposition code.
 
-For AVSS, the important type question is whether the value is really a cryptographic scalar that needs a curve commitment or threshold-signature transcript. If the value is ordinary low-entropy application data such as age, income, vote counts, or policy scores, start with HoneyBadgerMPC unless the application specifically needs AVSS commitments or curve compatibility.
+For AVSS, the important type question is whether the value is really a cryptographic scalar that needs a public commitment or curve-compatible output. If the value is ordinary application data and the output boundary is an opened result or client-output shares, start with HoneyBadgerMPC unless the application specifically needs AVSS commitments or curve compatibility.
 
 ## HoneyBadgerMPC preprocessing intuition
 
@@ -63,7 +63,7 @@ AVSS uses scalar shares and public commitments. The optimization target is usual
 - Use commitments deliberately. `get_commitment(0)` gives the public group commitment associated with the scalar share; it is useful for public keys, nonce commitments, audit handles, and verification transcripts.
 - Minimize openings. Opening scalar responses or intermediate fields is sometimes part of a signature protocol, but unnecessary openings weaken privacy boundaries and add protocol work.
 - Choose the curve for the external protocol first. `ed25519`, `secp256k1`, `p-256`, `bn254`, and `bls12_381` are not interchangeable when another system needs to verify a public commitment, encoded group element, scalar response, or signature-related artifact.
-- Do not use AVSS as a generic replacement for private arithmetic over low-entropy values. If the secret values are ordinary application data and the output boundary is an opened result or client-output shares, HoneyBadgerMPC is usually the better starting point.
+- Do not use AVSS as a generic replacement for private arithmetic over ordinary application data. If the output boundary is an opened result or client-output shares, HoneyBadgerMPC is usually the better starting point.
 
 ## AI-agent prompt shape
 

@@ -27,7 +27,7 @@ VM + selected MPC backend
 | Backend | Purpose | Developer selector |
 | --- | --- | --- |
 | HoneyBadgerMPC | Default asynchronous/robust backend for field-compatible secret application values. | `honeybadger` / `MpcBackend::HoneyBadger` |
-| AVSS | Computational AVSS backend for verifiable scalar shares, public commitments, and curve-compatible outputs. | `avss`, `avss:<curve>` / `MpcBackend::Avss { curve }` |
+| AVSS | AVSS backend for verifiable scalar shares, public commitments, and curve-compatible outputs. | `avss`, `avss:<curve>` / `MpcBackend::Avss { curve }` |
 
 Both backends use the same high-level Stoffel application model, but they are not interchangeable at the cryptographic layer. HoneyBadgerMPC is field-arithmetic oriented. AVSS is group/scalar oriented and is the backend to use when the output boundary needs public commitments, curve-encoded values, or scalar responses that match an external verifier.
 
@@ -58,8 +58,8 @@ Each backend has its own threat model and assumptions. Do not treat “MPC backe
 
 | Backend | Security posture |
 | --- | --- |
-| HoneyBadgerMPC | Asynchronous, Byzantine-robust, field-based MPC. Primarily information-theoretic/statistical at the share arithmetic layer, with ordinary computational assumptions for concrete transport/authentication and implementation details. |
-| AVSS | Asynchronous verifiable secret sharing with Feldman-style commitments. Computational security under discrete-log assumptions; best suited to high-entropy scalar secrets that need commitments or curve-compatible outputs. |
+| HoneyBadgerMPC | Asynchronous, Byzantine-robust, field-based MPC for private computation over application values. Use it when the output boundary is an opened result or client-output shares. |
+| AVSS | Asynchronous verifiable secret sharing with Feldman-style commitments. Use it when public commitments, curve-encoded values, or scalar responses are part of the verifier-facing protocol boundary. |
 
 Current Stoffel local/network config validates:
 

@@ -35,7 +35,7 @@ The sharing model is closely related to Shamir secret sharing and Reed-Solomon/e
 For developer configuration, remember three points:
 
 1. HoneyBadgerMPC is designed for asynchronous, Byzantine-robust MPC.
-2. The field-MPC layer is primarily information-theoretic/statistical, while concrete deployments still rely on ordinary computational cryptography for transport, authentication, signatures, and implementation details.
+2. HoneyBadgerMPC is the default path for private computation over application values; concrete deployments still rely on ordinary cryptography for transport, authentication, signatures, and implementation details.
 3. Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
 
 That last rule is what developers should use when choosing local or network topology values, even though the underlying asynchronous MPC literature often starts from `n >= 3t + 1` thresholds.

@@ -1,6 +1,6 @@
 ---
 title: "AVSS"
-description: "AVSS backend details for computational MPC, Feldman commitments, and curve-compatible scalar workflows in Stoffel."
+description: "AVSS backend details for Feldman commitments, verifiable scalar shares, and curve-compatible workflows in Stoffel."
 ---
 
 AVSS is Stoffel's backend for group/scalar-oriented MPC workflows. Use it when secret values are cryptographic scalars that need verifiable shares, public commitments, or curve-compatible outputs.
@@ -37,13 +37,15 @@ where `a_j` is a polynomial coefficient. A party can verify a scalar share again
 
 ## Security posture
 
-AVSS is computational: Feldman commitments are binding under discrete-log hardness. They are not perfectly hiding commitments. That makes the backend a natural fit for high-entropy cryptographic secrets such as random key shares, but not a generic replacement for information-theoretic private arithmetic.
+AVSS commitments are public group elements tied to the shared scalar. That is useful when another system needs to verify a commitment, curve-encoded value, or scalar response, but it is usually the wrong privacy boundary for ordinary application data. If the value is app data and the goal is private computation over integers or fixed-point values, start with HoneyBadgerMPC.
+
+Cryptographic note: Feldman-style commitments are binding under discrete-log hardness, but they are not hiding commitments. The developer consequence is that AVSS commitments are verifier-facing artifacts, not a drop-in privacy boundary for low-entropy values.
 
 Keep these distinctions in mind:
 
 - AVSS is about verifiable scalar shares and group commitments.
 - Feldman-style commitments expose public group elements tied to the secret polynomial.
-- Low-entropy private values should not be treated like random cryptographic keys.
+- Low-entropy application values should not be treated like random cryptographic scalars.
 - Full threshold signing protocols may need additional logic beyond share generation and commitment access.
 - Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
 

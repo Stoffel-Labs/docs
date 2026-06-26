@@ -36,6 +36,26 @@ Use AVSS when the secret values are cryptographic scalars and the output needs g
 
 If you are not sure, start with HoneyBadgerMPC for ordinary private computation. Reach for AVSS when the application is specifically about threshold cryptography or group-backed shares.
 
+## Performance and circuit-shaping guidance
+
+The same high-level MPC intuition applies to both backends: reduce secret-dependent work, make public work public, and avoid serial interactive layers when the math can be rearranged. The details differ by backend:
+
+| Question | HoneyBadgerMPC intuition | AVSS intuition |
+| --- | --- | --- |
+| What tends to be expensive? | Secret × secret multiplication, comparisons, bit decomposition, and nonlinear functions. | Scalar-share operations that participate in threshold-signature/key workflows, openings, commitments, and curve-specific transcript steps. |
+| What is usually cheap? | Additions, subtractions, and share × clear-scalar operations. | Public transcript hashing, public curve encodings, and commitment handling once the committed share exists. |
+| What should you optimize first? | Multiplication count, multiplication depth, and the amount of preprocessing material needed for the largest input shape. | The protocol transcript: keep messages public where possible, avoid unnecessary openings, persist long-lived key shares, and avoid using AVSS for generic low-entropy private arithmetic. |
+
+For both backends:
+
+- Count secret-dependent operations first. Public constants, hashes, encodings, and normalization factors should usually be computed outside the MPC circuit.
+- Distinguish total operation count from dependency depth. Independent work can often be batched or planned together; long dependent chains create extra interactive layers.
+- Prefer public parameters when they are not part of the private input. For example, public model weights usually make a private scoring circuit cheaper than secret model weights.
+- Treat comparisons, bit-level logic, and nonlinear functions as expensive until measured. They often compile into more field operations than the source code suggests.
+- Size network/runtime configuration for the largest expected input shape, not the happy-path demo input.
+
+Use [HoneyBadgerMPC](./honeybadger-mpc) for detailed preprocessing guidance. Use [AVSS](./avss) for curve, commitment, and threshold-cryptography guidance.
+
 ## Select a backend in `Stoffel.toml`
 
 The default project template uses HoneyBadgerMPC:

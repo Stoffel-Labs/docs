@@ -133,6 +133,18 @@ let result = Stoffel::load_file("target/debug/threshold-demo.stflb")?
 
 The Rust SDK's off-chain client I/O path currently supports AVSS client I/O over `bls12_381`. Other AVSS curves are available to the bytecode/runtime path, local protocol work, and StoffelLang examples where the selected curve is handled by the VM/backend.
 
+## Circuit-shaping for AVSS
+
+The general advice from [Performance and circuit-shaping guidance](./overview#performance-and-circuit-shaping) applies to AVSS too, but do not copy the HoneyBadgerMPC preprocessing checklist directly. AVSS is the right choice when the application needs verifiable scalar shares, group commitments, or curve-compatible threshold-cryptography building blocks. Optimize the cryptographic transcript, not just a generic multiplication budget:
+
+- Keep public transcript work public. Message encoding, domain separators, curve names, public keys, and transcript hashes should usually stay as clear bytes/fields until a secret scalar operation actually needs them.
+- Use `Crypto.hash_to_field(..., Mpc.curve())` at the boundary where public transcript data becomes a curve-field challenge. Avoid turning public transcript material into secret shares earlier than necessary.
+- Persist long-lived key shares with `LocalStorage` instead of regenerating them on every run. For signing protocols, never persist or reuse per-signature nonces unless the protocol explicitly requires and protects that state.
+- Use commitments deliberately. `get_commitment(0)` gives the public group commitment associated with the scalar share; it is useful for public keys, nonce commitments, audit handles, and verification transcripts.
+- Minimize openings. Opening scalar responses or intermediate fields is sometimes part of a signature protocol, but unnecessary openings weaken privacy boundaries and add protocol work.
+- Choose the curve for the external protocol first. `ed25519`, `secp256k1`, `p-256`, `bn254`, and `bls12_381` are not interchangeable if the output must verify against an existing wallet, certificate, proof system, or signature stack.
+- Do not use AVSS as a generic replacement for private arithmetic over low-entropy values. If the workload is aggregation, scoring, comparison-heavy policy logic, or private analytics, HoneyBadgerMPC is usually the better starting point.
+
 ## StoffelLang AVSS helpers
 
 StoffelLang includes an `AvssShare` opaque type and AVSS helper methods:

@@ -114,7 +114,7 @@ let deployment = NetworkDeployment::builder([
 
 Local CLI/SDK paths hide most of this setup. If a program consumes more multiplication/randomness material than the run prepared, increase preprocessing configuration or simplify the circuit.
 
-For advanced MPC workloads, use the preprocessing warning as a signal to inspect the circuit shape:
+For advanced MPC workloads, use the preprocessing warning as a signal to inspect the circuit shape. The backend comparison page has the cross-backend version of this guidance in [Performance and circuit-shaping guidance](./overview#performance-and-circuit-shaping); for HoneyBadgerMPC, start with these checks:
 
 - Count secret × secret multiplications first. Additions, subtractions, and share × clear-scalar operations are usually local share operations; they should not drive triple demand the way secret multiplication does.
 - Separate multiplication count from multiplication depth. More independent multiplications mainly require more preprocessing material. Long dependent chains also increase the number of interactive multiplication layers, so they affect latency as well as total demand.

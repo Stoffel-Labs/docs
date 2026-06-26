@@ -54,6 +54,20 @@ For both backends:
 - Treat comparisons, bit-level logic, and nonlinear functions as expensive until measured. They often compile into more field operations than the source code suggests.
 - Size network/runtime configuration for the largest expected input shape, not the happy-path demo input.
 
+### Type choices and preprocessing demand
+
+Types affect preprocessing demand because they influence which VM and share operations the compiler emits:
+
+- Clear/public values stay local. Public `int64`, `fix64`, `bytes`, curve names, constants, hashes, and encodings should remain clear until a secret operation actually needs them.
+- Secret values enter the MPC circuit. `secret int64`, `secret bool`, fixed-point shares, and `Share` values can consume preprocessing when an operation requires interaction.
+- Public weights are cheaper than secret weights. A private score with public coefficients is mostly share × clear-scalar work; making the coefficients secret turns those terms into secret × secret multiplications.
+- Fixed-point addition is usually close to integer share addition, but fixed-point multiplication can require extra scaling, truncation, or rounding logic. Use fixed-point where the application needs it, but avoid secret fixed-point products when a clear scaling factor is enough.
+- `secret bool`, comparisons, range checks, and bit decomposition are often larger than they look. A single source-level comparison can expand into many lower-level field operations.
+- Containers multiply the cost of their element operations. A `list[secret int64]` is not expensive by itself; a loop that multiplies each element by another secret value consumes work per element.
+- Width matters for low-level share helpers. Operations over 64-bit ranges generally require more bit work than the same operation over an 8- or 16-bit domain, so use the smallest safe width when writing explicit comparison or bit-decomposition code.
+
+For AVSS, the important type question is whether the value is really a cryptographic scalar that needs a curve commitment or threshold-signature transcript. If the value is ordinary low-entropy application data such as age, income, vote counts, or policy scores, start with HoneyBadgerMPC unless the application specifically needs AVSS commitments or curve compatibility.
+
 Use [HoneyBadgerMPC](./honeybadger-mpc) for detailed preprocessing guidance. Use [AVSS](./avss) for curve, commitment, and threshold-cryptography guidance.
 
 ## Select a backend in `Stoffel.toml`

@@ -153,9 +153,13 @@ Stoffel::load_file("target/debug/program.stflb")?
 ```rust
 .parties(5)
 .threshold(1)
+.backend(MpcBackend::HoneyBadger)
+.backend(MpcBackend::Avss { curve: Curve::Secp256k1 })
 ```
 
-For HoneyBadger-style configurations, use `parties >= 3 * threshold + 1`. The common developer default is five parties and threshold one.
+Current local and network MPC config validates `parties >= 4 * threshold + 1`. The common developer default is five parties and threshold one.
+
+Use `MpcBackend::HoneyBadger` when secret application values are field-compatible shares and the outside system consumes an opened result or client-output shares. Use `MpcBackend::Avss { curve }` when the output boundary needs public commitments, curve-encoded values, opened scalar responses, or signature-related artifacts. See [MPC Backends](../mpc-protocols/overview) for backend details.
 
 ### Bytecode
 
@@ -191,6 +195,8 @@ let client = StoffelClient::builder().network_config(&config).build()?;
 ```
 
 For most app developers, start with clear execution and local MPC before using network configuration directly.
+
+The same builders accept `MpcBackend::Avss { curve: Curve::Bls12_381 }` for AVSS network/client experiments supported by the current off-chain client I/O path. Use curve-specific AVSS examples when the external protocol fixes the curve or verifier-facing artifact.
 
 ## Observability and errors
 

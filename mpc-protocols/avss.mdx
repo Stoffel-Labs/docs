@@ -1,0 +1,235 @@
+---
+title: "AVSS"
+description: "AVSS backend details for Feldman commitments, verifiable scalar shares, and curve-compatible workflows in Stoffel."
+---
+
+AVSS is Stoffel's backend for group/scalar-oriented MPC workflows. Use it when secret values are cryptographic scalars that need verifiable shares, public commitments, or curve-compatible outputs.
+
+AVSS stands for asynchronous verifiable secret sharing. In Stoffel, the AVSS path uses Feldman-style commitments: shares are scalar values, commitments are group elements, and parties can check that a share is consistent with the committed polynomial under the discrete-log assumption.
+
+## What it is good for
+
+AVSS is the right backend when the secret value is a cryptographic scalar whose share needs a public commitment or curve-compatible output:
+
+- the program exposes public commitments to secret shares;
+- the backend must use a curve selected by an external verifier or protocol;
+- public transcript bytes must become curve-field challenges;
+- the outside system consumes a commitment, curve-encoded value, opened scalar response, or signature-related artifact.
+
+For ordinary private arithmetic over integers or fixed-point values, start with [HoneyBadgerMPC](./honeybadger-mpc).
+
+## Protocol model
+
+AVSS uses a dealer/share/commitment model:
+
+1. a secret scalar is shared as evaluations of a polynomial;
+2. the dealer publishes commitments to the polynomial coefficients;
+3. each party verifies its share against those commitments;
+4. later, enough valid shares can reconstruct or derive the intended cryptographic value.
+
+For an elliptic curve with base point `G`, the commitment form is conceptually:
+
+```text
+C_j = a_j * G
+```
+
+where `a_j` is a polynomial coefficient. A party can verify a scalar share against the public commitment points without learning the underlying secret scalar.
+
+## Security posture
+
+AVSS commitments are public group elements tied to the shared scalar. That is useful when another system needs to verify a commitment, curve-encoded value, or scalar response, but it is usually the wrong privacy boundary for ordinary application data. If the value is app data and the goal is private computation over integers or fixed-point values, start with HoneyBadgerMPC.
+
+Cryptographic note: Feldman-style commitments are binding under discrete-log hardness, but they are not hiding commitments. The developer consequence is that AVSS commitments are verifier-facing artifacts, not a drop-in privacy boundary for low-entropy values.
+
+Keep these distinctions in mind:
+
+- AVSS is about verifiable scalar shares and group commitments.
+- Feldman-style commitments expose public group elements tied to the secret polynomial.
+- Low-entropy application values should not be treated like random cryptographic scalars.
+- Full threshold signing protocols may need additional logic beyond share generation and commitment access.
+- Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
+
+## Curves
+
+Stoffel accepts AVSS curve selectors through the CLI and Rust SDK:
+
+| Curve selector | Rust enum |
+| --- | --- |
+| `bls12_381` | `Curve::Bls12_381` |
+| `bn254` | `Curve::Bn254` |
+| `curve25519` | `Curve::Curve25519` |
+| `ed25519` | `Curve::Ed25519` |
+| `secp256k1` | `Curve::Secp256k1` |
+| `p-256` / `secp256r1` | `Curve::Secp256r1` |
+
+Use the curve required by the external verifier or protocol boundary. Curve selectors are not interchangeable when another system needs to verify a public commitment, encoded group element, scalar response, or signature-related artifact.
+
+## Configure AVSS
+
+`avss` defaults to `bls12_381`:
+
+```toml
+[mpc]
+backend = "avss"
+parties = 5
+threshold = 1
+```
+
+Use an explicit curve for curve-compatible workflows:
+
+```toml
+[mpc]
+backend = "avss:secp256k1"
+parties = 5
+threshold = 1
+```
+
+Or set the curve separately:
+
+```toml
+[mpc]
+backend = "avss"
+curve = "ed25519"
+parties = 5
+threshold = 1
+```
+
+CLI override:
+
+```bash
+stoffel build --backend avss --field secp256k1 --parties 5 --threshold 1
+stoffel run --backend avss:ed25519 --parties 5 --threshold 1
+```
+
+Rust SDK:
+
+```rust
+use stoffel::prelude::*;
+
+# fn example() -> stoffel::Result<()> {
+let config = MpcConfig::builder()
+    .parties(5)
+    .threshold(1)
+    .avss(Curve::Secp256k1)
+    .build()?;
+# Ok(())
+# }
+```
+
+Program builder:
+
+```rust
+# use stoffel::prelude::*;
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::load_file("target/debug/threshold-demo.stflb")?
+    .parties(5)
+    .threshold(1)
+    .backend(MpcBackend::Avss { curve: Curve::Ed25519 })
+    .execute_local()
+    .await?;
+# Ok(())
+# }
+```
+
+The Rust SDK's off-chain client I/O path currently supports AVSS client I/O over `bls12_381`. Other AVSS curves are available to the bytecode/runtime path, local protocol work, and StoffelLang examples where the selected curve is handled by the VM/backend.
+
+## Circuit-shaping for AVSS
+
+AVSS is the right choice when the application needs verifiable scalar shares, group commitments, or curve-compatible threshold-cryptography building blocks. The optimization target is the cryptographic transcript: keep public transcript work public, choose the curve for the external protocol, use commitments deliberately, and minimize unnecessary openings. See [Performance and circuit shaping](./performance-and-circuit-shaping#avss-transcript-shaping-intuition) for the full checklist.
+
+## StoffelLang AVSS helpers
+
+StoffelLang includes an `AvssShare` opaque type and AVSS helper methods:
+
+```stoffel
+builtin opaque AvssShare
+
+builtin object Avss:
+  def get_commitment(share: AvssShare, index: int64) -> bytes {.builtin.}:
+  def get_key_name(share: AvssShare) -> string {.builtin.}:
+  def commitment_count(share: AvssShare) -> int64 {.builtin.}:
+  def is_avss_share[T](value: T) -> bool {.builtin.}:
+```
+
+Secret shares can also expose commitments through Share methods when the backend produced committed share data:
+
+```stoffel
+def main() -> bytes:
+  var secret_key: secret int64 = Share.random()
+  return secret_key.get_commitment(0)
+```
+
+Threshold-signature examples live in the StoffelLang examples tree:
+
+```text
+crates/stoffel-lang/examples/threshold_signatures/
+crates/stoffel-lang/examples/avss_certificate/
+crates/stoffel-lang/examples/avss_share_auditor/
+```
+
+## Use-case examples
+
+AVSS is the best fit when the secret is a cryptographic scalar and the application needs public group commitments, curve-specific encodings, or threshold-signature building blocks. The examples below use Stoffel features that are specific to those workflows: persisted secret shares, `Mpc.curve()`, commitment extraction, curve encodings, transcript hashing, and client-output shares.
+
+### Persistent threshold key material
+
+Use this shape when MPC parties need to generate a signing key once, persist each party's share, and publish the corresponding curve point as the application-facing public key:
+
+```stoffel
+def main() -> bytes:
+  var storage_key = "ca:avss:sk:v1"
+
+  if LocalStorage.exists(storage_key):
+    discard LocalStorage.load_share(storage_key)
+  else:
+    var generated_key: secret int64 = Share.random()
+    discard LocalStorage.store(storage_key, generated_key)
+
+  var secret_key: secret int64 = LocalStorage.load(storage_key)
+  var public_key = secret_key.get_commitment(0)
+  return Crypto.point_to_sec1(public_key, Mpc.curve())
+```
+
+This uses the AVSS/Feldman distinction directly: the scalar key remains shared and persisted per party, while the public commitment point can be encoded for the selected curve and returned to the application.
+
+### Threshold signature response with client output
+
+Use this shape when a signing workflow needs committed nonces, curve-specific challenge hashing, and selected signature shares returned to a client:
+
+```stoffel
+def main() -> bytes:
+  var client_count = ClientStore.get_number_clients()
+  var secret_key: secret int64 = Share.random()
+  var public_key = secret_key.get_commitment(0)
+
+  var nonce: secret int64 = Share.random()
+  var nonce_commitment = nonce.get_commitment(0)
+
+  var message = Bytes.from_string("threshold message")
+  var challenge_input = Bytes.concat(nonce_commitment, message)
+  var challenge_hash = Crypto.sha256(challenge_input)
+  var challenge = Crypto.hash_to_field(challenge_hash, Mpc.curve())
+  if client_count > 0:
+    var challenge_share = ClientStore.take_share(0, 0)
+    challenge = challenge_share.open_field()
+
+  var response_share = nonce.add(secret_key.mul_field(challenge))
+  var response = response_share.open_field()
+
+  if client_count > 0 and Mpc.has_capability("client-output"):
+    var output_shares: list[Share] = [response_share]
+    MpcOutput.send_to_client(0, output_shares)
+
+  var signature = Bytes.concat(nonce_commitment, response)
+  return Bytes.concat(signature, Crypto.point_to_sec1(public_key, Mpc.curve()))
+```
+
+This is not a complete production signing protocol by itself. It shows the AVSS-oriented boundary: generate scalar shares, expose nonce/key commitments as curve points, hash transcript data into the selected curve field, and route the response share through Stoffel's client-output channel.
+
+## Further reading
+
+- [Performance and circuit shaping](./performance-and-circuit-shaping)
+- Feldman, “A Practical Scheme for Non-interactive Verifiable Secret Sharing”: https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
+- Cachin, Kursawe, Lysyanskaya, Strobl, “Asynchronous Verifiable Secret Sharing and Proactive Cryptosystems”: https://doi.org/10.1145/586110.586122
+- Gennaro, Jarecki, Krawczyk, Rabin, “Secure Distributed Key Generation for Discrete-Log Based Cryptosystems”: https://doi.org/10.1007/3-540-48910-X_21
+- FROST threshold Schnorr signatures: https://eprint.iacr.org/2020/852

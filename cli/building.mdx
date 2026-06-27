@@ -38,10 +38,11 @@ Useful build flags:
 ```bash
 stoffel build --optimize
 stoffel build --release
-stoffel build --backend honeybadger --field bls12-381 --parties 5 --threshold 1
+stoffel build --backend honeybadger --parties 5 --threshold 1
+stoffel build --backend avss --field secp256k1 --parties 5 --threshold 1
 ```
 
-`--optimize` selects O2 unless `--release` selects O3. `--parties` and `--threshold` describe the local MPC topology encoded in the compiled program metadata. For HoneyBadger-style settings, use `parties >= 3 * threshold + 1`; five parties and threshold one is the common local default.
+`--optimize` selects O2 unless `--release` selects O3. `--parties` and `--threshold` describe the local MPC topology encoded in the compiled program metadata. Current local and network MPC config validates `parties >= 4 * threshold + 1`; five parties and threshold one is the common local default. Use `--backend honeybadger` for field-arithmetic MPC, or `--backend avss --field <curve>` for AVSS workflows that need group/scalar shares.
 
 ## Inspect bytecode
 

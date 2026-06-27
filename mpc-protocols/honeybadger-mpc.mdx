@@ -1,0 +1,205 @@
+---
+title: "HoneyBadgerMPC"
+description: "HoneyBadgerMPC backend details for asynchronous, robust, field-based MPC in Stoffel."
+---
+
+HoneyBadgerMPC is Stoffel's default MPC backend. Use it when secret application values are represented as field-compatible shares and the outside system consumes an opened result or client-output shares from private computation.
+
+It is an asynchronous, robust MPC protocol family. In practical terms, Stoffel can run a known set of MPC parties without relying on a fixed network round clock, while tolerating Byzantine parties up to the configured threshold.
+
+## What it is good for
+
+HoneyBadgerMPC is the right starting point when the secret values are application data represented as field-compatible shares:
+
+- the program computes over secret integers, fixed-point values, or other field-compatible values;
+- public parameters can stay public while private inputs remain ordinary MPC shares;
+- the main cost questions are multiplication count, multiplication depth, comparisons, and reveal boundaries;
+- the output boundary is an opened value or client-output shares.
+
+It is less natural when the output boundary is a public commitment, curve-encoded value, opened scalar response, or signature-related artifact. Use AVSS when the secret value is a cryptographic scalar that must match an external curve or verifier.
+
+## Protocol model
+
+HoneyBadgerMPC-style protocols are built around finite-field secret sharing:
+
+- secrets are encoded as field elements;
+- parties hold shares of those field elements;
+- addition and subtraction are local operations on shares;
+- multiplication consumes preprocessed material such as Beaver triples;
+- opening/revealing reconstructs a clear value from enough valid shares.
+
+The sharing model is closely related to Shamir secret sharing and Reed-Solomon/error-correcting-code ideas: polynomial evaluations are shares, and interpolation/reconstruction can detect or tolerate faulty shares under the protocol threshold.
+
+## Security posture
+
+For developer configuration, remember three points:
+
+1. HoneyBadgerMPC is designed for asynchronous, Byzantine-robust MPC.
+2. HoneyBadgerMPC is the default path for private computation over application values; concrete deployments still rely on ordinary cryptography for transport, authentication, signatures, and implementation details.
+3. Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
+
+That last rule is what developers should use when choosing local or network topology values, even though the underlying asynchronous MPC literature often starts from `n >= 3t + 1` thresholds.
+
+## Configure HoneyBadgerMPC
+
+`honeybadger` is the default backend.
+
+```toml
+[mpc]
+backend = "honeybadger"
+parties = 5
+threshold = 1
+```
+
+CLI override:
+
+```bash
+stoffel build --backend honeybadger --parties 5 --threshold 1
+stoffel run --backend honeybadger --client-input 0=42 --parties 5 --threshold 1
+```
+
+Rust SDK:
+
+```rust
+use stoffel::prelude::*;
+
+# fn example() -> stoffel::Result<()> {
+let config = MpcConfig::builder()
+    .parties(5)
+    .threshold(1)
+    .honeybadger()
+    .build()?;
+# Ok(())
+# }
+```
+
+Program builder:
+
+```rust
+# use stoffel::prelude::*;
+# async fn example() -> stoffel::Result<()> {
+let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
+    .parties(5)
+    .threshold(1)
+    .backend(MpcBackend::HoneyBadger)
+    .with_client_input(0, &[42_i64])
+    .execute_local()
+    .await?;
+# Ok(())
+# }
+```
+
+## Preprocessing
+
+Multiplication of two secret shares needs preprocessed material. Stoffel records preprocessing demand in the bytecode manifest and exposes preprocessing configuration in the Rust SDK network builders.
+
+```rust
+# use stoffel::prelude::*;
+# fn example() -> stoffel::Result<()> {
+let deployment = NetworkDeployment::builder([
+    "127.0.0.1:19200",
+    "127.0.0.1:19201",
+    "127.0.0.1:19202",
+    "127.0.0.1:19203",
+    "127.0.0.1:19204",
+])
+.expected_clients(1)
+.threshold(1)
+.backend(MpcBackend::HoneyBadger)
+.preprocessing(1000, 500)
+.build()?;
+# Ok(())
+# }
+```
+
+Local CLI/SDK paths hide most of this setup. If a program consumes more multiplication/randomness material than the run prepared, increase preprocessing configuration or simplify the circuit.
+
+For advanced MPC workloads, use the preprocessing warning as a signal to inspect multiplication count, multiplication depth, type choices, and reveal boundaries. See [Performance and circuit shaping](./performance-and-circuit-shaping#honeybadgermpc-preprocessing-intuition) for the full checklist.
+
+## Operation costs
+
+| Operation | Cost shape |
+| --- | --- |
+| Secret addition/subtraction | Local share operation. |
+| Secret plus/minus public scalar | Local share operation. |
+| Secret multiplication | Consumes multiplication preprocessing and requires protocol work. |
+| Opening/reveal | Requires enough parties to reconstruct the value. |
+| Comparisons/bit-heavy logic | Encoded into field operations and generally more expensive than arithmetic. |
+
+## Use-case examples
+
+HoneyBadgerMPC is the best fit when the application is mostly field arithmetic over private inputs. The protocol's share representation makes additions and scalar shifts local, while multiplication uses the backend's preprocessed multiplication material. The examples below use Stoffel features that matter in real applications: typed fixed-point shares, loops, variable client counts, client-output channels, and explicit reveal boundaries.
+
+### Federated fixed-point aggregation
+
+Use this shape when clients contribute model updates, risk vectors, or analytics rows and the application needs per-position aggregates without revealing individual contributions:
+
+```stoffel
+def federated_average_2x3() -> list[fix64]:
+  var matrix_size: int64 = 6
+  var num_clients: int64 = ClientStore.get_number_clients()
+  var result: list[fix64] = []
+  var output_shares: list[Share] = []
+
+  var element_index: int64 = 0
+  while element_index < matrix_size:
+    var element_sum = ClientStore.take_share_fixed(0, element_index)
+
+    var client_index: int64 = 1
+    while client_index < num_clients:
+      var share = ClientStore.take_share_fixed(client_index, element_index)
+      element_sum = element_sum.add(share)
+      client_index = client_index + 1
+
+    var revealed_sum: fix64 = element_sum.open_fixed()
+    result.append(revealed_sum / num_clients)
+    output_shares.append(element_sum)
+    element_index = element_index + 1
+
+  if num_clients > 0 and Mpc.has_capability("client-output"):
+    MpcOutput.send_to_client(0, output_shares)
+
+  return result
+
+def main() -> list[fix64]:
+  return federated_average_2x3()
+```
+
+This uses HoneyBadgerMPC for a field-heavy workload: each matrix element is summed as a fixed-point share, the aggregate can be routed back to an output client as shares, and only the average values selected by the program are opened.
+
+### Private score routing with client-specific outputs
+
+Use this shape when the host application should learn only coordination metadata while selected clients receive private result shares:
+
+```stoffel
+def normalize_score(raw_score: Share) -> Share:
+  var adjusted = raw_score.add_scalar(50)
+  return adjusted.mul_scalar(2)
+
+def main() -> int64:
+  var client_count = ClientStore.get_number_clients()
+  var income_score = ClientStore.take_share(0, 0)
+  var eligibility = normalize_score(income_score)
+
+  if client_count > 1:
+    var coapplicant_score = ClientStore.take_share(1, 0)
+    eligibility = eligibility.add(coapplicant_score)
+
+  if Mpc.has_capability("client-output"):
+    var client_outputs: list[Share] = []
+    client_outputs.append(eligibility)
+    MpcOutput.send_to_client(0, client_outputs)
+    if client_count > 1:
+      eligibility.send_to_client(1)
+
+  return client_count
+```
+
+This keeps the score as a share instead of opening it to the host application. HoneyBadgerMPC is doing the general private arithmetic, while Stoffel's `ClientStore`, `Mpc.has_capability`, and `MpcOutput` APIs define which clients supply and receive private values.
+
+## Further reading
+
+- [Performance and circuit shaping](./performance-and-circuit-shaping)
+- Andrew Miller et al., “HoneyBadgerMPC and AsynchroMix: Practical Asynchronous MPC and its Application to Anonymous Communication”: https://eprint.iacr.org/2016/1066
+- Ben-Or, Canetti, Goldreich, “Asynchronous Secure Computation”: https://doi.org/10.1145/167088.167109
+- Shamir, “How to Share a Secret”: https://doi.org/10.1145/359168.359176

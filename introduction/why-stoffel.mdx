@@ -105,9 +105,9 @@ let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return 
 ### 3. **Protocol Flexibility**
 
 **Multiple Protocol Support**
-- **HoneyBadger MPC**: Current primary protocol
-- **Future Protocols**: Easy integration of new research
-- **Hybrid Approaches**: Mix protocols for optimal performance
+- **HoneyBadgerMPC**: Default field-arithmetic backend for private computation
+- **AVSS**: Group/scalar backend for commitments and curve-compatible outputs
+- **Configuration-driven selection**: Choose the backend that matches the application boundary
 
 **Configuration-Driven**
 ```toml
@@ -115,7 +115,15 @@ let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return 
 backend = "honeybadger"
 parties = 5
 threshold = 1
-curve = "bls12-381"
+```
+
+For AVSS workflows, switch the backend and curve:
+
+```toml
+[mpc]
+backend = "avss:secp256k1"
+parties = 5
+threshold = 1
 ```
 
 ### 4. **Deployment-Oriented Building Blocks**

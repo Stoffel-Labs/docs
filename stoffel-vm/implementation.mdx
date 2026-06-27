@@ -1,134 +1,193 @@
 ---
 title: "Stoffel VM Implementation"
-description: "Stoffel VM architecture, workspace crates, bytecode format, runtime values, and 0.1.0 execution paths."
+description: "Architecture notes for Stoffel VM runtime state, bytecode loading, execution, table memory, hooks, and MPC effects."
 ---
 
-Stoffel VM is the register-based runtime at the center of the Stoffel 0.1.0 stack. It lives in `crates/stoffel-vm` inside [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) and is consumed by the CLI, StoffelLang compiler, Rust SDK, and lower-level FFI surfaces.
-
-## Workspace layout
+Stoffel VM is the register-based runtime used by the CLI, StoffelLang compiler, Rust SDK, and lower-level integration surfaces. It is implemented primarily by two crates in the `stoffel` repository:
 
 | Crate | Purpose |
 | --- | --- |
-| `crates/stoffel-cli` | Cargo-like `stoffel` project CLI. |
-| `crates/stoffel-bindgen` | Binding generation support. |
-| `crates/stoffel-lang` | StoffelLang compiler. |
-| `crates/stoffel-rust-sdk` | Primary Rust application SDK. |
-| `crates/stoffel-vm` | Runtime, networking layer, MPC integrations, and C FFI. |
-| `crates/stoffel-vm-types` | Shared value, instruction, function, and compiled bytecode types. |
+| `crates/stoffel-vm-types` | Shared compiler/runtime data model: values, instructions, registers, activations, functions, and `.stflb` bytecode. |
+| `crates/stoffel-vm` | Runtime execution engine, standard library, MPC builtins, async MPC effect scheduling, storage, networking internals, and FFI. |
+
+Application docs should start with the CLI and Rust SDK. This page is for understanding the implementation boundary beneath those surfaces.
 
 ## Execution model
 
 ```text
-StoffelLang source (.stfl)
-    ↓ compiler (stoffellang / CLI / SDK)
-Compiled bytecode (.stflb)
-    ↓ loader (stoffel-vm-types)
-Program metadata + VMFunction definitions
-    ↓ runtime (stoffel-vm)
-Clear execution, local MPC execution, or network execution
+StoffelLang source
+    ↓ compiler
+CompiledBinary (.stflb)
+    ↓ bytecode loader
+VMFunction records + client/MPC manifest
+    ↓ VirtualMachine / VMState
+resolved runtime instructions
     ↓
-Allowed output values or client-directed MPC outputs
+clear execution, yielded async MPC effects, or network-backed MPC execution
 ```
 
-The VM is a register machine. It executes `Instruction` values from `stoffel-vm-types`, stores runtime values in register/table structures, and delegates MPC operations to registered builtin functions and backend engines.
+The runtime executes lowered/resolved instructions, not raw source text. Symbolic `Instruction` values are useful at compiler/direct-construction boundaries; `ResolvedInstruction` values and packed runtime instructions are used for efficient execution.
 
-## Runtime values
+## VirtualMachine and VMState
 
-The current VM value model includes:
+`VirtualMachine` is a public wrapper around `VMState`.
 
-```rust
-Value::I64(i64)
-Value::I32(i32)
-Value::I16(i16)
-Value::I8(i8)
-Value::U64(u64)
-Value::U32(u32)
-Value::U16(u16)
-Value::U8(u8)
-Value::Float(F64)
-Value::Bool(bool)
-Value::String(String)
-Value::Object(usize)
-Value::Array(usize)
-Value::Foreign(usize)
-Value::Closure(Arc<Closure>)
-Value::Unit
-Value::Share(ShareType, Vec<u8>)
-```
+`VirtualMachine::new()` uses the VM builder defaults:
 
-Objects, arrays/lists, closures, foreign objects, and share objects are stored through VM-managed tables and references.
+- registers the standard library;
+- registers MPC builtins;
+- uses the default register layout;
+- uses in-memory table storage;
+- uses stdout as the output sink;
+- starts without a configured MPC engine or local storage backend.
 
-## Instruction families
+`VirtualMachine::without_builtins()` creates an empty VM for tests or custom embedding.
 
-The exact instruction enum is defined in `crates/stoffel-vm-types/src/instructions.rs` and must remain aligned with compiler code generation. Common families include:
+`VMState` owns the runtime state:
 
-- memory and movement: `LD`, `LDI`, `MOV`, `PUSHARG`
-- arithmetic: `ADD`, `SUB`, `MUL`, `DIV`, `MOD`
-- bitwise: `AND`, `OR`, `XOR`, `NOT`, `SHL`, `SHR`
-- control flow: `JMP`, conditional jumps, `CMP`, `CALL`, `RET`
-- object/list/closure support through runtime builtins and table operations
-- MPC share operations through builtin calls such as `Share.add` and `Share.open`
+| Component | Role |
+| --- | --- |
+| Program registry | VM and foreign function definitions. |
+| Activation stack | Current call frames and return flow. |
+| Runtime function cache | Lowered instruction data per active frame. |
+| Register layout | Maps absolute register operands to clear or secret banks. |
+| Table memory | Object and array storage backend. |
+| Foreign object store | Rust objects exposed to VM code. |
+| Hook manager | Optional execution/debug hooks. |
+| MPC runtime | Optional engine metadata and online operation handle. |
+| Output sink | Destination used by `print`. |
+| Local storage | Optional app-provided storage backend for `LocalStorage.*`. |
 
-## Builtins and MPC integration
+When the runtime needs to execute multiple functions or MPC tasks concurrently, it can clone an empty execution state that shares immutable program metadata while getting independent activation/table state. Configured local storage remains shared.
 
-`VirtualMachine::new()` registers the standard library and MPC-focused builtins. Important modules are:
+## Registers and frames
 
-- general runtime builtins: `print`, `type`, `to_string`, arrays/lists, objects, closures, `assert`, `slice`, and `contains`
-- `Share.*`: clear-to-share conversion, arithmetic, randomness, opening, commitments, field/exponent helpers, and client output helpers
-- `ClientStore.*`: client input slots for local or network MPC execution
-- `Mpc.*`: runtime metadata, capabilities, and randomness helpers
-- `MpcOutput.*`: coordinator/client output distribution
-- lower-level `Rbc.*`, `Crypto.*`, `Bytes.*`, and `Avss.*` helpers
+The bytecode ABI uses absolute register indices. The default layout treats `r0..r15` as clear registers and `r16..` as secret registers. `r0` is the return register.
 
-See [Built-in Functions](./builtins) for current names and examples.
+Each function has a frame register count. Registration normalizes that count so the frame is wide enough for:
 
-## Bytecode format
+- at least the return register;
+- all parameters;
+- every referenced clear or secret register.
 
-Compiled programs are serialized as `.stflb` files through `stoffel-vm-types::compiled_binary::CompiledBinary`. The format carries function definitions, metadata, and enough manifest information for the CLI/SDK to inspect and execute programs.
+A call frame stores:
 
-```bash
-stoffel compile src/main.stfl --output target/debug/main.stflb
-stoffel compile --disassemble target/debug/main.stflb
-```
+- local variables;
+- the register file;
+- captured upvalues;
+- a volatile argument stack;
+- a stable spill area;
+- compare flag;
+- instruction pointer;
+- optional closure metadata.
 
-## Embedding through the Rust SDK
+The distinction between argument stack and spill area matters:
 
-The recommended application API is the Rust SDK:
+- `PUSHARG` pushes onto the volatile argument stack for calls;
+- `LD` reads from that argument stack;
+- `STS` / `LDS` access a separate per-frame spill area used by the register allocator.
 
-```rust
-use stoffel::prelude::*;
+## Clear and secret bank transitions
 
-fn main() -> stoffel::Result<()> {
-    let result = Stoffel::compile("def main(a: int64, b: int64) -> int64:\n  return a + b")?
-        .with_inputs(&[("a", 40_i64), ("b", 2_i64)])
-        .execute_clear()?;
+The register file stores clear and secret banks separately. The layout maps absolute bytecode registers into a bank and bank-local address.
 
-    println!("Result: {}", result[0]);
-    Ok(())
-}
-```
+A write or move across banks may have MPC meaning:
 
-Local MPC execution from an application wrapper should normally load the bytecode built by the CLI:
+| Transition | Runtime behavior |
+| --- | --- |
+| clear → clear | normal value copy |
+| secret → secret | share/value copy |
+| clear → secret | clear value is represented as a share value when needed |
+| secret → clear | reveal/open operation; may yield an async MPC effect |
 
-```rust
-use stoffel::prelude::*;
+Pending reveals are stored as register-slot state until the online MPC operation completes. They are not ordinary `Value` variants.
 
-# async fn example() -> stoffel::Result<()> {
-let result = Stoffel::load_file("target/debug/hello-mpc.stflb")?
-    .parties(5)
-    .threshold(1)
-    .with_client_input(0, &[42_i64])
-    .execute_local()
-    .await?;
-# Ok(())
-# }
-```
+## Values and table memory
 
-`.execute_local().await?` runs a local MPC test network on the developer machine. In deployment, MPC nodes run separately from input/output clients.
+The VM value model includes scalar values, typed table handles, closures, foreign object handles, unit, and share values.
+
+Object and array storage is abstracted behind `TableMemory`. The default backend is an in-memory `ObjectStore`, but the trait boundary is designed so future backends, including access-tracking or ORAM-like storage, can preserve read/write metadata. For this reason, execution-path table reads go through mutable table-memory APIs even when a read looks logically immutable.
+
+Arrays are 0-indexed. The default array implementation uses dense inline storage for small numeric indices plus an extra field map for large or non-numeric keys, with a cached length hint.
+
+## Functions and calls
+
+A `VMFunction` carries:
+
+- name;
+- parameter names;
+- upvalue names;
+- optional parent function;
+- register count;
+- labels;
+- symbolic instructions, or resolved instructions with constants and call targets.
+
+During registration/loading, the VM validates labels and registers, resolves control-flow targets, interns constants, and resolves call targets. Call-target lookup is cached inside VM state to avoid repeated function-name lookups on hot call paths.
+
+VM calls and foreign-function calls share the same call machinery. Method-style calls are resolved against canonical builtin names and receiver types before dispatch.
+
+## Hooks and debugging
+
+The VM has an optional hook system for debugging and tooling. When no hooks are enabled, the runtime takes a fast path and does not build hook snapshots.
+
+Hook events can cover:
+
+- before/after instruction execution;
+- register reads/writes with absolute and bank-local register information;
+- variable and upvalue access;
+- object and array field access;
+- function calls;
+- closure creation;
+- stack push/pop.
+
+Use this hook layer for runtime instrumentation instead of adding logging to hot execution paths.
+
+## Async MPC effects
+
+The VM can execute ordinary local instructions synchronously. When execution reaches work that needs an MPC engine, async execution yields a typed effect and resumes after the engine returns a result.
+
+Examples of operations that can yield effects:
+
+- client input sharing;
+- secret multiplication;
+- secret boolean bit operations;
+- opening/revealing a share;
+- `Share.batch_open`;
+- `Share.random` / `Share.random_int`;
+- `MpcOutput.send_to_client`;
+- lower-level RBC, field-open, and exponent-open operations.
+
+The effect scheduler runs local instructions in bounded slices so non-MPC work does not block the async runtime indefinitely.
+
+## Builtins and standard library
+
+`VirtualMachine::new()` registers two broad groups:
+
+| Group | Examples |
+| --- | --- |
+| Standard library | arrays/lists, objects, closures, local storage, `print`, `type`, `slice`, `contains`, `assert`, `ClientStore.*`, `MpcOutput.send_to_client` |
+| MPC builtins | `Share.*`, `Mpc.*`, `Bytes.*`, `Crypto.*`, `Field.*`, `Rbc.*`, `Avss.*` |
+
+`print` writes through the configured VM output sink. `LocalStorage.*` builtins require a local-storage backend to be configured on the VM builder.
+
+## Bytecode and manifests
+
+`.stflb` bytecode is defined by `CompiledBinary` in `stoffel-vm-types`. The current format uses magic bytes `STFL` and format version `9`.
+
+A compiled binary carries:
+
+- a scalar constant pool;
+- compiled function records;
+- function type metadata;
+- client input/output schema metadata;
+- MPC backend and curve selections;
+- preprocessing demand estimates.
+
+The preprocessing manifest helps local/network MPC runtimes prepare material such as triples, random shares, PRandBits, and PRandInts. A `dynamic` flag indicates that runtime demand may exceed the static estimate.
 
 ## Lower-level embedding
 
-Advanced integrations can construct `VMFunction` values directly and execute them with `VirtualMachine`. This is useful for VM tests and bytecode-generation tools, but it is not the recommended first application path.
+Direct VM construction is useful for VM tests and bytecode tooling, but most application integrations should use `stoffel build` plus `Stoffel::load_file(...)` from the Rust SDK.
 
 ```rust
 use std::collections::HashMap;
@@ -163,12 +222,9 @@ fn main() -> Result<(), String> {
 }
 ```
 
-## Status
-
-The VM, compiler, CLI, and Rust SDK support local examples, template projects, `.stflb` inspection, and local MPC smoke tests. Use the CLI and Rust SDK for application workflows; use direct VM construction for VM tests, bytecode tooling, or maintainer-level integrations.
-
 ## See also
 
+- [Virtual Machine Overview](./overview)
+- [Instructions and Types](./instructions)
 - [Built-in Functions](./builtins)
-- [CLI Overview](../cli/overview)
 - [Rust SDK Overview](../rust-sdk/overview)

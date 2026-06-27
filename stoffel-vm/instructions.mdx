@@ -1,360 +1,252 @@
 ---
 title: "Instructions and Types"
-description: "Complete Stoffel VM instruction set reference including memory operations, arithmetic, control flow, and bytecode format."
+description: "Stoffel VM instruction, register, value, function, and bytecode format reference."
 ---
 
-Stoffel VM is a register-based virtual machine optimized for Multi-Party Computation. This page documents the complete instruction set and type system.
+Stoffel VM bytecode is register-based. Instructions operate on absolute frame registers, call functions by name before resolution, and are serialized into `.stflb` bytecode by `stoffel-vm-types`.
 
-## Architecture Overview
+## Instruction representations
 
-- **Register-based**: Operations use numbered registers rather than a stack
-- **Dual register sets**: Separate registers for clear (public) and secret values
-- **32 registers**: Registers 0-15 for clear values, 16-31 for secret values
-- **Compare flag**: Single flag for conditional jumps
+The VM uses two related instruction forms:
 
-## Value Types
+| Form | Purpose |
+| --- | --- |
+| `Instruction` | Symbolic representation with labels, function names, and embedded immediate `Value`s. Used by compiler output and direct VM construction. |
+| `ResolvedInstruction` | Execution-oriented representation with label targets, constants, and call targets resolved to numeric indices. |
 
-### Primitive Types
+During function registration and bytecode loading, labels are resolved, immediates are interned into a per-function constant table, and `CALL("name")` becomes a numeric call-target index plus a call-target name table.
 
-| Type | Description | Size |
-|------|-------------|------|
-| `I64` | Signed 64-bit integer | 8 bytes |
-| `I32` | Signed 32-bit integer | 4 bytes |
-| `I16` | Signed 16-bit integer | 2 bytes |
-| `I8` | Signed 8-bit integer | 1 byte |
-| `U64` | Unsigned 64-bit integer | 8 bytes |
-| `U32` | Unsigned 32-bit integer | 4 bytes |
-| `U16` | Unsigned 16-bit integer | 2 bytes |
-| `U8` | Unsigned 8-bit integer | 1 byte |
-| `Float` | Fixed-point number (stored as I64) | 8 bytes |
-| `Bool` | Boolean value | 1 byte |
-| `String` | UTF-8 string | Variable |
-| `Unit` | Nil/void value | 0 bytes |
+The runtime then lowers resolved instructions into packed runtime instructions for dispatch. The packed runtime opcode mapping is an internal optimization and is not the same thing as the serialized opcode values shown below.
 
-### Complex Types
+## Registers
 
-| Type | Description |
-|------|-------------|
-| `Object` | Key-value map (reference) |
-| `Array` | Indexed collection (reference) |
-| `Closure` | Function with captured environment |
-| `Foreign` | Rust object exposed via FFI |
-| `Share` | Secret-shared value for MPC |
+Bytecode register operands are absolute frame indices. The default layout uses register `16` as the secret-register boundary:
 
-### Share Types (MPC)
+| Range | Default bank |
+| --- | --- |
+| `r0..r15` | clear registers |
+| `r16..` | secret registers |
 
-Secret-shared values carry a type tag:
+Important details:
 
-```
-ShareType:
-  Int(i64), I32, I16, I8
-  U8, U16, U32, U64
-  Float, Bool
-```
+- `r0` is the return register.
+- The secret boundary is a layout convention, not a hard 32-register maximum.
+- Each `VMFunction` has a frame register count. Registration normalizes the count so it is large enough for parameters, the return register, and every referenced register.
+- The register file stores clear and secret banks separately even though bytecode operands are absolute indices.
+- Moving clear values into secret registers creates or carries share values. Moving secret values back to clear registers becomes a reveal/open operation.
+- Pending reveals are stored as register-slot state until the async MPC operation completes.
 
-## Instruction Set
+## Frame memory
 
-### Memory Operations
+Each activation frame contains:
 
-#### LD - Load from Stack
+- function name and local variable map;
+- register file;
+- captured upvalues;
+- a volatile argument stack for `PUSHARG`, `LD`, and calls;
+- a dedicated spill vector for `STS` / `LDS`;
+- a compare flag;
+- an instruction pointer;
+- optional closure metadata.
 
-Load a value from the stack into a register.
+`LD` reads from the current frame's argument stack. Offset `0` resolves to the top argument; negative offsets read below the top.
 
-```
-LD dest_reg, stack_offset
-```
+`STS` and `LDS` do not use that argument stack. They access a stable per-frame spill area used by register allocation, so spilled values survive between call argument pushes without being confused with function-call arguments.
 
-- `dest_reg`: Target register (0-31)
-- `stack_offset`: Offset from stack base
+## Value types
 
-#### LDI - Load Immediate
+The VM value enum includes:
 
-Load a constant value into a register.
+| Variant family | Runtime shape |
+| --- | --- |
+| Signed integers | `I64`, `I32`, `I16`, `I8` |
+| Unsigned integers | `U64`, `U32`, `U16`, `U8` |
+| Other scalars | `Float(F64)`, `Bool`, `String`, `Unit` |
+| VM-managed references | `Object(ObjectRef)`, `Array(ArrayRef)`, `Foreign(ForeignObjectRef)`, `Closure(...)` |
+| Shares | `Share(ShareType, ShareData)` |
 
-```
-LDI dest_reg, constant_index
-```
+Object, array, and foreign values are typed handles into VM-managed stores. They are not serialized as constants in `.stflb` files.
 
-- `dest_reg`: Target register (0-31)
-- `constant_index`: Index into constant pool
+Share type metadata is shape-oriented:
 
-#### MOV - Move
-
-Copy value from one register to another.
-
-```
-MOV dest_reg, src_reg
+```rust
+ShareType::SecretInt { bit_length }
+ShareType::SecretUInt { bit_length }
+ShareType::SecretFixedPoint { precision }
 ```
 
-- `dest_reg`: Target register (0-31)
-- `src_reg`: Source register (0-31)
+Useful defaults:
 
-#### PUSHARG - Push Argument
+- secret int: 64 bits;
+- secret bool: one-bit secret int;
+- fixed point: 64 total bits, 16 fractional bits.
 
-Push a register value onto the argument stack for function calls.
+## Instruction set
 
-```
-PUSHARG src_reg
-```
+### Loading and movement
 
-- `src_reg`: Register containing the argument
+| Instruction | Operands | Effect |
+| --- | --- | --- |
+| `NOP` | — | No operation. |
+| `LD` | `dest, stack_offset` | Load from current frame's argument stack. |
+| `LDI` | `dest, value` | Load an immediate value; serialized bytecode stores a constant index. |
+| `MOV` | `dest, src` | Move/copy a register value, including clear/secret bank transitions. |
+| `PUSHARG` | `src` | Push a register value onto the call argument stack. |
+| `STS` | `slot, src` | Store a raw value into the frame spill area. |
+| `LDS` | `dest, slot` | Load a raw value from the frame spill area. |
 
-### Arithmetic Operations
+### Arithmetic and bitwise operations
 
-All arithmetic operations follow the pattern:
-```
-OP dest_reg, src1_reg, src2_reg
-```
+Arithmetic instructions use `dest, left, right` operands:
 
-| Instruction | Operation | Description |
-|-------------|-----------|-------------|
-| `ADD` | `dest = src1 + src2` | Addition |
-| `SUB` | `dest = src1 - src2` | Subtraction |
-| `MUL` | `dest = src1 * src2` | Multiplication |
-| `DIV` | `dest = src1 / src2` | Integer division |
-| `MOD` | `dest = src1 % src2` | Modulo |
+| Instruction | Meaning |
+| --- | --- |
+| `ADD` | `dest = left + right` |
+| `SUB` | `dest = left - right` |
+| `MUL` | `dest = left * right` |
+| `DIV` | `dest = left / right` |
+| `MOD` | `dest = left % right` |
 
-**Example:**
-```
-LDI R0, 10      # R0 = 10
-LDI R1, 3       # R1 = 3
-ADD R2, R0, R1  # R2 = 13
-SUB R3, R0, R1  # R3 = 7
-MUL R4, R0, R1  # R4 = 30
-DIV R5, R0, R1  # R5 = 3
-MOD R6, R0, R1  # R6 = 1
-```
+Bitwise instructions:
 
-### Bitwise Operations
+| Instruction | Meaning |
+| --- | --- |
+| `AND` | `dest = left & right` |
+| `OR` | `dest = left \| right` |
+| `XOR` | `dest = left ^ right` |
+| `NOT` | `dest = !src` / bitwise not depending on value type |
+| `SHL` | `dest = value << amount_register` |
+| `SHR` | `dest = value >> amount_register` |
 
-| Instruction | Operation | Description |
-|-------------|-----------|-------------|
-| `AND` | `dest = src1 & src2` | Bitwise AND |
-| `OR` | `dest = src1 \| src2` | Bitwise OR |
-| `XOR` | `dest = src1 ^ src2` | Bitwise XOR |
-| `NOT` | `dest = ~src` | Bitwise NOT (unary) |
-| `SHL` | `dest = src << amount` | Shift left |
-| `SHR` | `dest = src >> amount` | Shift right |
+`SHL` and `SHR` take the shift amount from a register, not an immediate literal operand.
 
-**Note:** `NOT` only takes two operands: `NOT dest_reg, src_reg`
+### Comparisons and jumps
 
-**Example:**
-```
-LDI R0, 5       # R0 = 0101 (binary)
-LDI R1, 3       # R1 = 0011 (binary)
-AND R2, R0, R1  # R2 = 0001 = 1
-OR  R3, R0, R1  # R3 = 0111 = 7
-XOR R4, R0, R1  # R4 = 0110 = 6
-NOT R5, R0      # R5 = ~5
-LDI R6, 1
-SHL R7, R0, R6  # R7 = 10
-SHR R8, R0, R6  # R8 = 2
-```
+`CMP left, right` sets a typed compare flag:
 
-### Comparison Operation
+- `Less`
+- `Equal`
+- `Greater`
 
-#### CMP - Compare
+Conditional jumps read that flag:
 
-Compare two registers and set the compare flag.
+| Instruction | Jumps when |
+| --- | --- |
+| `JMPEQ` | comparison was equal |
+| `JMPNEQ` | comparison was not equal |
+| `JMPLT` | comparison was less than |
+| `JMPGT` | comparison was greater than |
 
-```
-CMP reg1, reg2
-```
+`JMP` jumps unconditionally to a label in symbolic form or instruction index in resolved form.
 
-Sets compare flag:
-- `-1` if `reg1 < reg2`
-- `0` if `reg1 == reg2`
-- `1` if `reg1 > reg2`
+### Calls and returns
 
-### Control Flow
+| Instruction | Purpose |
+| --- | --- |
+| `CALL name` | Call a VM or foreign function. Arguments must have been pushed with `PUSHARG`. |
+| `RET src` | Return a register value to the caller. |
 
-#### JMP - Unconditional Jump
+At the end of a VM function, the runtime also treats `r0` as the return register for fallthrough-style completion.
 
-Jump to a labeled instruction.
+## Serialized opcode values
 
-```
-JMP label
-```
+The opcode values used by serialized bytecode are:
 
-#### Conditional Jumps
+| Hex | Instruction |
+| --- | --- |
+| `0x00` | `LD` |
+| `0x01` | `LDI` |
+| `0x02` | `MOV` |
+| `0x03` | `ADD` |
+| `0x04` | `SUB` |
+| `0x05` | `MUL` |
+| `0x06` | `DIV` |
+| `0x07` | `MOD` |
+| `0x08` | `AND` |
+| `0x09` | `OR` |
+| `0x0A` | `XOR` |
+| `0x0B` | `NOT` |
+| `0x0C` | `SHL` |
+| `0x0D` | `SHR` |
+| `0x0E` | `JMP` |
+| `0x0F` | `JMPEQ` |
+| `0x10` | `JMPNEQ` |
+| `0x11` | `CALL` |
+| `0x12` | `RET` |
+| `0x13` | `PUSHARG` |
+| `0x14` | `CMP` |
+| `0x15` | `JMPLT` |
+| `0x16` | `JMPGT` |
+| `0x17` | `NOP` |
+| `0x18` | `LDS` |
+| `0x19` | `STS` |
 
-Jump based on the compare flag (set by `CMP`):
+## Bytecode format
 
-| Instruction | Condition | Description |
-|-------------|-----------|-------------|
-| `JMPEQ` | `flag == 0` | Jump if equal |
-| `JMPNEQ` | `flag != 0` | Jump if not equal |
-| `JMPLT` | `flag == -1` | Jump if less than |
-| `JMPGT` | `flag == 1` | Jump if greater than |
+Compiled bytecode is stored in `.stflb` files. The format is defined by `stoffel-vm-types::compiled_binary`.
 
-**Example:**
-```
-LDI R0, 10
-LDI R1, 20
-CMP R0, R1      # flag = -1 (10 < 20)
-JMPLT less      # Jumps because flag == -1
-JMP end
+Current format facts:
 
-less:
-  LDI R2, 1     # This executes
-  JMP end
+- magic bytes: `STFL`;
+- format version: `9`;
+- version 9 added `LDS` / `STS` spill-slot instructions;
+- generic collection guardrail: 1,000,000 items;
+- per-function instruction guardrail: 8,000,000 instructions;
+- string/blob guardrail: 16 MiB.
 
-end:
-  RET R2
-```
+Top-level serialized layout:
 
-### Function Operations
-
-#### CALL - Call Function
-
-Call a function by name or index.
-
-```
-CALL function_name
-```
-
-- Arguments must be pushed with `PUSHARG` before calling
-- Creates new activation record
-- Jumps to function entry point
-
-#### RET - Return
-
-Return from function with a value.
-
-```
-RET src_reg
+```text
+magic bytes:       4 bytes  "STFL"
+format version:    u16
+constant count:    u32
+constants:         scalar constants only
+function count:    u32
+functions:         compiled function records
+client IO manifest versioned fields, when present
 ```
 
-- `src_reg`: Register containing return value
-- Pops activation record
-- Returns control to caller
+### Constants
 
-**Example:**
-```
-# Function: add(a, b) -> a + b
-add:
-  LD R0, 0        # Load first argument
-  LD R1, 1        # Load second argument
-  ADD R2, R0, R1  # Add them
-  RET R2          # Return result
+The constant pool supports scalar constants:
 
-# Calling code:
-main:
-  LDI R0, 10
-  PUSHARG R0      # Push first argument
-  LDI R1, 20
-  PUSHARG R1      # Push second argument
-  CALL add        # Call function
-  # Result is now in return register
-```
+- `Unit`
+- signed and unsigned integer values
+- `Float`
+- `Bool`
+- `String`
 
-## Opcode Encoding
+Complex runtime values such as objects, arrays, foreign objects, closures, and shares are created at runtime and are not serialized as constants.
 
-Instructions are encoded as bytes with the following opcodes:
+### Function records
 
-| Opcode | Hex | Instruction |
-|--------|-----|-------------|
-| 0 | 0x00 | LD |
-| 1 | 0x01 | LDI |
-| 2 | 0x02 | MOV |
-| 3 | 0x03 | ADD |
-| 4 | 0x04 | SUB |
-| 5 | 0x05 | MUL |
-| 6 | 0x06 | DIV |
-| 7 | 0x07 | MOD |
-| 8 | 0x08 | AND |
-| 9 | 0x09 | OR |
-| 10 | 0x0A | XOR |
-| 11 | 0x0B | NOT |
-| 12 | 0x0C | SHL |
-| 13 | 0x0D | SHR |
-| 14 | 0x0E | JMP |
-| 15 | 0x0F | JMPEQ |
-| 16 | 0x10 | JMPNEQ |
-| 17 | 0x11 | CALL |
-| 18 | 0x12 | RET |
-| 19 | 0x13 | PUSHARG |
-| 20 | 0x14 | CMP |
-| 21 | 0x15 | JMPLT |
-| 22 | 0x16 | JMPGT |
+A compiled function stores:
 
-## Bytecode Format
+- name;
+- parameters;
+- parameter types;
+- return type;
+- upvalues;
+- optional parent function name;
+- frame register count;
+- labels;
+- instructions.
 
-Compiled programs currently use the `.stflb` extension:
+Function names, parameter names, upvalues, and labels are length-prefixed strings. Register counts and many counts are bounded integer fields; instruction and label offsets use wider fields for large generated programs.
 
-```
-Header:
-  [4 bytes] Magic: "STFL"
-  [2 bytes] Version: 1
+### Client and MPC manifest
 
-Constants:
-  [4 bytes] Count
-  [variable] Constant values (type + data)
+The bytecode manifest carries MPC-facing metadata used by the CLI and SDK:
 
-Functions:
-  [4 bytes] Count
-  For each function:
-    [variable] Name (length-prefixed string)
-    [4 bytes] Register count
-    [4 bytes] Parameter count
-    [variable] Parameter names
-    [4 bytes] Upvalue count
-    [variable] Upvalue names
-    [variable] Parent function name (optional)
-    [4 bytes] Label count
-    [variable] Labels (name + instruction index)
-    [4 bytes] Instruction count
-    [variable] Instructions
-```
+- selected MPC backend, such as HoneyBadger or AVSS;
+- selected curve/field configuration;
+- client input/output schemas by client slot;
+- static preprocessing demand estimate.
 
-## Execution Model
+The preprocessing estimate includes counts for Beaver triples, random shares, PRandBits, PRandInts, and a `dynamic` flag for cases where runtime demand may exceed the static estimate.
 
-### Activation Records
+## See also
 
-Each function call creates an activation record containing:
-
-- Function name
-- Local variables (HashMap)
-- Registers (SmallVec, optimized for 16)
-- Instructions
-- Upvalues (for closures)
-- Argument stack
-- Compare flag
-- Instruction pointer
-
-### Register Allocation
-
-- **Registers 0-15**: Clear (public) values
-- **Registers 16-31**: Secret (MPC) values
-- Compiler performs graph-coloring register allocation
-- Spills to stack when registers exhausted
-
-### Constant Pool
-
-Constants are stored in a separate pool and referenced by index:
-- Reduces instruction size
-- Enables deduplication
-- Supports all value types
-
-## MPC Integration
-
-For MPC operations, the VM integrates with the HoneyBadger protocol:
-
-### Secret Operations
-
-When operating on `Share` values:
-- Arithmetic uses secure MPC protocols
-- `multiply_share()` uses Beaver triples
-- `open_share()` reconstructs values
-
-### Client Input
-
-The `ClientStore` provides access to client inputs:
-- `take_share(party_id, index)` retrieves secret shares
-- `get_number_clients()` returns participant count
-
-## Next Steps
-
-- **[Implementation Details](./implementation)**: VM architecture deep dive
-- **[Built-in Functions](./builtins)**: Standard library functions
-- **[Using the VM](./usage)**: Running programs
+- [Virtual Machine Overview](./overview)
+- [Stoffel VM Implementation](./implementation)
+- [Built-in Functions](./builtins)

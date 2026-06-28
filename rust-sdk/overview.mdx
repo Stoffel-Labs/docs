@@ -32,27 +32,9 @@ The SDK gives Rust applications a single API for:
 
 ## Mental model
 
-```text
-Stoffel Lang source
-        │
-        ▼
-Stoffel::compile(...)
-        │
-        ├── execute_clear()          fast local logic check
-        │
-        ├── build()                  runtime/program handle
-        │
-        └── execute_local().await    local MPC test run
+![Rust SDK runtime paths from Rust application code through compile/load APIs into clear local execution, local MPC execution, and network handles.](/images/diagrams/rust-sdk-runtime-paths.svg)
 
-.stflb bytecode
-        │
-        ▼
-Stoffel::load(...) / Stoffel::load_file(...)
-        │
-        ├── with_inputs(...)
-        ├── with_client_input(...)
-        └── execute_clear() / execute_local().await
-```
+Use `Stoffel::compile(...)` when the Rust app owns source compilation. Use `Stoffel::load(...)` or `Stoffel::load_file(...)` when the app should load a `.stflb` artifact built by the CLI.
 
 For app integrations, a common flow is to build bytecode with the CLI and load that artifact from Rust:
 

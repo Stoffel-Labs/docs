@@ -25,32 +25,9 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
 
 ## Component architecture
 
-```text
-┌────────────────────────┐
-│  Stoffel app / project │
-└───────────┬────────────┘
-            │
-            ├─────────────────────────────┐
-            ▼                             ▼
-┌────────────────────────┐     ┌────────────────────────┐
-│  Stoffel CLI (`stoffel`)│     │ Rust SDK (`stoffel`)   │
-│  init/check/build/run   │     │ compile/load/run APIs  │
-└───────────┬────────────┘     └───────────┬────────────┘
-            │                              │
-            └──────────────┬───────────────┘
-                           ▼
-              ┌────────────────────────┐
-              │ Stoffel Lang compiler  │  `.stfl` source → `.stflb` bytecode
-              └───────────┬────────────┘
-                          ▼
-              ┌────────────────────────┐
-              │ Stoffel VM runtime     │  clear execution, secret shares, builtins, hooks
-              └───────────┬────────────┘
-                          ▼
-              ┌────────────────────────┐
-              │ MPC/network integrations│ local MPC and lower-level network surfaces
-              └────────────────────────┘
-```
+![Stoffel system flow showing how application code, CLI or SDK entry points, the build contract, and the networked MPC runtime fit together.](/images/diagrams/stoffel-stack.svg)
+
+The key boundary is the build contract: `.stfl` source compiles to `.stflb` bytecode plus manifest information, and every runtime path loads that same artifact.
 
 ## Primary developer workflow
 

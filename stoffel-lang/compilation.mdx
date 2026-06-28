@@ -7,14 +7,9 @@ StoffelLang source files (`.stfl`) compile to portable Stoffel bytecode files (`
 
 ## Pipeline
 
-```text
-Source (.stfl)
-  → lexer/parser
-  → type checking
-  → code generation
-  → VMFunction metadata and instructions
-  → compiled bytecode (.stflb)
-```
+![Compilation pipeline from StoffelLang source through parsing, type checking, lowering, optimization, and .stflb bytecode.](/images/diagrams/compilation-pipeline.svg)
+
+The compiler validates `.stfl` source, lowers it to VM function metadata and instructions, then writes the `.stflb` artifact that the CLI, SDK, and VM can load.
 
 ## Validate without writing bytecode
 

@@ -14,17 +14,7 @@ Application docs should start with the CLI and Rust SDK. This page is for unders
 
 ## Execution model
 
-```text
-StoffelLang source
-    ↓ compiler
-CompiledBinary (.stflb)
-    ↓ bytecode loader
-VMFunction records + client/MPC manifest
-    ↓ VirtualMachine / VMState
-resolved runtime instructions
-    ↓
-clear execution, yielded async MPC effects, or network-backed MPC execution
-```
+![Stoffel VM execution model showing bytecode loading, instruction dispatch, clear and secret register spaces, runtime stores, builtins, and MPC hooks.](/images/diagrams/vm-execution-model.svg)
 
 The runtime executes lowered/resolved instructions, not raw source text. Symbolic `Instruction` values are useful at compiler/direct-construction boundaries; `ResolvedInstruction` values and packed runtime instructions are used for efficient execution.
 

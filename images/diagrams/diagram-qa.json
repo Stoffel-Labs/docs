@@ -1,0 +1,42 @@
+{
+  "diagrams": [
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/stoffel-stack.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/mpc-privacy-flow.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/developer-loop.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/compilation-pipeline.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/rust-sdk-runtime-paths.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/vm-execution-model.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/honeybadger-network.svg",
+      "width": 1200,
+      "height": 675
+    }
+  ],
+  "xml_parse_errors": [],
+  "missing_title_or_desc": [],
+  "dimension_issues": []
+}

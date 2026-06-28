@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Stoffel system flow</title>
+  <desc id="desc">Source, build artifact, runtime parties, and authorized outputs</desc>
+  <defs>
+    <style>
+:root { color-scheme: light; }
+.bg { fill: #f8f8fc; }
+.header { fill: #3448f0; }
+.title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 34px; font-weight: 700; fill: #ffffff; }
+.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 400; fill: #dfe4ff; }
+.zone { fill: #ffffff; stroke: #b8bde8; stroke-width: 2; stroke-dasharray: 9 8; rx: 22; }
+.zone-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 700; fill: #17214f; letter-spacing: .02em; }
+.card { fill: #ffffff; stroke: #c6cbef; stroke-width: 2; rx: 16; }
+.card-lav { fill: #ebe9ff; stroke: #c6c0ff; }
+.card-cream { fill: #fff6df; stroke: #edd797; }
+.card-blue { fill: #3448f0; stroke: #2335c8; }
+.card-cyan { fill: #e5fbff; stroke: #7be4f5; }
+.card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
+.card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
+.white { fill: #ffffff; }
+.small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
+.badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
+.badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
+.arrow { stroke: #101a45; stroke-width: 3; fill: none; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
+.arrow-soft { stroke: #3448f0; stroke-width: 2.5; fill: none; marker-end: url(#arrow-soft); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.arrow-dash { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow-soft); opacity: .72; }
+.label-chip { fill: #ffffff; stroke: #d7daf4; stroke-width: 1; rx: 10; }
+.label { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #24305f; text-anchor: middle; dominant-baseline: middle; }
+</style>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11 z" fill="#101a45"/></marker>
+    <marker id="arrow-soft" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3448f0"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="675"/>
+  <rect class="header" x="0" y="0" width="1200" height="94"/>
+  <text x="48" y="40" class="title">Stoffel system flow</text>
+  <text x="48" y="68" class="subtitle">Source, build artifact, runtime parties, and authorized outputs</text>
+  <rect x="44" y="126" width="325" height="394" class="zone"/>
+<text x="68" y="160" class="zone-title">Developer + application</text>
+<rect x="437" y="126" width="326" height="394" class="zone"/>
+<text x="461" y="160" class="zone-title">Build contract</text>
+<rect x="831" y="126" width="325" height="394" class="zone"/>
+<text x="855" y="160" class="zone-title">Networked MPC runtime</text>
+<rect x="78" y="190" width="255" height="84" class="card card-lav"/>
+<text x="205" y="224" class="card-text" text-anchor="middle">.stfl source</text>
+<text x="205" y="250" class="card-sub" text-anchor="middle">computation + secret inputs</text>
+<rect x="78" y="310" width="255" height="84" class="card card-lav"/>
+<text x="205" y="344" class="card-text" text-anchor="middle">Rust app / CLI</text>
+<text x="205" y="370" class="card-sub" text-anchor="middle">maps product values</text>
+<text x="205" y="388" class="card-sub" text-anchor="middle">starts local or network run</text>
+<rect x="470" y="184" width="260" height="90" class="card card-cream"/>
+<text x="600" y="218" class="card-text" text-anchor="middle">compiler</text>
+<text x="600" y="244" class="card-sub" text-anchor="middle">parse + type check</text>
+<text x="600" y="262" class="card-sub" text-anchor="middle">lower to VM functions</text>
+<rect x="470" y="326" width="260" height="90" class="card card-cream"/>
+<text x="600" y="360" class="card-text" text-anchor="middle">.stflb + manifest</text>
+<text x="600" y="386" class="card-sub" text-anchor="middle">portable bytecode</text>
+<text x="600" y="404" class="card-sub" text-anchor="middle">input/output contract</text>
+<rect x="864" y="180" width="258" height="82" class="card card-cyan"/>
+<text x="993" y="214" class="card-text" text-anchor="middle">coordinator</text>
+<text x="993" y="240" class="card-sub" text-anchor="middle">lifecycle + IO routing</text>
+<rect x="852" y="318" width="118" height="82" class="card card-blue"/>
+<text x="911" y="352" class="card-text white" text-anchor="middle">party 1</text>
+<text x="911" y="378" class="card-sub" text-anchor="middle">VM over shares</text>
+<rect x="988" y="318" width="118" height="82" class="card card-blue"/>
+<text x="1047" y="352" class="card-text white" text-anchor="middle">party 2</text>
+<text x="1047" y="378" class="card-sub" text-anchor="middle">VM over shares</text>
+<rect x="920" y="432" width="118" height="82" class="card card-blue"/>
+<text x="979" y="466" class="card-text white" text-anchor="middle">party n</text>
+<text x="979" y="492" class="card-sub" text-anchor="middle">VM over shares</text>
+<path d="M333,232 L470,232" class="arrow"/>
+<rect x="357" y="200" width="95" height="28" class="label-chip"/>
+<text x="404.5" y="214" class="label">build</text>
+<path d="M333,352 L470,370" class="arrow"/>
+<rect x="358" y="342" width="87" height="28" class="label-chip"/>
+<text x="401.5" y="356" class="label">load/run</text>
+<path d="M600,274 L600,326" class="arrow"/>
+<rect x="538" y="288" width="124" height="28" class="label-chip"/>
+<text x="600.0" y="302" class="label">emit artifact</text>
+<path d="M730,370 L864,220" class="arrow"/>
+<rect x="751" y="278" width="100" height="28" class="label-chip"/>
+<text x="801.0" y="292" class="label">same file</text>
+<path d="M864,242 C780,560 300,560 205,394" class="arrow-soft"/>
+<rect x="434" y="536" width="292" height="28" class="label-chip"/>
+<text x="580.0" y="550" class="label">authorized output shares/results return</text>
+<path d="M970,318 C945,280 990,280 1000,318" class="arrow-dash"/>
+<path d="M970,400 C960,428 965,438 920,462" class="arrow-dash"/>
+<path d="M1038,432 C1088,418 1112,386 1106,360" class="arrow-dash"/>
+</svg>

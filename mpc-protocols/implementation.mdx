@@ -9,19 +9,9 @@ Stoffel records the selected MPC backend in the compiled program and carries it 
 
 ## End-to-end path
 
-```text
-Stoffel.toml / CLI flags / Rust SDK builder
-        │
-        ▼
-Compiler options
-        │
-        ▼
-.stflb bytecode manifest
-        │
-        ├── VM local execution
-        ├── SDK local MPC test network
-        └── SDK network/off-chain client configuration
-```
+![HoneyBadger MPC runtime diagram showing client input/output paths, coordinator-managed sessions, preprocessing material, and peer protocol rounds between VM parties.](/images/diagrams/honeybadger-network.svg)
+
+At runtime, clients submit protected inputs, the coordinator manages session lifecycle and IO routing, and the parties execute the VM while exchanging HoneyBadger protocol messages.
 
 The important invariant is that the compiled bytecode and the runtime agree on:
 

@@ -5,7 +5,9 @@ description: "How Stoffel integrates with MPC backends, secret sharing, client i
 
 Use this page to understand how private client inputs move through Stoffel: input collection, secret sharing, VM execution, openings, and client-output delivery. If you are deciding which backend to use, start with [MPC Backends](../mpc-protocols/overview). If you already chose a backend and need config or runtime details, use [How Backend Selection Works](../mpc-protocols/implementation).
 
-Stoffel is designed around a consistent programming surface with selectable MPC backends underneath it. Developers write StoffelLang programs with `secret T`, `Share`, `ClientStore`, and `MpcOutput`; the CLI and Rust SDK compile those programs to bytecode that records which MPC backend should execute them.
+![HoneyBadger MPC runtime diagram showing client input/output paths, coordinator-managed sessions, preprocessing, and protocol rounds among parties.](/images/diagrams/honeybadger-network.svg)
+
+## Protocol Architecture
 
 ## Protocol architecture
 

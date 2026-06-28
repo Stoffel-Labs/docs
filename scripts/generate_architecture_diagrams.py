@@ -29,8 +29,8 @@ CSS = """
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
-.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #ffffff; }
-.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; fill: #ffffff !important; opacity: 1; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -79,7 +79,12 @@ def text(x: int, y: int, lines: str | Iterable[str], cls: str = "card-text", anc
         lines = [lines]
     out = []
     for i, line in enumerate(lines):
-        out.append(f'<text x="{x}" y="{y + i * gap}" class="{cls}" text-anchor="{anchor}">{esc(line)}</text>')
+        attrs = f'class="{cls}"'
+        if cls in {"on-blue-title", "on-blue-sub"}:
+            # Inline paint attributes make the blue-node text independent of
+            # downstream CSS cascade/rendering quirks in docs platforms.
+            attrs = f'class="{cls}" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff"'
+        out.append(f'<text x="{x}" y="{y + i * gap}" {attrs} text-anchor="{anchor}">{esc(line)}</text>')
     return "\n".join(out)
 
 

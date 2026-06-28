@@ -18,8 +18,8 @@
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
-.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #ffffff; }
-.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; fill: #ffffff !important; opacity: 1; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -49,14 +49,14 @@
 <text x="208" y="340" class="card-text" text-anchor="middle">Bob input</text>
 <text x="208" y="366" class="card-sub" text-anchor="middle">raw value stays private</text>
 <rect x="486" y="178" width="228" height="70" class="card card-blue"/>
-<text x="600" y="212" class="on-blue-title" text-anchor="middle">share 1</text>
-<text x="600" y="238" class="on-blue-sub" text-anchor="middle">one masked fragment</text>
+<text x="600" y="212" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">share 1</text>
+<text x="600" y="238" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">one masked fragment</text>
 <rect x="486" y="286" width="228" height="70" class="card card-blue"/>
-<text x="600" y="320" class="on-blue-title" text-anchor="middle">share 2</text>
-<text x="600" y="346" class="on-blue-sub" text-anchor="middle">one masked fragment</text>
+<text x="600" y="320" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">share 2</text>
+<text x="600" y="346" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">one masked fragment</text>
 <rect x="486" y="394" width="228" height="70" class="card card-blue"/>
-<text x="600" y="428" class="on-blue-title" text-anchor="middle">share n</text>
-<text x="600" y="454" class="on-blue-sub" text-anchor="middle">one masked fragment</text>
+<text x="600" y="428" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">share n</text>
+<text x="600" y="454" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">one masked fragment</text>
 <rect x="886" y="228" width="212" height="86" class="card card-cream"/>
 <text x="992" y="262" class="card-text" text-anchor="middle">opened result</text>
 <text x="992" y="288" class="card-sub" text-anchor="middle">only the value the</text>

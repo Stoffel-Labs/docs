@@ -18,8 +18,8 @@
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
-.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #ffffff; }
-.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; fill: #ffffff !important; opacity: 1; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -52,8 +52,8 @@
 <text x="501" y="326" class="card-text" text-anchor="middle">clear registers</text>
 <text x="501" y="352" class="card-sub" text-anchor="middle">public values</text>
 <rect x="604" y="292" width="142" height="78" class="card card-blue"/>
-<text x="675" y="326" class="on-blue-title" text-anchor="middle">secret registers</text>
-<text x="675" y="352" class="on-blue-sub" text-anchor="middle">share values</text>
+<text x="675" y="326" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">secret registers</text>
+<text x="675" y="352" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">share values</text>
 <rect x="430" y="414" width="316" height="64" class="card card-lav"/>
 <text x="588" y="448" class="card-text" text-anchor="middle">object/array/closure stores</text>
 <text x="588" y="474" class="card-sub" text-anchor="middle">runtime references</text>

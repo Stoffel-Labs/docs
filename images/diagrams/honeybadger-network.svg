@@ -14,6 +14,7 @@
 .card-lav { fill: #ebe9ff; stroke: #c6c0ff; }
 .card-cream { fill: #fff6df; stroke: #edd797; }
 .card-blue { fill: #3448f0; stroke: #2335c8; }
+.card-party { fill: #ffffff; stroke: #3448f0; stroke-width: 3; }
 .card-cyan { fill: #e5fbff; stroke: #7be4f5; }
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }

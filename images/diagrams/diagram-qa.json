@@ -84,6 +84,18 @@
         "contrast_ratio": 7.28
       },
       {
+        "pair": "party card title",
+        "foreground": "#121a44",
+        "background": "#ffffff",
+        "contrast_ratio": 16.71
+      },
+      {
+        "pair": "party card subtitle",
+        "foreground": "#465078",
+        "background": "#ffffff",
+        "contrast_ratio": 7.84
+      },
+      {
         "pair": "cyan card title",
         "foreground": "#121a44",
         "background": "#e5fbff",

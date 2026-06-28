@@ -25,6 +25,7 @@ CSS = """
 .card-lav { fill: #ebe9ff; stroke: #c6c0ff; }
 .card-cream { fill: #fff6df; stroke: #edd797; }
 .card-blue { fill: #3448f0; stroke: #2335c8; }
+.card-party { fill: #ffffff; stroke: #3448f0; stroke-width: 3; }
 .card-cyan { fill: #e5fbff; stroke: #7be4f5; }
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
@@ -54,6 +55,7 @@ PALETTE = {
     "card-lav": "#ebe9ff",
     "card-cream": "#fff6df",
     "card-blue": "#3448f0",
+    "card-party": "#ffffff",
     "card-cyan": "#e5fbff",
     "zone": "#ffffff",
     "label-chip": "#ffffff",
@@ -157,6 +159,8 @@ def contrast_qa() -> dict:
         ("lavender card subtitle", "card-sub", "card-lav"),
         ("cream card title", "card-text", "card-cream"),
         ("cream card subtitle", "card-sub", "card-cream"),
+        ("party card title", "card-text", "card-party"),
+        ("party card subtitle", "card-sub", "card-party"),
         ("cyan card title", "card-text", "card-cyan"),
         ("cyan card subtitle", "card-sub", "card-cyan"),
         ("blue card title", "on-blue-title", "card-blue"),
@@ -208,9 +212,9 @@ def stack() -> Diagram:
         card(470, 184, 260, 90, "compiler", "parse + type check|lower to VM functions", "card card-cream"),
         card(470, 326, 260, 90, ".stflb + manifest", "portable bytecode|input/output contract", "card card-cream"),
         card(864, 180, 258, 82, "coordinator", "lifecycle + IO routing", "card card-cyan"),
-        card(852, 318, 118, 82, "party 1", "VM over shares", "card card-blue"),
-        card(988, 318, 118, 82, "party 2", "VM over shares", "card card-blue"),
-        card(920, 432, 118, 82, "party n", "VM over shares", "card card-blue"),
+        card(852, 318, 118, 82, "party 1", "VM over shares", "card card-party"),
+        card(988, 318, 118, 82, "party 2", "VM over shares", "card card-party"),
+        card(920, 432, 118, 82, "party n", "VM over shares", "card card-party"),
         arrow(333, 232, 470, 232), chip(357, 200, 95, "build"),
         arrow(333, 352, 470, 370), chip(358, 342, 87, "load/run"),
         arrow(600, 274, 600, 326), chip(538, 288, 124, "emit artifact"),

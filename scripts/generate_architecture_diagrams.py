@@ -29,6 +29,7 @@ CSS = """
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
+.on-blue-sub { fill: #ffffff; opacity: .92; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -47,6 +48,30 @@ class Diagram:
     body: str
 
 
+PALETTE = {
+    "header": "#3448f0",
+    "card-lav": "#ebe9ff",
+    "card-cream": "#fff6df",
+    "card-blue": "#3448f0",
+    "card-cyan": "#e5fbff",
+    "zone": "#ffffff",
+    "label-chip": "#ffffff",
+    "badge": "#5ee3ff",
+}
+
+TEXT_COLORS = {
+    "title": "#ffffff",
+    "subtitle": "#dfe4ff",
+    "zone-title": "#17214f",
+    "card-text": "#121a44",
+    "card-sub": "#465078",
+    "white": "#ffffff",
+    "on-blue-sub": "#ffffff",
+    "badge-text": "#07133d",
+    "label": "#24305f",
+}
+
+
 def text(x: int, y: int, lines: str | Iterable[str], cls: str = "card-text", anchor: str = "middle", gap: int = 22) -> str:
     if isinstance(lines, str):
         lines = [lines]
@@ -60,11 +85,23 @@ def esc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def card(x: int, y: int, w: int, h: int, title: str, sub: str = "", cls: str = "card", title_cls: str = "card-text") -> str:
+def card(
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    title: str,
+    sub: str = "",
+    cls: str = "card",
+    title_cls: str = "card-text",
+    sub_cls: str | None = None,
+) -> str:
     body = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" class="{cls}"/>']
     body.append(text(x + w // 2, y + 34, title, title_cls))
     if sub:
-        body.append(text(x + w // 2, y + 60, sub.split("|"), "card-sub", gap=18))
+        if sub_cls is None:
+            sub_cls = "card-sub on-blue-sub" if "card-blue" in cls else "card-sub"
+        body.append(text(x + w // 2, y + 60, sub.split("|"), sub_cls, gap=18))
     return "\n".join(body)
 
 
@@ -82,6 +119,56 @@ def curve(d: str, cls: str = "arrow") -> str:
 
 def chip(x: int, y: int, w: int, label: str) -> str:
     return f'<rect x="{x}" y="{y}" width="{w}" height="28" class="label-chip"/>\n<text x="{x+w/2:.1f}" y="{y+14}" class="label">{esc(label)}</text>'
+
+
+def relative_luminance(hex_color: str) -> float:
+    raw = hex_color.lstrip("#")
+    channels = [int(raw[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+
+    def linearize(channel: float) -> float:
+        return channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+
+    r, g, b = [linearize(channel) for channel in channels]
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast_ratio(foreground: str, background: str) -> float:
+    fg = relative_luminance(foreground)
+    bg = relative_luminance(background)
+    light, dark = max(fg, bg), min(fg, bg)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def contrast_qa() -> dict:
+    pairs = [
+        ("header title", "title", "header"),
+        ("header subtitle", "subtitle", "header"),
+        ("zone label", "zone-title", "zone"),
+        ("lavender card title", "card-text", "card-lav"),
+        ("lavender card subtitle", "card-sub", "card-lav"),
+        ("cream card title", "card-text", "card-cream"),
+        ("cream card subtitle", "card-sub", "card-cream"),
+        ("cyan card title", "card-text", "card-cyan"),
+        ("cyan card subtitle", "card-sub", "card-cyan"),
+        ("blue card title", "white", "card-blue"),
+        ("blue card subtitle", "on-blue-sub", "card-blue"),
+        ("badge text", "badge-text", "badge"),
+        ("arrow label chip", "label", "label-chip"),
+    ]
+    checked = []
+    issues = []
+    for name, text_key, bg_key in pairs:
+        ratio = contrast_ratio(TEXT_COLORS[text_key], PALETTE[bg_key])
+        item = {
+            "pair": name,
+            "foreground": TEXT_COLORS[text_key],
+            "background": PALETTE[bg_key],
+            "contrast_ratio": round(ratio, 2),
+        }
+        checked.append(item)
+        if ratio < 4.5:
+            issues.append(item)
+    return {"checked": checked, "issues": issues}
 
 
 def base(diagram: Diagram) -> str:
@@ -230,7 +317,13 @@ def honeybadger() -> Diagram:
 def write_all() -> dict:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     diagrams = [stack(), mpc_flow(), dev_loop(), compilation(), sdk_paths(), vm_model(), honeybadger()]
-    qa = {"diagrams": [], "xml_parse_errors": [], "missing_title_or_desc": [], "dimension_issues": []}
+    qa = {
+        "diagrams": [],
+        "xml_parse_errors": [],
+        "missing_title_or_desc": [],
+        "dimension_issues": [],
+        "contrast": contrast_qa(),
+    }
     for d in diagrams:
         path = OUT_DIR / f"{d.name}.svg"
         path.write_text(base(d), encoding="utf-8")
@@ -254,5 +347,6 @@ if __name__ == "__main__":
         "xml_parse_error_count": len(result["xml_parse_errors"]),
         "missing_title_or_desc_count": len(result["missing_title_or_desc"]),
         "dimension_issue_count": len(result["dimension_issues"]),
+        "contrast_issue_count": len(result["contrast"]["issues"]),
         "qa_path": str(QA_PATH),
     }, indent=2))

@@ -18,6 +18,7 @@
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
+.on-blue-sub { fill: #ffffff; opacity: .92; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -60,13 +61,13 @@
 <text x="993" y="240" class="card-sub" text-anchor="middle">lifecycle + IO routing</text>
 <rect x="852" y="318" width="118" height="82" class="card card-blue"/>
 <text x="911" y="352" class="card-text white" text-anchor="middle">party 1</text>
-<text x="911" y="378" class="card-sub" text-anchor="middle">VM over shares</text>
+<text x="911" y="378" class="card-sub on-blue-sub" text-anchor="middle">VM over shares</text>
 <rect x="988" y="318" width="118" height="82" class="card card-blue"/>
 <text x="1047" y="352" class="card-text white" text-anchor="middle">party 2</text>
-<text x="1047" y="378" class="card-sub" text-anchor="middle">VM over shares</text>
+<text x="1047" y="378" class="card-sub on-blue-sub" text-anchor="middle">VM over shares</text>
 <rect x="920" y="432" width="118" height="82" class="card card-blue"/>
 <text x="979" y="466" class="card-text white" text-anchor="middle">party n</text>
-<text x="979" y="492" class="card-sub" text-anchor="middle">VM over shares</text>
+<text x="979" y="492" class="card-sub on-blue-sub" text-anchor="middle">VM over shares</text>
 <path d="M333,232 L470,232" class="arrow"/>
 <rect x="357" y="200" width="95" height="28" class="label-chip"/>
 <text x="404.5" y="214" class="label">build</text>

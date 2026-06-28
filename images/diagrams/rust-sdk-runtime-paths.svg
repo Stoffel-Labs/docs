@@ -18,7 +18,8 @@
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
-.on-blue-sub { fill: #ffffff; opacity: .92; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #ffffff; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #ffffff; opacity: .95; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -48,8 +49,8 @@
 <text x="941" y="184" class="card-text" text-anchor="middle">execute_clear()</text>
 <text x="941" y="210" class="card-sub" text-anchor="middle">fast local logic check</text>
 <rect x="816" y="290" width="250" height="88" class="card card-blue"/>
-<text x="941" y="324" class="card-text white" text-anchor="middle">execute_local().await</text>
-<text x="941" y="350" class="card-sub on-blue-sub" text-anchor="middle">spawn local MPC parties</text>
+<text x="941" y="324" class="on-blue-title" text-anchor="middle">execute_local().await</text>
+<text x="941" y="350" class="on-blue-sub" text-anchor="middle">spawn local MPC parties</text>
 <rect x="816" y="430" width="250" height="78" class="card card-cyan"/>
 <text x="941" y="464" class="card-text" text-anchor="middle">network handles</text>
 <text x="941" y="490" class="card-sub" text-anchor="middle">deployment/server/client config</text>

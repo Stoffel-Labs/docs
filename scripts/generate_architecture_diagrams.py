@@ -29,7 +29,8 @@ CSS = """
 .card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
 .card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
 .white { fill: #ffffff; }
-.on-blue-sub { fill: #ffffff; opacity: .92; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #ffffff; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #ffffff; opacity: .95; }
 .small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
 .badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
 .badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
@@ -66,6 +67,7 @@ TEXT_COLORS = {
     "card-text": "#121a44",
     "card-sub": "#465078",
     "white": "#ffffff",
+    "on-blue-title": "#ffffff",
     "on-blue-sub": "#ffffff",
     "badge-text": "#07133d",
     "label": "#24305f",
@@ -97,10 +99,12 @@ def card(
     sub_cls: str | None = None,
 ) -> str:
     body = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" class="{cls}"/>']
+    if "card-blue" in cls and title_cls == "card-text":
+        title_cls = "on-blue-title"
     body.append(text(x + w // 2, y + 34, title, title_cls))
     if sub:
         if sub_cls is None:
-            sub_cls = "card-sub on-blue-sub" if "card-blue" in cls else "card-sub"
+            sub_cls = "on-blue-sub" if "card-blue" in cls else "card-sub"
         body.append(text(x + w // 2, y + 60, sub.split("|"), sub_cls, gap=18))
     return "\n".join(body)
 
@@ -150,7 +154,7 @@ def contrast_qa() -> dict:
         ("cream card subtitle", "card-sub", "card-cream"),
         ("cyan card title", "card-text", "card-cyan"),
         ("cyan card subtitle", "card-sub", "card-cyan"),
-        ("blue card title", "white", "card-blue"),
+        ("blue card title", "on-blue-title", "card-blue"),
         ("blue card subtitle", "on-blue-sub", "card-blue"),
         ("badge text", "badge-text", "badge"),
         ("arrow label chip", "label", "label-chip"),
@@ -199,9 +203,9 @@ def stack() -> Diagram:
         card(470, 184, 260, 90, "compiler", "parse + type check|lower to VM functions", "card card-cream"),
         card(470, 326, 260, 90, ".stflb + manifest", "portable bytecode|input/output contract", "card card-cream"),
         card(864, 180, 258, 82, "coordinator", "lifecycle + IO routing", "card card-cyan"),
-        card(852, 318, 118, 82, "party 1", "VM over shares", "card card-blue", "card-text white"),
-        card(988, 318, 118, 82, "party 2", "VM over shares", "card card-blue", "card-text white"),
-        card(920, 432, 118, 82, "party n", "VM over shares", "card card-blue", "card-text white"),
+        card(852, 318, 118, 82, "party 1", "VM over shares", "card card-blue"),
+        card(988, 318, 118, 82, "party 2", "VM over shares", "card card-blue"),
+        card(920, 432, 118, 82, "party n", "VM over shares", "card card-blue"),
         arrow(333, 232, 470, 232), chip(357, 200, 95, "build"),
         arrow(333, 352, 470, 370), chip(358, 342, 87, "load/run"),
         arrow(600, 274, 600, 326), chip(538, 288, 124, "emit artifact"),
@@ -219,9 +223,9 @@ def mpc_flow() -> Diagram:
         zone(62, 128, 292, 382, "Input owners"), zone(454, 128, 292, 382, "MPC parties"), zone(846, 128, 292, 382, "Authorized output"),
         card(98, 188, 220, 74, "Alice input", "raw value stays private", "card card-lav"),
         card(98, 306, 220, 74, "Bob input", "raw value stays private", "card card-lav"),
-        card(486, 178, 228, 70, "share 1", "one masked fragment", "card card-blue", "card-text white"),
-        card(486, 286, 228, 70, "share 2", "one masked fragment", "card card-blue", "card-text white"),
-        card(486, 394, 228, 70, "share n", "one masked fragment", "card card-blue", "card-text white"),
+        card(486, 178, 228, 70, "share 1", "one masked fragment", "card card-blue"),
+        card(486, 286, 228, 70, "share 2", "one masked fragment", "card card-blue"),
+        card(486, 394, 228, 70, "share n", "one masked fragment", "card card-blue"),
         card(886, 228, 212, 86, "opened result", "only the value the|program reveals", "card card-cream"),
         card(886, 366, 212, 74, "private trace", "inputs + intermediates|remain secret", "card card-cyan"),
         arrow(318, 224, 486, 213), arrow(318, 224, 486, 321), arrow(318, 224, 486, 429),
@@ -271,7 +275,7 @@ def sdk_paths() -> Diagram:
         card(430,150,260,88,"Stoffel::compile","source to runtime handle","card card-cream"),
         card(430,290,260,88,"Stoffel::load_file","load built .stflb artifact","card card-cream"),
         card(816,150,250,88,"execute_clear()","fast local logic check","card card-cyan"),
-        card(816,290,250,88,"execute_local().await","spawn local MPC parties","card card-blue","card-text white"),
+        card(816,290,250,88,"execute_local().await","spawn local MPC parties","card card-blue"),
         card(816,430,250,78,"network handles","deployment/server/client config","card card-cyan"),
         arrow(314,224,430,194), arrow(314,224,430,334),
         arrow(690,194,816,194), arrow(690,334,816,334), arrow(690,334,816,469,"arrow-soft"),
@@ -286,7 +290,7 @@ def vm_model() -> Diagram:
         card(96,220,192,74,".stflb bytecode","functions + constants","card card-cream"),
         card(430,186,316,74,"instruction dispatcher","program counter + opcodes","card card-lav"),
         card(430,292,142,78,"clear registers","public values","card card-cyan"),
-        card(604,292,142,78,"secret registers","share values","card card-blue","card-text white"),
+        card(604,292,142,78,"secret registers","share values","card card-blue"),
         card(430,414,316,64,"object/array/closure stores","runtime references","card card-lav"),
         card(888,214,216,76,"protocol builtins","share ops + reveal","card card-cream"),
         card(888,340,216,76,"network parties","rounds for secret×secret","card card-cream"),
@@ -303,9 +307,9 @@ def honeybadger() -> Diagram:
         card(90,348,200,76,"output client","receives output shares","card card-lav"),
         card(456,184,288,78,"coordinator","reservations, sessions, IO routing","card card-cyan"),
         card(456,326,288,82,"preprocessing","Beaver triples + random shares","card card-cream"),
-        card(900,184,90,70,"P1","VM","card card-blue","card-text white"),
-        card(1020,184,90,70,"P2","VM","card card-blue","card-text white"),
-        card(960,330,90,70,"Pn","VM","card card-blue","card-text white"),
+        card(900,184,90,70,"P1","VM","card card-blue"),
+        card(1020,184,90,70,"P2","VM","card card-blue"),
+        card(960,330,90,70,"Pn","VM","card card-blue"),
         arrow(290,244,456,223), arrow(744,223,900,219), arrow(744,367,960,367),
         curve("M990,219 C1010,174 1036,174 1050,219","arrow-dash"), curve("M945,254 C930,292 944,320 985,330","arrow-dash"), curve("M1050,330 C1110,310 1122,245 1110,219","arrow-dash"),
         curve("M960,400 C862,548 260,548 190,424", "arrow-soft"), chip(458,532,258,"output shares return to authorized clients"),

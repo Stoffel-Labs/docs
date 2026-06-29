@@ -38,6 +38,7 @@ CSS = """
 .arrow { stroke: #101a45; stroke-width: 3; fill: none; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
 .arrow-soft { stroke: #3448f0; stroke-width: 2.5; fill: none; marker-end: url(#arrow-soft); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
 .arrow-dash { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow-soft); opacity: .72; }
+.boundary { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 8 8; stroke-linecap: round; opacity: .72; }
 .label-chip { fill: #ffffff; stroke: #d7daf4; stroke-width: 1; rx: 10; }
 .label { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #24305f; text-anchor: middle; dominant-baseline: middle; }
 """
@@ -295,16 +296,25 @@ def sdk_paths() -> Diagram:
 
 def vm_model() -> Diagram:
     body="\n".join([
-        zone(62,144,260,364,"Program artifact"), zone(392,144,392,364,"Stoffel VM core"), zone(854,144,284,364,"MPC hooks"),
-        card(96,220,192,74,".stflb bytecode","functions + constants","card card-cream"),
-        card(430,186,316,74,"instruction dispatcher","program counter + opcodes","card card-lav"),
-        card(430,292,142,78,"clear registers","public values","card card-cyan"),
-        card(604,292,142,78,"secret registers","share values","card card-blue"),
-        card(430,414,316,64,"object/array/closure stores","runtime references","card card-lav"),
-        card(888,214,216,76,"protocol builtins","share ops + reveal","card card-cream"),
-        card(888,340,216,76,"network parties","rounds for secret×secret","card card-cream"),
-        arrow(288,257,430,224), arrow(588,260,501,292), arrow(588,260,675,292), arrow(675,370,888,252), arrow(996,290,996,340,"arrow-soft"),
-        chip(762,270,108,"MPC boundary"),
+        zone(44,140,270,386,"Program artifact"),
+        zone(360,140,470,386,"Stoffel VM core"),
+        zone(884,140,272,386,"MPC hooks"),
+        card(84,246,190,78,".stflb bytecode","functions + constants","card card-cream"),
+        card(430,184,330,78,"instruction dispatcher","program counter + opcodes","card card-lav"),
+        card(430,308,156,82,"clear registers","public values","card card-cyan"),
+        card(604,308,156,82,"secret registers","share values","card card-blue"),
+        card(430,438,330,62,"runtime state stores","objects, arrays, closures","card card-lav"),
+        card(920,214,200,78,"protocol builtins","share ops + reveal","card card-cream"),
+        card(920,360,200,78,"network parties","rounds for secret×secret","card card-cream"),
+        '<path d="M836,188 L836,466" class="boundary"/>',
+        chip(778,166,116,"MPC gate"),
+        curve("M274,285 L430,223"),
+        curve("M595,262 L595,286 L508,308"),
+        curve("M595,262 L595,286 L682,308"),
+        curve("M508,390 L508,438", "arrow-soft"),
+        curve("M682,390 L682,438", "arrow-soft"),
+        curve("M682,390 L682,410 L836,410 L836,253 L920,253"),
+        arrow(1020,292,1020,360,"arrow-soft"),
     ])
     return Diagram("vm-execution-model", "Stoffel VM execution model", "Bytecode drives clear registers, secret registers, builtins, and protocol hooks", body)
 

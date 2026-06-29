@@ -27,6 +27,7 @@
 .arrow { stroke: #101a45; stroke-width: 3; fill: none; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
 .arrow-soft { stroke: #3448f0; stroke-width: 2.5; fill: none; marker-end: url(#arrow-soft); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
 .arrow-dash { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow-soft); opacity: .72; }
+.boundary { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 8 8; stroke-linecap: round; opacity: .72; }
 .label-chip { fill: #ffffff; stroke: #d7daf4; stroke-width: 1; rx: 10; }
 .label { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #24305f; text-anchor: middle; dominant-baseline: middle; }
 </style>

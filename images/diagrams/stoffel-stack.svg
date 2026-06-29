@@ -7,7 +7,7 @@
 .bg { fill: #f8f8fc; }
 .header { fill: #3448f0; }
 .title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 34px; font-weight: 700; fill: #ffffff; }
-.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 400; fill: #dfe4ff; }
+.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 500; fill: #ffffff; }
 .zone { fill: #ffffff; stroke: #b8bde8; stroke-width: 2; stroke-dasharray: 9 8; rx: 22; }
 .zone-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 700; fill: #17214f; letter-spacing: .02em; }
 .card { fill: #ffffff; stroke: #c6cbef; stroke-width: 2; rx: 16; }
@@ -36,7 +36,7 @@
   <rect class="bg" width="1200" height="675"/>
   <rect class="header" x="0" y="0" width="1200" height="94"/>
   <text x="48" y="40" class="title">Stoffel system flow</text>
-  <text x="48" y="68" class="subtitle">Source, build artifact, runtime parties, and authorized outputs</text>
+  <text x="48" y="68" class="subtitle" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff">Source, build artifact, runtime parties, and authorized outputs</text>
   <rect x="44" y="126" width="325" height="394" class="zone"/>
 <text x="68" y="160" class="zone-title">Developer + application</text>
 <rect x="437" y="126" width="326" height="394" class="zone"/>

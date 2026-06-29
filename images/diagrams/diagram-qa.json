@@ -49,9 +49,9 @@
       },
       {
         "pair": "header subtitle",
-        "foreground": "#dfe4ff",
+        "foreground": "#ffffff",
         "background": "#3448f0",
-        "contrast_ratio": 5.01
+        "contrast_ratio": 6.3
       },
       {
         "pair": "zone label",

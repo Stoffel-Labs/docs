@@ -18,7 +18,7 @@ CSS = """
 .bg { fill: #f8f8fc; }
 .header { fill: #3448f0; }
 .title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 34px; font-weight: 700; fill: #ffffff; }
-.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 400; fill: #dfe4ff; }
+.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 500; fill: #ffffff; }
 .zone { fill: #ffffff; stroke: #b8bde8; stroke-width: 2; stroke-dasharray: 9 8; rx: 22; }
 .zone-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 700; fill: #17214f; letter-spacing: .02em; }
 .card { fill: #ffffff; stroke: #c6cbef; stroke-width: 2; rx: 16; }
@@ -64,7 +64,7 @@ PALETTE = {
 
 TEXT_COLORS = {
     "title": "#ffffff",
-    "subtitle": "#dfe4ff",
+    "subtitle": "#ffffff",
     "zone-title": "#17214f",
     "card-text": "#121a44",
     "card-sub": "#465078",
@@ -196,7 +196,7 @@ def base(diagram: Diagram) -> str:
   <rect class="bg" width="{W}" height="{H}"/>
   <rect class="header" x="0" y="0" width="{W}" height="94"/>
   <text x="48" y="40" class="title">{esc(diagram.title)}</text>
-  <text x="48" y="68" class="subtitle">{esc(diagram.subtitle)}</text>
+  <text x="48" y="68" class="subtitle" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff">{esc(diagram.subtitle)}</text>
   {diagram.body}
 </svg>
 '''

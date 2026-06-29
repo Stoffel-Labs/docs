@@ -38,6 +38,7 @@ qa = {
     'text_overflow': [],
     'box_overflow': [],
     'card_containment_issues': [],
+    'text_box_containment_issues': [],
     'asset': None,
     'text_count': 0,
     'layer_count': 0,
@@ -57,6 +58,16 @@ def check_card_containment(label, kind, bbox, card_box, padding=18):
             'kind': kind,
             'bbox': tuple(round(v, 2) for v in bbox),
             'card_box': card_box,
+            'padding': padding,
+        })
+
+
+def check_text_box_containment(label, bbox, text_box, padding=0):
+    if not inside(bbox, text_box, padding):
+        qa['text_box_containment_issues'].append({
+            'label': label,
+            'bbox': tuple(round(v, 2) for v in bbox),
+            'text_box': text_box,
             'padding': padding,
         })
 
@@ -151,10 +162,13 @@ def layer_card(draw, box, title, subtitle, accent, pills):
     draw.rounded_rectangle((x1 + 10, y1 + 14, x2 + 10, y2 + 14), radius=28, fill=(0, 0, 0, 68))
     draw.rounded_rectangle(box, radius=28, fill=COL['card'], outline=COL['stroke'], width=2)
     draw.rounded_rectangle((x1 + 24, y1 + 30, x1 + 42, y2 - 30), radius=9, fill=accent)
-    title_box = draw_text(draw, (x1 + 72, y1 + 34), title, font_semi(36), COL['white'], maxw=520, label=title)
+    title_box = draw_text(draw, (x1 + 72, y1 + 30), title, font_semi(36), COL['white'], maxw=520, label=title)
     check_card_containment(title, 'title', title_box, box, padding=30)
-    subtitle_box = draw_text(draw, (x1 + 72, y1 + 88), subtitle, font_reg(22), COL['muted'], maxw=700, spacing=5, label=title + ' subtitle')
+    byline_box = (x1 + 62, y1 + 78, min(x1 + 850, x2 - 590), y1 + 122)
+    draw.rounded_rectangle(byline_box, radius=16, fill=(255, 255, 255, 18), outline=(255, 255, 255, 28), width=1)
+    subtitle_box = draw_text(draw, (x1 + 82, y1 + 88), subtitle, font_reg(20), COL['soft'], maxw=byline_box[2] - byline_box[0] - 40, spacing=4, label=title + ' subtitle')
     check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=30)
+    check_text_box_containment(title + ' subtitle', subtitle_box, byline_box, padding=10)
     px, py = x2 - 512, y1 + 62
     for pill in pills:
         w, h, pill_box = chip(draw, (px, py), pill, (255, 248, 224, 238), font_semi(19), return_box=True)

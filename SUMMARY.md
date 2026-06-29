@@ -4,7 +4,7 @@
 - [Introduction](./introduction.md)
 - [What is Multi-Party Computation?](./introduction/what-is-mpc.md)
 - [Why Stoffel?](./introduction/why-stoffel.md)
-- [Ecosystem Overview](./introduction/ecosystem.md)
+- [Stoffel ecosystem](./introduction/ecosystem.md)
 
 # Getting Started
 - [Installation](./getting-started/installation.md)

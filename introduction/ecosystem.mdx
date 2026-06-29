@@ -1,13 +1,13 @@
 ---
-title: "Ecosystem Overview"
-description: "Map the Stoffel components and choose the build path your app needs."
+title: "Stoffel ecosystem"
+description: "Map the app-facing tools, bytecode path, VM runtime, and MPC backend."
 ---
 
-Stoffel 0.1.0 centers on [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel), the repository for the CLI, compiler, Rust SDK, VM runtime, and shared bytecode/type definitions.
+Stoffel centers on [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel), the repository for the CLI, compiler, Rust SDK, VM runtime, and shared bytecode/type definitions.
 
 Stoffel gives you a direct path to private computation: write the workflow, mark sensitive values explicitly, run clear checks locally, then exercise secret-shared execution through the CLI or Rust SDK.
 
-## Components in 0.1.0
+## How the stack fits together
 
 ![Docs-optimized Stoffel stack diagram showing app integration, language and CLI, bytecode and VM, and MPC runtime layers.](/images/campaign/stoffel-stack-ecosystem-v6.png)
 
@@ -21,17 +21,13 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
 | Stoffel Lang compiler crate | `stoffellang` on crates.io / `crates/stoffel-lang` | Compiler surface for Rust tools that need to compile Stoffel Lang directly. |
 | MPC/network dependencies | `mpc-protocols`, `stoffel-networking`, `stoffel-mpc-coordinator` | Pulled by Cargo for protocol, networking, and coordination support; app developers normally use the CLI and SDK first. |
 
-## Security review scope
-
-`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped. Validate the full application, integration code, configuration, and threat model your product relies on.
-
-## Component architecture
+## Runtime architecture
 
 ![Campaign-style Stoffel architecture diagram showing how application code, build artifacts, the coordinator, VM parties, protocol chatter, and authorized outputs fit together.](/images/campaign/stoffel-how-it-works-architecture.png)
 
 The key boundary is the build contract: `.stfl` source compiles to `.stflb` bytecode plus manifest information, and every runtime path loads that same artifact.
 
-## Primary developer workflow
+## Developer workflow
 
 ### 1. Install the tools
 
@@ -88,7 +84,7 @@ Use `stoffel dev --once` for a script-friendly one-shot run.
 
 ### Stoffel CLI
 
-The `stoffel` binary is a Cargo-like command-line tool. The 0.1.0 CLI commands are:
+The `stoffel` binary is a Cargo-like command-line tool. The core CLI commands are:
 
 - `init` / `new`: create projects from templates.
 - `check`: validate source and MPC settings without writing bytecode.
@@ -103,14 +99,14 @@ The `stoffel` binary is a Cargo-like command-line tool. The 0.1.0 CLI commands a
 
 ### Stoffel Lang compiler
 
-Stoffel Lang is the source language for the VM. The 0.1.0 syntax is Python-style:
+Stoffel Lang is the source language for the VM. The syntax is Python-style:
 
 ```stoffel
 def main(a: int64, b: int64) -> int64:
   return a + b
 ```
 
-Secret-shared values are explicit in the 0.1.0 local MPC smoke path:
+Secret-shared values are explicit in the local MPC smoke path:
 
 ```stoffel
 def add_private_values(a: Share, b: Share) -> int64:
@@ -120,7 +116,7 @@ def add_private_values(a: Share, b: Share) -> int64:
 
 ### Rust SDK
 
-The Rust SDK is the primary application API for 0.1.0. It exposes `Stoffel::compile`, `Stoffel::load`, `with_inputs`, `with_client_input`, `execute_clear`, `execute_local`, bytecode save/load helpers, network deployment builders, and observability helpers.
+The Rust SDK is the primary application API. It exposes `Stoffel::compile`, `Stoffel::load`, `with_inputs`, `with_client_input`, `execute_clear`, `execute_local`, bytecode save/load helpers, network deployment builders, and observability helpers.
 
 ```rust
 use stoffel::prelude::*;
@@ -142,6 +138,10 @@ The VM is a register-based runtime with clear values, secret shares, objects, ar
 ### MPC/network backends
 
 HoneyBadger MPC, AVSS, reliable broadcast, and QUIC networking integrations are wired into the repository through Rust dependencies. Local developer workflows normally use the SDK/CLI rather than integrating those crates directly.
+
+## Review scope
+
+`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped. Validate the full application, integration code, configuration, and threat model your product relies on.
 
 ## Next steps
 

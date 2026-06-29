@@ -329,7 +329,17 @@ def honeybadger() -> Diagram:
 
 def write_all() -> dict:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    diagrams = [stack(), mpc_flow(), dev_loop(), compilation(), sdk_paths(), vm_model(), honeybadger()]
+    system_flow = stack()
+    diagrams = [
+        system_flow,
+        Diagram("stoffel-stack-introduction", system_flow.title, system_flow.subtitle, system_flow.body),
+        mpc_flow(),
+        dev_loop(),
+        compilation(),
+        sdk_paths(),
+        vm_model(),
+        honeybadger(),
+    ]
     qa = {
         "diagrams": [],
         "xml_parse_errors": [],

@@ -216,7 +216,7 @@ def docs_stack_diagram():
     # Subtle source note, not a competing visual element.
     draw_text(d, (70, 1080), 'Source: Stoffel docs + 0.1.0 component model', font_reg(20), COL['muted'], label='source note')
 
-    out = OUT / 'stoffel-stack-ecosystem-contained.png'
+    out = OUT / 'stoffel-stack-ecosystem-contained-v2.png'
     im.convert('RGB').save(out, quality=94, optimize=True)
     qa['asset'] = {'path': str(out), 'width': W, 'height': H, 'bytes': out.stat().st_size}
     QA_PATH.write_text(json.dumps(qa, indent=2), encoding='utf-8')

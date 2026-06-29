@@ -61,15 +61,15 @@
 <rect x="864" y="180" width="258" height="82" class="card card-cyan"/>
 <text x="993" y="214" class="card-text" text-anchor="middle">coordinator</text>
 <text x="993" y="240" class="card-sub" text-anchor="middle">lifecycle + IO routing</text>
-<rect x="852" y="318" width="118" height="82" class="card card-party"/>
-<text x="911" y="352" class="card-text" text-anchor="middle">party 1</text>
-<text x="911" y="378" class="card-sub" text-anchor="middle">VM over shares</text>
-<rect x="988" y="318" width="118" height="82" class="card card-party"/>
-<text x="1047" y="352" class="card-text" text-anchor="middle">party 2</text>
-<text x="1047" y="378" class="card-sub" text-anchor="middle">VM over shares</text>
-<rect x="920" y="432" width="118" height="82" class="card card-party"/>
-<text x="979" y="466" class="card-text" text-anchor="middle">party n</text>
-<text x="979" y="492" class="card-sub" text-anchor="middle">VM over shares</text>
+<rect x="852" y="318" width="118" height="82" class="card card-blue"/>
+<text x="911" y="352" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">party 1</text>
+<text x="911" y="378" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">VM over shares</text>
+<rect x="988" y="318" width="118" height="82" class="card card-blue"/>
+<text x="1047" y="352" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">party 2</text>
+<text x="1047" y="378" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">VM over shares</text>
+<rect x="920" y="432" width="118" height="82" class="card card-blue"/>
+<text x="979" y="466" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">party n</text>
+<text x="979" y="492" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">VM over shares</text>
 <path d="M333,232 L470,232" class="arrow"/>
 <rect x="357" y="200" width="95" height="28" class="label-chip"/>
 <text x="404.5" y="214" class="label">build</text>

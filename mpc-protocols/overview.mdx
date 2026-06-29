@@ -26,11 +26,31 @@ Start from the shape of the secret work, not the name of the application.
 
 Select AVSS with the default curve:
 
-```toml
-[mpc]
-backend = "avss"
-parties = 5
-threshold = 1
+![Campaign-style networked privacy backend diagram showing how clients, the coordinator, preprocessing, and VM parties fit together for MPC execution.](/images/campaign/stoffel-networked-privacy-backend.png)
+
+### Overview
+
+HoneyBadger is an asynchronous Byzantine fault-tolerant (BFT) MPC protocol that:
+
+- **Tolerates malicious parties**: Up to `t` parties can be actively malicious
+- **Works asynchronously**: No timing assumptions required
+- **Provides guaranteed output delivery**: Honest parties always get results
+
+### Security Guarantees
+
+| Property | Description |
+|----------|-------------|
+| **Privacy** | No coalition of ≤t parties learns anything about honest inputs |
+| **Correctness** | Output is always the correct result of the computation |
+| **Guaranteed Output** | Honest parties always receive their outputs |
+| **Fairness** | Either all honest parties get output, or none do |
+
+### Configuration Constraints
+
+The number of parties `n` and threshold `t` must satisfy:
+
+```
+n >= 3t + 1
 ```
 
 Select AVSS with a specific curve:

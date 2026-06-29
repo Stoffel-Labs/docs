@@ -11,6 +11,8 @@ Stoffel records the selected MPC backend in the compiled program and carries it 
 
 ![HoneyBadger MPC runtime diagram showing client input/output paths, coordinator-managed sessions, preprocessing material, and peer protocol rounds between VM parties.](/images/diagrams/honeybadger-network.svg)
 
+![Campaign-style networked privacy backend diagram showing client input and output paths, coordinator routing, preprocessing, and peer protocol messages.](/images/campaign/stoffel-networked-privacy-backend.png)
+
 At runtime, clients submit protected inputs, the coordinator manages session lifecycle and IO routing, and the parties execute the VM while exchanging HoneyBadger protocol messages.
 
 The important invariant is that the compiled bytecode and the runtime agree on:

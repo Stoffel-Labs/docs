@@ -34,6 +34,8 @@ The SDK gives Rust applications a single API for:
 
 ![Rust SDK runtime paths from Rust application code through compile/load APIs into clear local execution, local MPC execution, and network handles.](/images/diagrams/rust-sdk-runtime-paths.svg)
 
+![Campaign-style Stoffel workflow diagram showing how source programs, the build contract, coordinator-managed runtime, and application clients connect.](/images/campaign/stoffel-how-it-works.png)
+
 Use `Stoffel::compile(...)` when the Rust app owns source compilation. Use `Stoffel::load(...)` or `Stoffel::load_file(...)` when the app should load a `.stflb` artifact built by the CLI.
 
 For app integrations, a common flow is to build bytecode with the CLI and load that artifact from Rust:

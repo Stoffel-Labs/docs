@@ -9,6 +9,8 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
 
 ## Components in 0.1.0
 
+![Campaign-style Stoffel stack diagram showing the application and SDK layer, Stoffel language and CLI layer, VM bytecode contract, and privacy backend.](/images/campaign/stoffel-stack.png)
+
 | Component | Location | Developer guidance |
 | --- | --- | --- |
 | Stoffel repository | [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel) | Start here. It contains the CLI, compiler, Rust SDK, VM runtime, bytecode/types crates, C FFI, and examples. |
@@ -25,7 +27,7 @@ Stoffel gives you a direct path to private computation: write the workflow, mark
 
 ## Component architecture
 
-![Stoffel system flow showing how application code, CLI or SDK entry points, the build contract, and the networked MPC runtime fit together.](/images/diagrams/stoffel-stack.svg)
+![Campaign-style Stoffel architecture diagram showing how application code, build artifacts, the coordinator, VM parties, protocol chatter, and authorized outputs fit together.](/images/campaign/stoffel-how-it-works-architecture.png)
 
 The key boundary is the build contract: `.stfl` source compiles to `.stflb` bytecode plus manifest information, and every runtime path loads that same artifact.
 

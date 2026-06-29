@@ -188,7 +188,7 @@ def docs_stack_diagram():
     draw_text(
         d,
         (72, 230),
-        'A docs-first view of how app code moves through the Stoffel toolchain into VM-backed MPC execution.',
+        'Trace the app-facing path from product code to private MPC execution.',
         font_reg(36),
         COL['muted'],
         maxw=1200,
@@ -210,7 +210,7 @@ def docs_stack_diagram():
         bx = (b_box[0] + b_box[2]) // 2
         arrow(d, (ax, a_box[3] + 12), (bx, b_box[1] - 14), COL['honey'], 7)
 
-    out = OUT / 'stoffel-stack-ecosystem-v5.png'
+    out = OUT / 'stoffel-stack-ecosystem-v6.png'
     im.convert('RGB').save(out, quality=94, optimize=True)
     qa['asset'] = {'path': str(out), 'width': W, 'height': H, 'bytes': out.stat().st_size}
     QA_PATH.write_text(json.dumps(qa, indent=2), encoding='utf-8')

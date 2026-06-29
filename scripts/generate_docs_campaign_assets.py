@@ -195,14 +195,11 @@ def docs_stack_diagram():
         spacing=8,
         label='subtitle',
     )
-    chip(d, (72, 328), 'Docs overview', COL['honey'])
-    chip(d, (268, 328), 'CLI + Rust SDK path', COL['teal'])
-
     layers = [
-        ((165, 408, 1635, 558), 'App integration', 'Rust SDK maps product values into programs.', COL['teal'], ['Rust SDK', 'bindings', 'clients']),
-        ((215, 574, 1585, 724), 'Language + CLI', 'Write .stfl, check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'CLI', 'Stoffel.toml']),
-        ((265, 740, 1535, 890), 'Bytecode + VM', 'The VM separates clear values from shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
-        ((315, 906, 1485, 1056), 'MPC runtime', 'Parties compute over shares; outputs are explicit.', COL['pink'], ['coordinator', 'parties', 'outputs']),
+        ((165, 352, 1635, 502), 'App integration', 'Rust SDK maps product values into programs.', COL['teal'], ['Rust SDK', 'bindings', 'clients']),
+        ((215, 528, 1585, 678), 'Language + CLI', 'Write .stfl, check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'CLI', 'Stoffel.toml']),
+        ((265, 704, 1535, 854), 'Bytecode + VM', 'The VM separates clear values from shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
+        ((315, 880, 1485, 1030), 'MPC runtime', 'Parties compute over shares; outputs are explicit.', COL['pink'], ['coordinator', 'parties', 'outputs']),
     ]
 
     for box, title, sub, accent, pills in layers:
@@ -216,7 +213,7 @@ def docs_stack_diagram():
     # Subtle source note, not a competing visual element.
     draw_text(d, (70, 1080), 'Source: Stoffel docs + 0.1.0 component model', font_reg(20), COL['muted'], label='source note')
 
-    out = OUT / 'stoffel-stack-ecosystem-contained-v2.png'
+    out = OUT / 'stoffel-stack-ecosystem-v3.png'
     im.convert('RGB').save(out, quality=94, optimize=True)
     qa['asset'] = {'path': str(out), 'width': W, 'height': H, 'bytes': out.stat().st_size}
     QA_PATH.write_text(json.dumps(qa, indent=2), encoding='utf-8')

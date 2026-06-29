@@ -92,9 +92,9 @@ def cover_bg(path):
 
 def add_logo(im):
     logo = Image.open(LOGO_RENDERED).convert('RGBA')
-    target_w = 248
+    target_w = 330
     logo = logo.resize((target_w, int(logo.height * target_w / logo.width)), Image.Resampling.LANCZOS)
-    im.alpha_composite(logo, (70, 58))
+    im.alpha_composite(logo, (W - target_w - 70, 58))
 
 
 def wrap(draw, s, font, maxw):
@@ -144,10 +144,10 @@ def chip(draw, xy, s, fill, f=None, return_box=False):
     return w, h
 
 
-def arrow(draw, p1, p2, fill=COL['honey'], width=5):
+def arrow(draw, p1, p2, fill=COL['honey'], width=7):
     draw.line([p1, p2], fill=fill, width=width)
     ang = math.atan2(p2[1] - p1[1], p2[0] - p1[0])
-    sz = 18
+    sz = 22
     pts = [
         p2,
         (p2[0] - sz * math.cos(ang - math.pi / 6), p2[1] - sz * math.sin(ang - math.pi / 6)),
@@ -159,23 +159,23 @@ def arrow(draw, p1, p2, fill=COL['honey'], width=5):
 def layer_card(draw, box, title, subtitle, accent, pills):
     qa['layer_count'] += 1
     x1, y1, x2, y2 = box
-    draw.rounded_rectangle((x1 + 10, y1 + 14, x2 + 10, y2 + 14), radius=28, fill=(0, 0, 0, 68))
-    draw.rounded_rectangle(box, radius=28, fill=COL['card'], outline=COL['stroke'], width=2)
-    draw.rounded_rectangle((x1 + 24, y1 + 30, x1 + 42, y2 - 30), radius=9, fill=accent)
-    title_box = draw_text(draw, (x1 + 72, y1 + 30), title, font_semi(36), COL['white'], maxw=520, label=title)
-    check_card_containment(title, 'title', title_box, box, padding=30)
-    byline_box = (x1 + 62, y1 + 78, min(x1 + 850, x2 - 590), y1 + 124)
-    draw.rounded_rectangle(byline_box, radius=16, fill=COL['cream'], outline=accent, width=2)
-    subtitle_box = draw_text(draw, (x1 + 82, y1 + 89), subtitle, font_semi(19), COL['ink'], maxw=byline_box[2] - byline_box[0] - 40, spacing=4, label=title + ' subtitle')
-    check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=30)
-    check_text_box_containment(title + ' subtitle', subtitle_box, byline_box, padding=10)
-    px, py = x2 - 512, y1 + 62
+    draw.rounded_rectangle((x1 + 12, y1 + 16, x2 + 12, y2 + 16), radius=34, fill=(0, 0, 0, 72))
+    draw.rounded_rectangle(box, radius=34, fill=COL['card'], outline=COL['stroke'], width=3)
+    draw.rounded_rectangle((x1 + 28, y1 + 34, x1 + 50, y2 - 34), radius=11, fill=accent)
+    title_box = draw_text(draw, (x1 + 86, y1 + 32), title, font_semi(42), COL['white'], maxw=620, label=title)
+    check_card_containment(title, 'title', title_box, box, padding=34)
+    byline_box = (x1 + 76, y1 + 88, min(x1 + 930, x2 - 520), y1 + 140)
+    draw.rounded_rectangle(byline_box, radius=18, fill=COL['cream'], outline=accent, width=3)
+    subtitle_box = draw_text(draw, (x1 + 100, y1 + 101), subtitle, font_semi(21), COL['ink'], maxw=byline_box[2] - byline_box[0] - 48, spacing=4, label=title + ' subtitle')
+    check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=34)
+    check_text_box_containment(title + ' subtitle', subtitle_box, byline_box, padding=11)
+    px, py = x2 - 500, y1 + 72
     for pill in pills:
-        w, h, pill_box = chip(draw, (px, py), pill, (255, 248, 224, 238), font_semi(19), return_box=True)
-        check_card_containment(pill, 'pill', pill_box, box, padding=30)
-        px += w + 12
-        if px > x2 - 70:
-            px, py = x2 - 512, py + h + 12
+        w, h, pill_box = chip(draw, (px, py), pill, COL['cream'], font_semi(22), return_box=True)
+        check_card_containment(pill, 'pill', pill_box, box, padding=34)
+        px += w + 14
+        if px > x2 - 78:
+            px, py = x2 - 500, py + h + 14
 
 
 def docs_stack_diagram():
@@ -184,22 +184,22 @@ def docs_stack_diagram():
     add_logo(im)
     d = ImageDraw.Draw(im)
 
-    draw_text(d, (70, 156), 'The Stoffel stack', font_bold(72), COL['white'], label='title')
+    draw_text(d, (70, 126), 'The Stoffel stack', font_bold(84), COL['white'], label='title')
     draw_text(
         d,
-        (72, 246),
+        (72, 230),
         'A docs-first view of how app code moves through the Stoffel toolchain into VM-backed MPC execution.',
-        font_reg(31),
+        font_reg(36),
         COL['muted'],
-        maxw=1180,
-        spacing=8,
+        maxw=1200,
+        spacing=9,
         label='subtitle',
     )
     layers = [
-        ((165, 352, 1635, 502), 'App integration', 'Rust SDK maps product values into programs.', COL['teal'], ['Rust SDK', 'bindings', 'clients']),
-        ((215, 528, 1585, 678), 'Language + CLI', 'Write .stfl, check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'CLI', 'Stoffel.toml']),
-        ((265, 704, 1535, 854), 'Bytecode + VM', 'The VM separates clear values from shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
-        ((315, 880, 1485, 1030), 'MPC runtime', 'Parties compute over shares; outputs are explicit.', COL['pink'], ['coordinator', 'parties', 'outputs']),
+        ((130, 330, 1670, 500), 'App integration', 'Rust SDK maps product values into programs.', COL['teal'], ['Rust SDK', 'bindings', 'clients']),
+        ((190, 520, 1610, 690), 'Language + CLI', 'Write .stfl, check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'CLI', 'Stoffel.toml']),
+        ((250, 710, 1550, 880), 'Bytecode + VM', 'The VM separates clear values from shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
+        ((310, 900, 1490, 1070), 'MPC runtime', 'Parties compute over shares; outputs are explicit.', COL['pink'], ['coordinator', 'parties', 'outputs']),
     ]
 
     for box, title, sub, accent, pills in layers:
@@ -208,9 +208,9 @@ def docs_stack_diagram():
     for (a_box, *_), (b_box, *__) in zip(layers, layers[1:]):
         ax = (a_box[0] + a_box[2]) // 2
         bx = (b_box[0] + b_box[2]) // 2
-        arrow(d, (ax, a_box[3] + 10), (bx, b_box[1] - 12), COL['honey'], 5)
+        arrow(d, (ax, a_box[3] + 12), (bx, b_box[1] - 14), COL['honey'], 7)
 
-    out = OUT / 'stoffel-stack-ecosystem-v4.png'
+    out = OUT / 'stoffel-stack-ecosystem-v5.png'
     im.convert('RGB').save(out, quality=94, optimize=True)
     qa['asset'] = {'path': str(out), 'width': W, 'height': H, 'bytes': out.stat().st_size}
     QA_PATH.write_text(json.dumps(qa, indent=2), encoding='utf-8')

@@ -4,11 +4,11 @@
   "card_containment_issues": [],
   "text_box_containment_issues": [],
   "asset": {
-    "path": "images/campaign/stoffel-stack-ecosystem-v3.png",
+    "path": "images/campaign/stoffel-stack-ecosystem-v4.png",
     "width": 1800,
     "height": 1125,
-    "bytes": 1101614
+    "bytes": 1091335
   },
-  "text_count": 11,
+  "text_count": 10,
   "layer_count": 4
 }

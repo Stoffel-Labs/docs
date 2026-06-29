@@ -210,10 +210,7 @@ def docs_stack_diagram():
         bx = (b_box[0] + b_box[2]) // 2
         arrow(d, (ax, a_box[3] + 10), (bx, b_box[1] - 12), COL['honey'], 5)
 
-    # Subtle source note, not a competing visual element.
-    draw_text(d, (70, 1080), 'Source: Stoffel docs + 0.1.0 component model', font_reg(20), COL['muted'], label='source note')
-
-    out = OUT / 'stoffel-stack-ecosystem-v3.png'
+    out = OUT / 'stoffel-stack-ecosystem-v4.png'
     im.convert('RGB').save(out, quality=94, optimize=True)
     qa['asset'] = {'path': str(out), 'width': W, 'height': H, 'bytes': out.stat().st_size}
     QA_PATH.write_text(json.dumps(qa, indent=2), encoding='utf-8')

@@ -327,6 +327,71 @@ def honeybadger() -> Diagram:
     return Diagram("honeybadger-network", "HoneyBadger MPC runtime", "Coordinator-managed sessions with preprocessing and peer protocol rounds", body)
 
 
+def why_stoffel_dev_gap() -> Diagram:
+    body = "\n".join([
+        zone(54, 136, 492, 386, "Traditional MPC project"),
+        zone(654, 136, 492, 386, "Stoffel project"),
+        card(92, 202, 170, 82, "protocol study", "paper + proofs", "card card-cream"),
+        card(318, 202, 170, 82, "custom stack", "crypto + networking", "card card-cream"),
+        card(206, 356, 170, 82, "late app test", "integration after plumbing", "card card-cream"),
+        arrow(262, 243, 318, 243),
+        curve("M403,284 C408,330 350,350 291,365", "arrow-soft"),
+        chip(174, 476, 252, "specialized plumbing first"),
+        card(698, 202, 150, 82, ".stfl logic", "app computation", "card card-lav"),
+        card(890, 202, 150, 82, "check + build", ".stflb artifact", "card card-cream"),
+        card(794, 356, 150, 82, "local MPC", "party smoke test", "card card-blue"),
+        card(980, 356, 130, 82, "Rust SDK", "app boundary", "card card-cyan"),
+        arrow(848, 243, 890, 243),
+        curve("M965,284 C970,330 900,350 870,356", "arrow-soft"),
+        arrow(944, 397, 980, 397),
+        chip(780, 476, 272, "application iteration stays visible"),
+    ])
+    return Diagram("why-stoffel-dev-gap", "From protocol project to app workflow", "Stoffel moves MPC work from bespoke plumbing into a repeatable developer loop", body)
+
+
+def why_stoffel_toolchain() -> Diagram:
+    labels = [
+        (78, "StoffelLang", "model secret values", "card card-lav"),
+        (284, "CLI", "init, check, build, run", "card card-cream"),
+        (490, ".stflb", "bytecode + manifest", "card card-cream"),
+        (696, "VM parties", "compute over shares", "card card-blue"),
+        (902, "Rust SDK", "application integration", "card card-cyan"),
+    ]
+    parts = []
+    for x, title, sub, cls in labels:
+        parts.append(card(x, 232, 160, 92, title, sub, cls))
+    for (x, *_), (nx, *__) in zip(labels, labels[1:]):
+        parts.append(arrow(x + 160, 278, nx, 278))
+    parts += [
+        card(154, 420, 230, 74, "clear checks", "fast logic feedback", "card card-lav"),
+        card(486, 420, 230, 74, "local MPC tests", "parties + threshold", "card card-blue"),
+        card(818, 420, 230, 74, "deployment planning", "network/config boundaries", "card card-cyan"),
+        arrow(384, 457, 486, 457),
+        arrow(716, 457, 818, 457),
+        chip(424, 154, 352, "one artifact connects language, runtime, and app code"),
+    ]
+    return Diagram("why-stoffel-toolchain", "Stoffel toolchain advantage", "A language, compiler, VM, CLI, and SDK share one bytecode contract", "\n".join(parts))
+
+
+def why_stoffel_privacy_boundary() -> Diagram:
+    body = "\n".join([
+        zone(58, 140, 486, 374, "Conventional backend"),
+        zone(656, 140, 486, 374, "Stoffel-backed workflow"),
+        card(96, 214, 162, 80, "private input", "arrives as plaintext", "card card-lav"),
+        card(332, 214, 162, 80, "service logic", "can log or inspect", "card card-cream"),
+        card(214, 382, 162, 80, "database/logs", "retain sensitive traces", "card card-cream"),
+        arrow(258, 254, 332, 254),
+        curve("M413,294 C414,346 330,366 295,382", "arrow-soft"),
+        card(694, 206, 148, 78, "client shares", "raw value split", "card card-lav"),
+        card(886, 206, 148, 78, "MPC parties", "VM over shares", "card card-blue"),
+        card(790, 376, 190, 82, "authorized output", "only explicit reveal/send", "card card-cyan"),
+        arrow(842, 245, 886, 245),
+        curve("M960,284 C970,332 930,354 885,376", "arrow-soft"),
+        chip(716, 500, 360, "privacy boundary is part of the program shape"),
+    ])
+    return Diagram("why-stoffel-privacy-boundary", "Privacy boundary comparison", "Stoffel keeps private inputs in shares until the program explicitly opens or sends output", body)
+
+
 def write_all() -> dict:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     system_flow = stack()
@@ -339,6 +404,9 @@ def write_all() -> dict:
         sdk_paths(),
         vm_model(),
         honeybadger(),
+        why_stoffel_dev_gap(),
+        why_stoffel_toolchain(),
+        why_stoffel_privacy_boundary(),
     ]
     qa = {
         "diagrams": [],

@@ -39,6 +39,21 @@
       "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/honeybadger-network.svg",
       "width": 1200,
       "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-dev-gap.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-toolchain.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-privacy-boundary.svg",
+      "width": 1200,
+      "height": 675
     }
   ],
   "xml_parse_errors": [],

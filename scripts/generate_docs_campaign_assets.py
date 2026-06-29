@@ -164,9 +164,9 @@ def layer_card(draw, box, title, subtitle, accent, pills):
     draw.rounded_rectangle((x1 + 24, y1 + 30, x1 + 42, y2 - 30), radius=9, fill=accent)
     title_box = draw_text(draw, (x1 + 72, y1 + 30), title, font_semi(36), COL['white'], maxw=520, label=title)
     check_card_containment(title, 'title', title_box, box, padding=30)
-    byline_box = (x1 + 62, y1 + 78, min(x1 + 850, x2 - 590), y1 + 122)
-    draw.rounded_rectangle(byline_box, radius=16, fill=(255, 255, 255, 18), outline=(255, 255, 255, 28), width=1)
-    subtitle_box = draw_text(draw, (x1 + 82, y1 + 88), subtitle, font_reg(20), COL['soft'], maxw=byline_box[2] - byline_box[0] - 40, spacing=4, label=title + ' subtitle')
+    byline_box = (x1 + 62, y1 + 78, min(x1 + 850, x2 - 590), y1 + 124)
+    draw.rounded_rectangle(byline_box, radius=16, fill=COL['cream'], outline=accent, width=2)
+    subtitle_box = draw_text(draw, (x1 + 82, y1 + 89), subtitle, font_semi(19), COL['ink'], maxw=byline_box[2] - byline_box[0] - 40, spacing=4, label=title + ' subtitle')
     check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=30)
     check_text_box_containment(title + ' subtitle', subtitle_box, byline_box, padding=10)
     px, py = x2 - 512, y1 + 62

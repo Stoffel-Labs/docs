@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Stoffel toolchain advantage</title>
+  <desc id="desc">A language, compiler, VM, CLI, and SDK share one bytecode contract</desc>
+  <defs>
+    <style>
+:root { color-scheme: light; }
+.bg { fill: #f8f8fc; }
+.header { fill: #3448f0; }
+.title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 34px; font-weight: 700; fill: #ffffff; }
+.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 500; fill: #ffffff; }
+.zone { fill: #ffffff; stroke: #b8bde8; stroke-width: 2; stroke-dasharray: 9 8; rx: 22; }
+.zone-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 700; fill: #17214f; letter-spacing: .02em; }
+.card { fill: #ffffff; stroke: #c6cbef; stroke-width: 2; rx: 16; }
+.card-lav { fill: #ebe9ff; stroke: #c6c0ff; }
+.card-cream { fill: #fff6df; stroke: #edd797; }
+.card-blue { fill: #3448f0; stroke: #2335c8; }
+.card-party { fill: #ffffff; stroke: #3448f0; stroke-width: 3; }
+.card-cyan { fill: #e5fbff; stroke: #7be4f5; }
+.card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
+.card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
+.white { fill: #ffffff; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; }
+.small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
+.badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
+.badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
+.arrow { stroke: #101a45; stroke-width: 3; fill: none; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
+.arrow-soft { stroke: #3448f0; stroke-width: 2.5; fill: none; marker-end: url(#arrow-soft); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.arrow-dash { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow-soft); opacity: .72; }
+.boundary { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 8 8; stroke-linecap: round; opacity: .72; }
+.label-chip { fill: #ffffff; stroke: #d7daf4; stroke-width: 1; rx: 10; }
+.label { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #24305f; text-anchor: middle; dominant-baseline: middle; }
+</style>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11 z" fill="#101a45"/></marker>
+    <marker id="arrow-soft" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3448f0"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="675"/>
+  <rect class="header" x="0" y="0" width="1200" height="94"/>
+  <text x="48" y="40" class="title">Stoffel toolchain advantage</text>
+  <text x="48" y="68" class="subtitle" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff">A language, compiler, VM, CLI, and SDK share one bytecode contract</text>
+  <rect x="78" y="232" width="160" height="92" class="card card-lav"/>
+<text x="158" y="266" class="card-text" text-anchor="middle">StoffelLang</text>
+<text x="158" y="292" class="card-sub" text-anchor="middle">model secret values</text>
+<rect x="284" y="232" width="160" height="92" class="card card-cream"/>
+<text x="364" y="266" class="card-text" text-anchor="middle">CLI</text>
+<text x="364" y="292" class="card-sub" text-anchor="middle">init, check, build, run</text>
+<rect x="490" y="232" width="160" height="92" class="card card-cream"/>
+<text x="570" y="266" class="card-text" text-anchor="middle">.stflb</text>
+<text x="570" y="292" class="card-sub" text-anchor="middle">bytecode + manifest</text>
+<rect x="696" y="232" width="160" height="92" class="card card-blue"/>
+<text x="776" y="266" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">VM parties</text>
+<text x="776" y="292" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">compute over shares</text>
+<rect x="902" y="232" width="160" height="92" class="card card-cyan"/>
+<text x="982" y="266" class="card-text" text-anchor="middle">Rust SDK</text>
+<text x="982" y="292" class="card-sub" text-anchor="middle">application integration</text>
+<path d="M238,278 L284,278" class="arrow"/>
+<path d="M444,278 L490,278" class="arrow"/>
+<path d="M650,278 L696,278" class="arrow"/>
+<path d="M856,278 L902,278" class="arrow"/>
+<rect x="154" y="420" width="230" height="74" class="card card-lav"/>
+<text x="269" y="454" class="card-text" text-anchor="middle">clear checks</text>
+<text x="269" y="480" class="card-sub" text-anchor="middle">fast logic feedback</text>
+<rect x="486" y="420" width="230" height="74" class="card card-blue"/>
+<text x="601" y="454" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">local MPC tests</text>
+<text x="601" y="480" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">parties + threshold</text>
+<rect x="818" y="420" width="230" height="74" class="card card-cyan"/>
+<text x="933" y="454" class="card-text" text-anchor="middle">deployment planning</text>
+<text x="933" y="480" class="card-sub" text-anchor="middle">network/config boundaries</text>
+<path d="M384,457 L486,457" class="arrow"/>
+<path d="M716,457 L818,457" class="arrow"/>
+<rect x="424" y="154" width="352" height="28" class="label-chip"/>
+<text x="600.0" y="168" class="label">one artifact connects language, runtime, and app code</text>
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Compilation pipeline</title>
+  <desc id="desc">How StoffelLang becomes portable Stoffel VM bytecode</desc>
+  <defs>
+    <style>
+:root { color-scheme: light; }
+.bg { fill: #f8f8fc; }
+.header { fill: #3448f0; }
+.title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 34px; font-weight: 700; fill: #ffffff; }
+.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 500; fill: #ffffff; }
+.zone { fill: #ffffff; stroke: #b8bde8; stroke-width: 2; stroke-dasharray: 9 8; rx: 22; }
+.zone-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 700; fill: #17214f; letter-spacing: .02em; }
+.card { fill: #ffffff; stroke: #c6cbef; stroke-width: 2; rx: 16; }
+.card-lav { fill: #ebe9ff; stroke: #c6c0ff; }
+.card-cream { fill: #fff6df; stroke: #edd797; }
+.card-blue { fill: #3448f0; stroke: #2335c8; }
+.card-party { fill: #ffffff; stroke: #3448f0; stroke-width: 3; }
+.card-cyan { fill: #e5fbff; stroke: #7be4f5; }
+.card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
+.card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
+.white { fill: #ffffff; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; }
+.small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
+.badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
+.badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
+.arrow { stroke: #101a45; stroke-width: 3; fill: none; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
+.arrow-soft { stroke: #3448f0; stroke-width: 2.5; fill: none; marker-end: url(#arrow-soft); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.arrow-dash { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow-soft); opacity: .72; }
+.boundary { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 8 8; stroke-linecap: round; opacity: .72; }
+.label-chip { fill: #ffffff; stroke: #d7daf4; stroke-width: 1; rx: 10; }
+.label { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #24305f; text-anchor: middle; dominant-baseline: middle; }
+</style>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11 z" fill="#101a45"/></marker>
+    <marker id="arrow-soft" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3448f0"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="675"/>
+  <rect class="header" x="0" y="0" width="1200" height="94"/>
+  <text x="48" y="40" class="title">Compilation pipeline</text>
+  <text x="48" y="68" class="subtitle" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff">How StoffelLang becomes portable Stoffel VM bytecode</text>
+  <rect x="70" y="230" width="150" height="88" class="card card-lav"/>
+<text x="145" y="264" class="card-text" text-anchor="middle">.stfl source</text>
+<text x="145" y="290" class="card-sub" text-anchor="middle">program + types</text>
+<path d="M220,274 L258,274" class="arrow"/>
+<rect x="258" y="230" width="150" height="88" class="card card-cream"/>
+<text x="333" y="264" class="card-text" text-anchor="middle">parse</text>
+<text x="333" y="290" class="card-sub" text-anchor="middle">AST</text>
+<path d="M408,274 L446,274" class="arrow"/>
+<rect x="446" y="230" width="150" height="88" class="card card-cream"/>
+<text x="521" y="264" class="card-text" text-anchor="middle">type check</text>
+<text x="521" y="290" class="card-sub" text-anchor="middle">clear/secret shapes</text>
+<path d="M596,274 L634,274" class="arrow"/>
+<rect x="634" y="230" width="150" height="88" class="card card-cream"/>
+<text x="709" y="264" class="card-text" text-anchor="middle">lower</text>
+<text x="709" y="290" class="card-sub" text-anchor="middle">VM functions</text>
+<path d="M784,274 L822,274" class="arrow"/>
+<rect x="822" y="230" width="150" height="88" class="card card-cream"/>
+<text x="897" y="264" class="card-text" text-anchor="middle">optimize</text>
+<text x="897" y="290" class="card-sub" text-anchor="middle">instruction stream</text>
+<path d="M972,274 L1010,274" class="arrow"/>
+<rect x="1010" y="230" width="150" height="88" class="card card-cyan"/>
+<text x="1085" y="264" class="card-text" text-anchor="middle">.stflb</text>
+<text x="1085" y="290" class="card-sub" text-anchor="middle">bytecode + manifest</text>
+<rect x="178" y="410" width="270" height="72" class="card card-lav"/>
+<text x="313" y="444" class="card-text" text-anchor="middle">stoffel check</text>
+<text x="313" y="470" class="card-sub" text-anchor="middle">validate without writing bytecode</text>
+<rect x="482" y="410" width="270" height="72" class="card card-lav"/>
+<text x="617" y="444" class="card-text" text-anchor="middle">stoffel build</text>
+<text x="617" y="470" class="card-sub" text-anchor="middle">write target/debug/*.stflb</text>
+<rect x="786" y="410" width="270" height="72" class="card card-lav"/>
+<text x="921" y="444" class="card-text" text-anchor="middle">disassemble/run</text>
+<text x="921" y="470" class="card-sub" text-anchor="middle">inspect or execute artifact</text>
+</svg>

@@ -5,6 +5,10 @@ description: "Technical overview of Stoffel VM's register-based architecture wit
 
 Stoffel VM is a register based virtual machine with two sets of registers. Clear registers for manipulating non-secret values. Secret registers are used for manipulating secret values.
 
+![Stoffel VM execution model showing bytecode, the instruction dispatcher, clear and secret registers, runtime stores, and MPC protocol hooks.](/images/diagrams/vm-execution-model.svg)
+
+![Campaign-style Stoffel stack diagram showing how applications, SDKs, Stoffel language and CLI, VM bytecode, and the privacy backend layer together.](/images/campaign/stoffel-stack.png)
+
 ## Technical Overview
 
 ### [Virtual Machine Architecture](./subsections/virtualmachine)

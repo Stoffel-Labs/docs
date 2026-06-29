@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Stoffel development loop</title>
+  <desc id="desc">Check, build, inspect, and run local MPC before application integration</desc>
+  <defs>
+    <style>
+:root { color-scheme: light; }
+.bg { fill: #f8f8fc; }
+.header { fill: #3448f0; }
+.title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 34px; font-weight: 700; fill: #ffffff; }
+.subtitle { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 500; fill: #ffffff; }
+.zone { fill: #ffffff; stroke: #b8bde8; stroke-width: 2; stroke-dasharray: 9 8; rx: 22; }
+.zone-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 17px; font-weight: 700; fill: #17214f; letter-spacing: .02em; }
+.card { fill: #ffffff; stroke: #c6cbef; stroke-width: 2; rx: 16; }
+.card-lav { fill: #ebe9ff; stroke: #c6c0ff; }
+.card-cream { fill: #fff6df; stroke: #edd797; }
+.card-blue { fill: #3448f0; stroke: #2335c8; }
+.card-party { fill: #ffffff; stroke: #3448f0; stroke-width: 3; }
+.card-cyan { fill: #e5fbff; stroke: #7be4f5; }
+.card-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #121a44; }
+.card-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 400; fill: #465078; }
+.white { fill: #ffffff; }
+.on-blue-title { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 18px; font-weight: 700; }
+.on-blue-sub { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 14px; font-weight: 700; }
+.small { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #465078; }
+.badge { fill: #5ee3ff; stroke: #28bfdc; stroke-width: 1.5; }
+.badge-text { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #07133d; text-anchor: middle; dominant-baseline: middle; }
+.arrow { stroke: #101a45; stroke-width: 3; fill: none; marker-end: url(#arrow); stroke-linecap: round; stroke-linejoin: round; }
+.arrow-soft { stroke: #3448f0; stroke-width: 2.5; fill: none; marker-end: url(#arrow-soft); stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.arrow-dash { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 7 7; marker-end: url(#arrow-soft); opacity: .72; }
+.boundary { stroke: #3448f0; stroke-width: 2.5; fill: none; stroke-dasharray: 8 8; stroke-linecap: round; opacity: .72; }
+.label-chip { fill: #ffffff; stroke: #d7daf4; stroke-width: 1; rx: 10; }
+.label { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #24305f; text-anchor: middle; dominant-baseline: middle; }
+</style>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11 z" fill="#101a45"/></marker>
+    <marker id="arrow-soft" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3448f0"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="675"/>
+  <rect class="header" x="0" y="0" width="1200" height="94"/>
+  <text x="48" y="40" class="title">Stoffel development loop</text>
+  <text x="48" y="68" class="subtitle" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff">Check, build, inspect, and run local MPC before application integration</text>
+  <circle cx="105" cy="182" r="18" class="badge"/><text x="105" y="182" class="badge-text">1</text>
+<rect x="70" y="214" width="170" height="92" class="card card-lav"/>
+<text x="155" y="248" class="card-text" text-anchor="middle">write</text>
+<text x="155" y="274" class="card-sub" text-anchor="middle">src/main.stfl</text>
+<circle cx="321" cy="182" r="18" class="badge"/><text x="321" y="182" class="badge-text">2</text>
+<rect x="286" y="214" width="170" height="92" class="card card-cream"/>
+<text x="371" y="248" class="card-text" text-anchor="middle">check</text>
+<text x="371" y="274" class="card-sub" text-anchor="middle">validate source</text>
+<circle cx="537" cy="182" r="18" class="badge"/><text x="537" y="182" class="badge-text">3</text>
+<rect x="502" y="214" width="170" height="92" class="card card-cream"/>
+<text x="587" y="248" class="card-text" text-anchor="middle">build</text>
+<text x="587" y="274" class="card-sub" text-anchor="middle">.stflb artifact</text>
+<circle cx="753" cy="182" r="18" class="badge"/><text x="753" y="182" class="badge-text">4</text>
+<rect x="718" y="214" width="170" height="92" class="card card-cream"/>
+<text x="803" y="248" class="card-text" text-anchor="middle">run</text>
+<text x="803" y="274" class="card-sub" text-anchor="middle">local MPC nodes</text>
+<circle cx="969" cy="182" r="18" class="badge"/><text x="969" y="182" class="badge-text">5</text>
+<rect x="934" y="214" width="170" height="92" class="card card-lav"/>
+<text x="1019" y="248" class="card-text" text-anchor="middle">integrate</text>
+<text x="1019" y="274" class="card-sub" text-anchor="middle">Rust SDK wrapper</text>
+<path d="M240,260 L286,260" class="arrow"/>
+<path d="M456,260 L502,260" class="arrow"/>
+<path d="M672,260 L718,260" class="arrow"/>
+<path d="M888,260 L934,260" class="arrow"/>
+<path d="M1019,306 C960,496 220,496 155,306" class="arrow-soft"/>
+<rect x="444" y="484" width="312" height="28" class="label-chip"/>
+<text x="600.0" y="498" class="label">edit, rebuild, rerun until the boundary is right</text>
+<rect x="318" y="398" width="564" height="68" class="card card-cyan"/>
+<text x="600" y="432" class="card-text" text-anchor="middle">Local MPC testing spawns several parties on your machine</text>
+<text x="600" y="458" class="card-sub" text-anchor="middle">uses parties + threshold settings from Stoffel.toml or CLI flags</text>
+</svg>

@@ -15,19 +15,20 @@ Stoffel is a developer stack for secure multiparty computation (MPC). It gives a
 
 Most software privacy has a missing layer: we encrypt data at rest, encrypt data in transit, and then decrypt it to compute. MPC addresses that data-in-use gap by letting multiple parties jointly compute over shares of private inputs. Stoffel packages that model into developer tooling: a language, compiler, VM, CLI, and SDK surface that let you focus on the application logic instead of implementing MPC protocols from scratch.
 
-## What is in 0.1.0
+![Campaign-style Stoffel architecture diagram showing how a StoffelLang program becomes app-prepared inputs, a build contract, and networked MPC runtime execution.](/images/campaign/stoffel-how-it-works-architecture.png)
 
-The 0.1.0 release ships the core developer workflow from [`Stoffel-Labs/stoffel`](https://github.com/Stoffel-Labs/stoffel):
+## How the stack fits together
 
-| Component | Crate/package | 0.1.0 status |
+![Docs-optimized Stoffel stack diagram showing app integration, language and CLI, bytecode and VM, and MPC runtime layers.](/images/campaign/stoffel-stack-ecosystem-v6.png)
+
+Start with application code and the Rust SDK. Write the private workflow in Stoffel Lang, build `.stflb` bytecode with the CLI/compiler, then run that artifact through the VM and MPC runtime.
+
+| Layer | Developer-facing surface | What it does |
 | --- | --- | --- |
-| Stoffel CLI | `crates/stoffel-cli` / binary `stoffel` | Cargo-like project CLI for `init`, `check`, `compile`, `build`, `run`, `dev`, `test`, `status`, `clean`, and `update`. |
-| Stoffel Lang compiler | `crates/stoffel-lang` / crate `stoffellang` | Python-style language compiler that emits Stoffel VM bytecode. |
-| Rust SDK | `crates/stoffel-rust-sdk` / library crate `stoffel` | Primary application API for compile/load/run workflows, local clear execution, local MPC testing, network configuration, observability, and on-chain coordinator handles. |
-| Stoffel VM | `crates/stoffel-vm` | Register-based VM runtime with builtins, secret-share values, networking/MPC integrations, and C FFI. |
-| VM types and bytecode | `crates/stoffel-vm-types` | Shared value, instruction, function, and compiled `.stflb` bytecode types. |
-
-Start from the `stoffel` repository for the Stoffel 0.1.0 workflow.
+| App integration | Rust SDK / generated bindings | Connects product code to Stoffel programs, inputs, outputs, local checks, and local MPC runs. |
+| Language + CLI | `.stfl` source / `stoffel` command | Checks source, builds bytecode, runs project workflows, and drives local development loops. |
+| Bytecode + VM | `.stflb` / register VM | Loads the compiled artifact, separates clear values from shares, and executes builtins and runtime hooks. |
+| MPC runtime | coordinator / parties / outputs | Runs secret-shared execution and opens or sends only the outputs the program authorizes. |
 
 ## What you can do today
 
@@ -38,9 +39,9 @@ Start from the `stoffel` repository for the Stoffel 0.1.0 workflow.
 - Generate, save, load, inspect, and execute `.stflb` bytecode.
 - Create project templates for Stoffel, Rust, Python, Foundry, and Hardhat workflows.
 
-## How to think about 0.1.0
+## How to think about the release
 
-These docs describe the Stoffel 0.1.0 release. The Rust SDK and CLI are the documented application path for building, testing, and deploying Stoffel applications. Other SDK and on-chain surfaces are present for exploration and integration planning.
+These docs describe the current Stoffel release. The Rust SDK and CLI are the documented application path for building, testing, and deploying Stoffel applications. Other SDK and on-chain surfaces are present for exploration and integration planning.
 
 MPC is a powerful primitive, not a complete security product by itself. Deployment teams should validate component status, threat models, output design, metadata exposure, operational hardening, and application-level access control for their use case.
 
@@ -50,7 +51,7 @@ MPC is a powerful primitive, not a complete security product by itself. Deployme
 
 ## Start here
 
-1. [Install Stoffel 0.1.0](./getting-started/installation)
-2. [Run the 0.1.0 quick start](./getting-started/quick-start)
-3. [Explore the current ecosystem map](./introduction/ecosystem)
-4. [Use the Rust SDK](./rust-sdk/overview)
+1. [Install Stoffel](./getting-started/installation)
+2. [Run the quick start](./getting-started/quick-start)
+3. [Use the Rust SDK](./rust-sdk/overview)
+4. [Read the system architecture](./architecture/system)

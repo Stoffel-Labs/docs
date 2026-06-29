@@ -26,6 +26,8 @@ MPC protocols work by:
 
 Throughout this process, no single party (including the computing nodes) ever sees the raw private data.
 
+![MPC privacy flow showing input owners splitting private values into shares, MPC parties computing over shares, and only the opened result returning.](/images/diagrams/mpc-privacy-flow.svg)
+
 ### A Simple Example
 
 Consider two parties, Alice and Bob, who want to compute `(Alice's number + Bob's number) > 100` without revealing their numbers:
@@ -209,4 +211,4 @@ This is where Stoffel comes in: it packages MPC concepts into a compiler, VM, CL
 
 To understand how Stoffel addresses these challenges and makes MPC practical for developers, see:
 - **[Why Stoffel?](./why-stoffel)** - How Stoffel solves MPC development challenges
-- **[Ecosystem Overview](./ecosystem)** - Complete overview of Stoffel's components
+- **[System architecture](../architecture/system)** - See how app code, bytecode, VM parties, and MPC backends fit together

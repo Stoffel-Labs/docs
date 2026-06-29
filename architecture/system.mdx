@@ -7,35 +7,9 @@ This section provides an overview of the complete Stoffel system architecture an
 
 ## Overall System Design
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Stoffel Ecosystem                       │
-├─────────────────────────────────────────────────────────────────┤
-│  Developer Interface Layer                                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │ Stoffel CLI │  │ Python SDK  │  │   IDEs &    │            │
-│  │             │  │             │  │  Editors    │            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-├─────────────────────────────────────────────────────────────────┤
-│  Compilation Layer                                             │
-│  ┌─────────────┐  ┌─────────────┐                             │
-│  │ StoffelLang │  │   Bytecode  │                             │
-│  │  Compiler   │→ │  Generator  │                             │
-│  └─────────────┘  └─────────────┘                             │
-├─────────────────────────────────────────────────────────────────┤
-│  Execution Layer                                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │ Stoffel VM   │  │   Runtime   │  │  Standard   │            │
-│  │   Core      │  │   System    │  │  Library    │            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-├─────────────────────────────────────────────────────────────────┤
-│  Protocol Layer                                                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │ MPC Proto-  │  │  Network    │  │ Crypto      │            │
-│  │   cols      │  │   Layer     │  │ Primitives  │            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-└─────────────────────────────────────────────────────────────────┘
-```
+![Campaign-style Stoffel architecture diagram showing developer application code, build artifacts, coordinator-managed execution, VM parties, and authorized outputs.](/images/campaign/stoffel-how-it-works-architecture.png)
+
+The same `.stflb` artifact connects the application-facing build path to the runtime party mesh. App code prepares protected inputs, the coordinator manages lifecycle and IO routing, and VM parties compute over shares.
 
 ## Component Interactions
 
@@ -53,6 +27,8 @@ This section provides an overview of the complete Stoffel system architecture an
 4. **Result Reconstruction**: Output is reconstructed from secret shares
 
 ## Data Flow
+
+![Campaign-style networked privacy backend diagram showing clients, coordinator, preprocessing, party mesh, and encrypted or authorized outputs.](/images/campaign/stoffel-networked-privacy-backend.png)
 
 ### Clear Data Path
 - Public inputs and configuration data

@@ -1,0 +1,14 @@
+{
+  "text_overflow": [],
+  "box_overflow": [],
+  "card_containment_issues": [],
+  "text_box_containment_issues": [],
+  "asset": {
+    "path": "images/campaign/stoffel-stack-ecosystem-v6.png",
+    "width": 1800,
+    "height": 1125,
+    "bytes": 978814
+  },
+  "text_count": 10,
+  "layer_count": 4
+}

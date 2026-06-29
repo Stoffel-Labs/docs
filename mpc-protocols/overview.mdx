@@ -22,62 +22,35 @@ Both backends are designed for asynchronous/robust settings: parties do not rely
 
 Start from the shape of the secret work, not the name of the application.
 
-Choose [HoneyBadgerMPC](./honeybadger-mpc) when the secret values are application data represented as field values:
-
-- the program computes over secret integers, fixed-point values, or field-compatible shares;
-- the main cost questions are multiplication count, multiplication depth, comparisons, and reveal boundaries;
-- public parameters can stay public while private inputs remain ordinary MPC shares;
-- the outside system consumes an opened result or client-output shares from private computation.
-
-Choose [AVSS](./avss) when the secret values are cryptographic scalars:
-
-- the program needs public commitments to secret shares;
-- the backend must use a curve that matches an external verifier or protocol;
-- public transcript bytes must become curve-field challenges;
-- the outside system consumes a commitment, curve-encoded value, opened scalar response, or signature-related artifact.
-
-If you are not sure, start with HoneyBadgerMPC for ordinary private computation. Reach for AVSS when the external system needs curve compatibility, commitments, or threshold-cryptography artifacts.
-
-## Choose the next implementation path
-
-Read [HoneyBadgerMPC](./honeybadger-mpc) next when the main question is:
-
-- how much private arithmetic the program performs;
-- which operations consume preprocessing;
-- whether type choices or public parameters can reduce circuit cost;
-- where values should be opened or returned as client-output shares.
-
-Read [AVSS](./avss) next when the main question is:
-
-- which curve the external protocol needs;
-- which commitments become public;
-- where transcript bytes become a curve-field challenge;
-- which scalar values are safe or necessary to open.
-
-If the decision depends on cost, read [Performance and circuit shaping](./performance-and-circuit-shaping). If the decision depends on config, bytecode, local runs, or network execution, read [How backend selection works](./implementation). If you need the application-level input, execution, and output flow, read [MPC Integration](../architecture/mpc).
-
-## Building with an AI agent
-
-If you are using an AI coding agent, give it the backend choice, secret/public input boundary, output boundary, and validation command before asking it to write code. The full prompt template lives in [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation).
-
-## Select a backend in `Stoffel.toml`
-
-The default project template uses HoneyBadgerMPC:
-
-```toml
-[mpc]
-backend = "honeybadger"
-parties = 5
-threshold = 1
-```
+![MPC privacy flow showing private inputs split into shares, computation across MPC parties, and explicit output reconstruction.](/images/diagrams/mpc-privacy-flow.svg)
 
 Select AVSS with the default curve:
 
-```toml
-[mpc]
-backend = "avss"
-parties = 5
-threshold = 1
+![Campaign-style networked privacy backend diagram showing how clients, the coordinator, preprocessing, and VM parties fit together for MPC execution.](/images/campaign/stoffel-networked-privacy-backend.png)
+
+### Overview
+
+HoneyBadger is an asynchronous Byzantine fault-tolerant (BFT) MPC protocol that:
+
+- **Tolerates malicious parties**: Up to `t` parties can be actively malicious
+- **Works asynchronously**: No timing assumptions required
+- **Provides guaranteed output delivery**: Honest parties always get results
+
+### Security Guarantees
+
+| Property | Description |
+|----------|-------------|
+| **Privacy** | No coalition of ≤t parties learns anything about honest inputs |
+| **Correctness** | Output is always the correct result of the computation |
+| **Guaranteed Output** | Honest parties always receive their outputs |
+| **Fairness** | Either all honest parties get output, or none do |
+
+### Configuration Constraints
+
+The number of parties `n` and threshold `t` must satisfy:
+
+```
+n >= 3t + 1
 ```
 
 Select AVSS with a specific curve:

@@ -5,6 +5,8 @@ description: "How Stoffel turns secure multiparty computation into an approachab
 
 Secure multiparty computation (MPC) lets multiple parties compute over private inputs without first pooling those inputs in one place. The hard part for most developers is not understanding why that is useful; it is getting from a product idea to code that compiles, runs locally, and can be integrated into an application. Stoffel focuses on that gap.
 
+![Comparison of a traditional MPC project path with a Stoffel project path, showing how Stoffel keeps application iteration visible while protocol plumbing stays packaged.](/images/diagrams/why-stoffel-dev-gap.svg)
+
 ## The MPC Development Challenge
 
 ### Traditional Approach Problems
@@ -46,6 +48,8 @@ Result: No interoperability, no standard practices
 ## The Stoffel Solution
 
 Stoffel packages MPC into a practical development experience: a language for computations, a compiler and VM, a project CLI, local MPC tooling, and a Rust SDK for application integration.
+
+![Stoffel toolchain diagram showing StoffelLang, the CLI, bytecode artifacts, VM parties, and Rust SDK integration connected by one bytecode contract.](/images/diagrams/why-stoffel-toolchain.svg)
 
 ### 🎯 **Design Philosophy**
 
@@ -181,6 +185,8 @@ MPC Library → Custom networking → Database integration → API layer → Fro
 Existing Application → Add Stoffel SDK → Model secret-shared values → Validate deployment assumptions
 (MPC protocol plumbing is packaged behind language, VM, CLI, and SDK surfaces)
 ```
+
+![Privacy boundary comparison showing a conventional backend receiving plaintext inputs versus a Stoffel-backed workflow with client shares, MPC parties, and authorized output boundaries.](/images/diagrams/why-stoffel-privacy-boundary.svg)
 
 ## Real-World Impact
 
@@ -349,5 +355,5 @@ Stoffel aims to be the approachable choice for building with MPC: technical enou
 Ready to build with MPC?
 
 - **[Get Started](../getting-started/installation)**: Install and create your first MPC project
-- **[Explore the Ecosystem](./ecosystem)**: Understand how all the components work together
+- **[Read the system architecture](../architecture/system)**: Understand how the runtime components fit together
 - **[See Examples](../rust-sdk/examples)**: Rust SDK examples and local MPC workflows

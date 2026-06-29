@@ -1,0 +1,237 @@
+{
+  "diagrams": [
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/stoffel-stack.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/stoffel-stack-introduction.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/mpc-privacy-flow.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/developer-loop.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/compilation-pipeline.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/rust-sdk-runtime-paths.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/vm-execution-model.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/honeybadger-network.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-dev-gap.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-toolchain.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-privacy-boundary.svg",
+      "width": 1200,
+      "height": 675
+    }
+  ],
+  "xml_parse_errors": [],
+  "missing_title_or_desc": [],
+  "dimension_issues": [],
+  "contrast": {
+    "checked": [
+      {
+        "pair": "header title",
+        "foreground": "#ffffff",
+        "background": "#3448f0",
+        "contrast_ratio": 6.3
+      },
+      {
+        "pair": "header subtitle",
+        "foreground": "#ffffff",
+        "background": "#3448f0",
+        "contrast_ratio": 6.3
+      },
+      {
+        "pair": "zone label",
+        "foreground": "#17214f",
+        "background": "#ffffff",
+        "contrast_ratio": 15.36
+      },
+      {
+        "pair": "lavender card title",
+        "foreground": "#121a44",
+        "background": "#ebe9ff",
+        "contrast_ratio": 14.03
+      },
+      {
+        "pair": "lavender card subtitle",
+        "foreground": "#465078",
+        "background": "#ebe9ff",
+        "contrast_ratio": 6.58
+      },
+      {
+        "pair": "cream card title",
+        "foreground": "#121a44",
+        "background": "#fff6df",
+        "contrast_ratio": 15.51
+      },
+      {
+        "pair": "cream card subtitle",
+        "foreground": "#465078",
+        "background": "#fff6df",
+        "contrast_ratio": 7.28
+      },
+      {
+        "pair": "party card title",
+        "foreground": "#121a44",
+        "background": "#ffffff",
+        "contrast_ratio": 16.71
+      },
+      {
+        "pair": "party card subtitle",
+        "foreground": "#465078",
+        "background": "#ffffff",
+        "contrast_ratio": 7.84
+      },
+      {
+        "pair": "cyan card title",
+        "foreground": "#121a44",
+        "background": "#e5fbff",
+        "contrast_ratio": 15.57
+      },
+      {
+        "pair": "cyan card subtitle",
+        "foreground": "#465078",
+        "background": "#e5fbff",
+        "contrast_ratio": 7.31
+      },
+      {
+        "pair": "blue card title",
+        "foreground": "#ffffff",
+        "background": "#3448f0",
+        "contrast_ratio": 6.3
+      },
+      {
+        "pair": "blue card subtitle",
+        "foreground": "#ffffff",
+        "background": "#3448f0",
+        "contrast_ratio": 6.3
+      },
+      {
+        "pair": "badge text",
+        "foreground": "#07133d",
+        "background": "#5ee3ff",
+        "contrast_ratio": 11.89
+      },
+      {
+        "pair": "arrow label chip",
+        "foreground": "#24305f",
+        "background": "#ffffff",
+        "contrast_ratio": 12.63
+      }
+    ],
+    "issues": []
+  },
+  "layout": [
+    {
+      "diagram": "stoffel-stack",
+      "card_count": 8,
+      "zone_count": 3,
+      "text_count": 30,
+      "issues": []
+    },
+    {
+      "diagram": "stoffel-stack-introduction",
+      "card_count": 8,
+      "zone_count": 3,
+      "text_count": 30,
+      "issues": []
+    },
+    {
+      "diagram": "mpc-privacy-flow",
+      "card_count": 7,
+      "zone_count": 3,
+      "text_count": 24,
+      "issues": []
+    },
+    {
+      "diagram": "developer-loop",
+      "card_count": 6,
+      "zone_count": 0,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "compilation-pipeline",
+      "card_count": 9,
+      "zone_count": 0,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "rust-sdk-runtime-paths",
+      "card_count": 6,
+      "zone_count": 3,
+      "text_count": 18,
+      "issues": []
+    },
+    {
+      "diagram": "vm-execution-model",
+      "card_count": 7,
+      "zone_count": 3,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "honeybadger-network",
+      "card_count": 7,
+      "zone_count": 3,
+      "text_count": 22,
+      "issues": []
+    },
+    {
+      "diagram": "why-stoffel-dev-gap",
+      "card_count": 7,
+      "zone_count": 2,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "why-stoffel-toolchain",
+      "card_count": 8,
+      "zone_count": 0,
+      "text_count": 19,
+      "issues": []
+    },
+    {
+      "diagram": "why-stoffel-privacy-boundary",
+      "card_count": 6,
+      "zone_count": 2,
+      "text_count": 17,
+      "issues": []
+    }
+  ],
+  "layout_issues": []
+}

@@ -5,7 +5,9 @@ description: "Stoffel VM instruction, register, value, function, and bytecode fo
 
 Stoffel VM bytecode is register-based. Instructions operate on absolute frame registers, call functions by name before resolution, and are serialized into `.stflb` bytecode by `stoffel-vm-types`.
 
-## Instruction representations
+![Stoffel VM execution model showing bytecode flowing into the instruction dispatcher, clear and secret register spaces, runtime stores, builtins, and MPC protocol hooks.](/images/diagrams/vm-execution-model.svg)
+
+## Architecture Overview
 
 The VM uses two related instruction forms:
 

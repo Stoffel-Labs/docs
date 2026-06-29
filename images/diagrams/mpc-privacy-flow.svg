@@ -44,12 +44,12 @@
 <text x="478" y="162" class="zone-title">MPC parties</text>
 <rect x="846" y="128" width="292" height="382" class="zone"/>
 <text x="870" y="162" class="zone-title">Authorized output</text>
-<rect x="98" y="188" width="220" height="74" class="card card-lav"/>
-<text x="208" y="222" class="card-text" text-anchor="middle">Alice input</text>
-<text x="208" y="248" class="card-sub" text-anchor="middle">raw value stays private</text>
-<rect x="98" y="306" width="220" height="74" class="card card-lav"/>
-<text x="208" y="340" class="card-text" text-anchor="middle">Bob input</text>
-<text x="208" y="366" class="card-sub" text-anchor="middle">raw value stays private</text>
+<rect x="98" y="190" width="220" height="78" class="card card-lav"/>
+<text x="208" y="224" class="card-text" text-anchor="middle">Alice input</text>
+<text x="208" y="250" class="card-sub" text-anchor="middle">raw value stays private</text>
+<rect x="98" y="332" width="220" height="78" class="card card-lav"/>
+<text x="208" y="366" class="card-text" text-anchor="middle">Bob input</text>
+<text x="208" y="392" class="card-sub" text-anchor="middle">raw value stays private</text>
 <rect x="486" y="178" width="228" height="70" class="card card-blue"/>
 <text x="600" y="212" class="on-blue-title" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">share 1</text>
 <text x="600" y="238" class="on-blue-sub" fill="#ffffff" opacity="1" style="fill:#ffffff;color:#ffffff" text-anchor="middle">one masked fragment</text>
@@ -67,18 +67,19 @@
 <text x="992" y="400" class="card-text" text-anchor="middle">private trace</text>
 <text x="992" y="426" class="card-sub" text-anchor="middle">inputs + intermediates</text>
 <text x="992" y="444" class="card-sub" text-anchor="middle">remain secret</text>
-<path d="M318,224 L486,213" class="arrow"/>
-<path d="M318,224 L486,321" class="arrow"/>
-<path d="M318,224 L486,429" class="arrow"/>
-<path d="M318,342 L486,213" class="arrow"/>
-<path d="M318,342 L486,321" class="arrow"/>
-<path d="M318,342 L486,429" class="arrow"/>
+<path d="M404,178 L404,460" class="boundary"/>
+<rect x="334" y="146" width="140" height="28" class="label-chip"/>
+<text x="404.0" y="160" class="label">share split</text>
+<path d="M318,229 C376,205 420,197 486,213" class="arrow"/>
+<path d="M318,229 C390,250 420,292 486,321" class="arrow-soft"/>
+<path d="M318,229 C382,316 418,396 486,429" class="arrow-soft"/>
+<path d="M318,371 C380,274 418,224 486,213" class="arrow-soft"/>
+<path d="M318,371 C390,356 424,337 486,321" class="arrow"/>
+<path d="M318,371 C378,398 422,420 486,429" class="arrow-soft"/>
 <path d="M714,213 C785,220 810,238 886,270" class="arrow"/>
 <path d="M714,321 C795,320 815,306 886,286" class="arrow"/>
 <path d="M714,429 C800,420 825,386 886,403" class="arrow-soft"/>
-<rect x="370" y="146" width="140" height="28" class="label-chip"/>
-<text x="440.0" y="160" class="label">split into shares</text>
-<rect x="752" y="174" width="116" height="28" class="label-chip"/>
+<rect x="750" y="174" width="120" height="28" class="label-chip"/>
 <text x="810.0" y="188" class="label">compute</text>
 <rect x="770" y="462" width="150" height="28" class="label-chip"/>
 <text x="845.0" y="476" class="label">not reconstructed</text>

@@ -153,5 +153,85 @@
       }
     ],
     "issues": []
-  }
+  },
+  "layout": [
+    {
+      "diagram": "stoffel-stack",
+      "card_count": 8,
+      "zone_count": 3,
+      "text_count": 30,
+      "issues": []
+    },
+    {
+      "diagram": "stoffel-stack-introduction",
+      "card_count": 8,
+      "zone_count": 3,
+      "text_count": 30,
+      "issues": []
+    },
+    {
+      "diagram": "mpc-privacy-flow",
+      "card_count": 7,
+      "zone_count": 3,
+      "text_count": 24,
+      "issues": []
+    },
+    {
+      "diagram": "developer-loop",
+      "card_count": 6,
+      "zone_count": 0,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "compilation-pipeline",
+      "card_count": 9,
+      "zone_count": 0,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "rust-sdk-runtime-paths",
+      "card_count": 6,
+      "zone_count": 3,
+      "text_count": 18,
+      "issues": []
+    },
+    {
+      "diagram": "vm-execution-model",
+      "card_count": 7,
+      "zone_count": 3,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "honeybadger-network",
+      "card_count": 7,
+      "zone_count": 3,
+      "text_count": 22,
+      "issues": []
+    },
+    {
+      "diagram": "why-stoffel-dev-gap",
+      "card_count": 7,
+      "zone_count": 2,
+      "text_count": 20,
+      "issues": []
+    },
+    {
+      "diagram": "why-stoffel-toolchain",
+      "card_count": 8,
+      "zone_count": 0,
+      "text_count": 19,
+      "issues": []
+    },
+    {
+      "diagram": "why-stoffel-privacy-boundary",
+      "card_count": 6,
+      "zone_count": 2,
+      "text_count": 17,
+      "issues": []
+    }
+  ],
+  "layout_issues": []
 }

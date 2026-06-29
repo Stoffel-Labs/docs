@@ -185,6 +185,59 @@ def contrast_qa() -> dict:
     return {"checked": checked, "issues": issues}
 
 
+def boxes_overlap(a: tuple[float, float, float, float], b: tuple[float, float, float, float], gap: float = 0) -> bool:
+    ax1, ay1, ax2, ay2 = a
+    bx1, by1, bx2, by2 = b
+    return ax1 < bx2 + gap and ax2 + gap > bx1 and ay1 < by2 + gap and ay2 + gap > by1
+
+
+def layout_qa_for_svg(root: ET.Element, diagram_name: str) -> dict:
+    rects = []
+    texts = []
+    for el in root.iter():
+        tag = el.tag.split("}")[-1]
+        if tag == "rect":
+            width = float(el.attrib.get("width", 0) or 0)
+            height = float(el.attrib.get("height", 0) or 0)
+            if not width or not height:
+                continue
+            x = float(el.attrib.get("x", 0) or 0)
+            y = float(el.attrib.get("y", 0) or 0)
+            cls = el.attrib.get("class", "")
+            rects.append({"class": cls, "box": (x, y, x + width, y + height)})
+        elif tag == "text":
+            content = "".join(el.itertext()).strip()
+            if not content:
+                continue
+            texts.append({
+                "text": content,
+                "class": el.attrib.get("class", ""),
+                "x": float(el.attrib.get("x", 0) or 0),
+                "y": float(el.attrib.get("y", 0) or 0),
+            })
+
+    cards = [r for r in rects if "card" in r["class"] and "label-chip" not in r["class"]]
+    zones = [r for r in rects if "zone" in r["class"]]
+    issues = []
+    for item in rects:
+        x1, y1, x2, y2 = item["box"]
+        if x1 < 0 or y1 < 0 or x2 > W or y2 > H:
+            issues.append({"type": "rect_canvas_overflow", "diagram": diagram_name, "class": item["class"], "box": item["box"]})
+    for item in texts:
+        if item["x"] < 0 or item["x"] > W or item["y"] < 0 or item["y"] > H:
+            issues.append({"type": "text_anchor_canvas_overflow", "diagram": diagram_name, **item})
+    for i, a in enumerate(cards):
+        for b in cards[i + 1:]:
+            if boxes_overlap(a["box"], b["box"], gap=0):
+                issues.append({"type": "card_overlap", "diagram": diagram_name, "a": a, "b": b})
+    if zones:
+        for card_item in cards:
+            cx1, cy1, cx2, cy2 = card_item["box"]
+            if not any(z["box"][0] <= cx1 and z["box"][1] <= cy1 and z["box"][2] >= cx2 and z["box"][3] >= cy2 for z in zones):
+                issues.append({"type": "card_outside_zone", "diagram": diagram_name, "card": card_item})
+    return {"diagram": diagram_name, "card_count": len(cards), "zone_count": len(zones), "text_count": len(texts), "issues": issues}
+
+
 def base(diagram: Diagram) -> str:
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="title desc">
   <title id="title">{esc(diagram.title)}</title>
@@ -224,44 +277,57 @@ def stack() -> Diagram:
         curve("M970,318 C945,280 990,280 1000,318", "arrow-dash"),
         curve("M970,400 C960,428 965,438 920,462", "arrow-dash"),
         curve("M1038,432 C1088,418 1112,386 1106,360", "arrow-dash"),
+        chip(1042, 276, 104, "peer rounds"),
     ])
     return Diagram("stoffel-stack", "Stoffel system flow", "Source, build artifact, runtime parties, and authorized outputs", body)
 
 
 def mpc_flow() -> Diagram:
     body = "\n".join([
-        zone(62, 128, 292, 382, "Input owners"), zone(454, 128, 292, 382, "MPC parties"), zone(846, 128, 292, 382, "Authorized output"),
-        card(98, 188, 220, 74, "Alice input", "raw value stays private", "card card-lav"),
-        card(98, 306, 220, 74, "Bob input", "raw value stays private", "card card-lav"),
+        zone(62, 128, 292, 382, "Input owners"),
+        zone(454, 128, 292, 382, "MPC parties"),
+        zone(846, 128, 292, 382, "Authorized output"),
+        card(98, 190, 220, 78, "Alice input", "raw value stays private", "card card-lav"),
+        card(98, 332, 220, 78, "Bob input", "raw value stays private", "card card-lav"),
         card(486, 178, 228, 70, "share 1", "one masked fragment", "card card-blue"),
         card(486, 286, 228, 70, "share 2", "one masked fragment", "card card-blue"),
         card(486, 394, 228, 70, "share n", "one masked fragment", "card card-blue"),
         card(886, 228, 212, 86, "opened result", "only the value the|program reveals", "card card-cream"),
         card(886, 366, 212, 74, "private trace", "inputs + intermediates|remain secret", "card card-cyan"),
-        arrow(318, 224, 486, 213), arrow(318, 224, 486, 321), arrow(318, 224, 486, 429),
-        arrow(318, 342, 486, 213), arrow(318, 342, 486, 321), arrow(318, 342, 486, 429),
-        curve("M714,213 C785,220 810,238 886,270"), curve("M714,321 C795,320 815,306 886,286"), curve("M714,429 C800,420 825,386 886,403", "arrow-soft"),
-        chip(370, 146, 140, "split into shares"), chip(752, 174, 116, "compute"), chip(770, 462, 150, "not reconstructed"),
+        '<path d="M404,178 L404,460" class="boundary"/>',
+        chip(334, 146, 140, "share split"),
+        curve("M318,229 C376,205 420,197 486,213"),
+        curve("M318,229 C390,250 420,292 486,321", "arrow-soft"),
+        curve("M318,229 C382,316 418,396 486,429", "arrow-soft"),
+        curve("M318,371 C380,274 418,224 486,213", "arrow-soft"),
+        curve("M318,371 C390,356 424,337 486,321"),
+        curve("M318,371 C378,398 422,420 486,429", "arrow-soft"),
+        curve("M714,213 C785,220 810,238 886,270"),
+        curve("M714,321 C795,320 815,306 886,286"),
+        curve("M714,429 C800,420 825,386 886,403", "arrow-soft"),
+        chip(750, 174, 120, "compute"),
+        chip(770, 462, 150, "not reconstructed"),
     ])
     return Diagram("mpc-privacy-flow", "MPC privacy flow", "Inputs are shared, computed over, and revealed only at explicit output boundaries", body)
 
 
 def dev_loop() -> Diagram:
     steps = [
-        (88, 214, "1", "write", "src/main.stfl"),
-        (292, 214, "2", "check", "validate source"),
-        (496, 214, "3", "build", ".stflb artifact"),
-        (700, 214, "4", "run", "local MPC nodes"),
-        (904, 214, "5", "integrate", "Rust SDK wrapper"),
+        (70, 214, "1", "write", "src/main.stfl"),
+        (286, 214, "2", "check", "validate source"),
+        (502, 214, "3", "build", ".stflb artifact"),
+        (718, 214, "4", "run", "local MPC nodes"),
+        (934, 214, "5", "integrate", "Rust SDK wrapper"),
     ]
     parts=[]
     for x,y,n,t,s in steps:
         parts.append(f'<circle cx="{x+35}" cy="{y-32}" r="18" class="badge"/><text x="{x+35}" y="{y-32}" class="badge-text">{n}</text>')
-        parts.append(card(x,y,160,92,t,s,"card card-lav" if n in {"1","5"} else "card card-cream"))
-    for i in range(len(steps)-1): parts.append(arrow(steps[i][0]+160,260,steps[i+1][0],260))
+        parts.append(card(x,y,170,92,t,s,"card card-lav" if n in {"1","5"} else "card card-cream"))
+    for i in range(len(steps)-1): parts.append(arrow(steps[i][0]+170,260,steps[i+1][0],260))
     parts += [
-        curve("M984,306 C940,488 210,488 168,306", "arrow-soft"), chip(452, 477, 296, "edit, rebuild, rerun until the boundary is right"),
-        card(334, 404, 532, 62, "Local MPC testing spawns several parties on your machine", "use parties + threshold settings from Stoffel.toml or CLI flags", "card card-cyan"),
+        curve("M1019,306 C960,496 220,496 155,306", "arrow-soft"),
+        chip(444, 484, 312, "edit, rebuild, rerun until the boundary is right"),
+        card(318, 398, 564, 68, "Local MPC testing spawns several parties on your machine", "uses parties + threshold settings from Stoffel.toml or CLI flags", "card card-cyan"),
     ]
     return Diagram("developer-loop", "Stoffel development loop", "Check, build, inspect, and run local MPC before application integration", "\n".join(parts))
 
@@ -281,15 +347,22 @@ def compilation() -> Diagram:
 
 def sdk_paths() -> Diagram:
     body="\n".join([
-        card(74,180,240,88,"Rust application","domain types + service logic","card card-lav"),
-        card(430,150,260,88,"Stoffel::compile","source to runtime handle","card card-cream"),
-        card(430,290,260,88,"Stoffel::load_file","load built .stflb artifact","card card-cream"),
-        card(816,150,250,88,"execute_clear()","fast local logic check","card card-cyan"),
-        card(816,290,250,88,"execute_local().await","spawn local MPC parties","card card-blue"),
-        card(816,430,250,78,"network handles","deployment/server/client config","card card-cyan"),
-        arrow(314,224,430,194), arrow(314,224,430,334),
-        arrow(690,194,816,194), arrow(690,334,816,334), arrow(690,334,816,469,"arrow-soft"),
-        curve("M941,378 C910,558 238,558 194,268", "arrow-soft"), chip(474,535,246,"authorized outputs return to app"),
+        zone(44, 132, 294, 392, "Rust app"),
+        zone(392, 132, 326, 392, "Compile or load"),
+        zone(774, 132, 382, 392, "Runtime path"),
+        card(78,220,226,90,"Rust application","domain types + service logic","card card-lav"),
+        card(430,176,252,88,"Stoffel::compile","source to runtime handle","card card-cream"),
+        card(430,326,252,88,"Stoffel::load_file","load built .stflb artifact","card card-cream"),
+        card(824,162,258,88,"execute_clear()","fast local logic check","card card-cyan"),
+        card(824,298,258,88,"execute_local().await","spawn local MPC parties","card card-blue"),
+        card(824,438,258,78,"network handles","deployment/server/client config","card card-cyan"),
+        curve("M304,265 L360,265 L360,220 L430,220"),
+        curve("M304,265 L360,265 L360,370 L430,370"),
+        curve("M682,220 L742,220 L742,206 L824,206"),
+        curve("M682,370 L742,370 L742,342 L824,342"),
+        curve("M682,370 L742,370 L742,477 L824,477", "arrow-soft"),
+        curve("M953,386 C920,552 240,552 191,310", "arrow-soft"),
+        chip(466,535,268,"authorized outputs return to app"),
     ])
     return Diagram("rust-sdk-runtime-paths", "Rust SDK runtime paths", "One API surface for compile/load, clear checks, local MPC, and deployment wiring", body)
 
@@ -321,18 +394,25 @@ def vm_model() -> Diagram:
 
 def honeybadger() -> Diagram:
     body="\n".join([
-        zone(54,136,272,374,"Client/app side"), zone(410,136,380,374,"Coordination + preprocessing"), zone(870,136,276,374,"Party mesh"),
-        card(90,206,200,76,"input client","submits protected inputs","card card-lav"),
-        card(90,348,200,76,"output client","receives output shares","card card-lav"),
+        zone(54,136,282,374,"Client/app side"),
+        zone(410,136,380,374,"Coordination + preprocessing"),
+        zone(864,136,286,374,"Party mesh"),
+        card(90,206,206,76,"input client","submits protected inputs","card card-lav"),
+        card(90,348,206,76,"output client","receives output shares","card card-lav"),
         card(456,184,288,78,"coordinator","reservations, sessions, IO routing","card card-cyan"),
         card(456,326,288,82,"preprocessing","Beaver triples + random shares","card card-cream"),
-        card(900,184,90,70,"P1","VM","card card-blue"),
-        card(1020,184,90,70,"P2","VM","card card-blue"),
-        card(960,330,90,70,"Pn","VM","card card-blue"),
-        arrow(290,244,456,223), arrow(744,223,900,219), arrow(744,367,960,367),
-        curve("M990,219 C1010,174 1036,174 1050,219","arrow-dash"), curve("M945,254 C930,292 944,320 985,330","arrow-dash"), curve("M1050,330 C1110,310 1122,245 1110,219","arrow-dash"),
-        curve("M960,400 C862,548 260,548 190,424", "arrow-soft"), chip(458,532,258,"output shares return to authorized clients"),
-        chip(794,176,86,"load .stflb"), chip(790,344,96,"triples"),
+        card(900,190,98,72,"P1","VM","card card-blue"),
+        card(1018,190,98,72,"P2","VM","card card-blue"),
+        card(959,338,98,72,"Pn","VM","card card-blue"),
+        arrow(296,244,456,223),
+        curve("M744,223 L816,223 L816,226 L900,226"),
+        curve("M744,367 L830,367 L830,374 L959,374"),
+        curve("M998,226 C1012,180 1032,180 1067,226","arrow-dash"),
+        curve("M949,262 C930,302 938,328 988,338","arrow-dash"),
+        curve("M1067,338 C1122,316 1132,258 1116,226","arrow-dash"),
+        curve("M1008,410 C894,548 262,548 193,424", "arrow-soft"),
+        chip(458,532,258,"output shares return to authorized clients"),
+        chip(796,176,92,"load .stflb"), chip(792,344,96,"triples"),
     ])
     return Diagram("honeybadger-network", "HoneyBadger MPC runtime", "Coordinator-managed sessions with preprocessing and peer protocol rounds", body)
 
@@ -424,6 +504,8 @@ def write_all() -> dict:
         "missing_title_or_desc": [],
         "dimension_issues": [],
         "contrast": contrast_qa(),
+        "layout": [],
+        "layout_issues": [],
     }
     for d in diagrams:
         path = OUT_DIR / f"{d.name}.svg"
@@ -435,6 +517,9 @@ def write_all() -> dict:
             ns = "{http://www.w3.org/2000/svg}"
             if root.find(ns + "title") is None or root.find(ns + "desc") is None:
                 qa["missing_title_or_desc"].append(str(path))
+            layout = layout_qa_for_svg(root, d.name)
+            qa["layout"].append(layout)
+            qa["layout_issues"].extend(layout["issues"])
         except Exception as exc:
             qa["xml_parse_errors"].append({"path": str(path), "error": str(exc)})
         qa["diagrams"].append({"path": str(path), "width": W, "height": H})
@@ -449,5 +534,6 @@ if __name__ == "__main__":
         "missing_title_or_desc_count": len(result["missing_title_or_desc"]),
         "dimension_issue_count": len(result["dimension_issues"]),
         "contrast_issue_count": len(result["contrast"]["issues"]),
+        "layout_issue_count": len(result["layout_issues"]),
         "qa_path": str(QA_PATH),
     }, indent=2))

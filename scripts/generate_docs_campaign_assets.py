@@ -150,18 +150,18 @@ def layer_card(draw, box, title, subtitle, accent, pills):
     x1, y1, x2, y2 = box
     draw.rounded_rectangle((x1 + 10, y1 + 14, x2 + 10, y2 + 14), radius=28, fill=(0, 0, 0, 68))
     draw.rounded_rectangle(box, radius=28, fill=COL['card'], outline=COL['stroke'], width=2)
-    draw.rounded_rectangle((x1 + 22, y1 + 24, x1 + 38, y2 - 24), radius=8, fill=accent)
-    title_box = draw_text(draw, (x1 + 62, y1 + 24), title, font_semi(34), COL['white'], maxw=520, label=title)
-    check_card_containment(title, 'title', title_box, box, padding=22)
-    subtitle_box = draw_text(draw, (x1 + 62, y1 + 72), subtitle, font_reg(23), COL['muted'], maxw=760, spacing=5, label=title + ' subtitle')
-    check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=22)
-    px, py = x2 - 560, y1 + 42
+    draw.rounded_rectangle((x1 + 24, y1 + 30, x1 + 42, y2 - 30), radius=9, fill=accent)
+    title_box = draw_text(draw, (x1 + 72, y1 + 34), title, font_semi(36), COL['white'], maxw=520, label=title)
+    check_card_containment(title, 'title', title_box, box, padding=30)
+    subtitle_box = draw_text(draw, (x1 + 72, y1 + 88), subtitle, font_reg(22), COL['muted'], maxw=700, spacing=5, label=title + ' subtitle')
+    check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=30)
+    px, py = x2 - 512, y1 + 62
     for pill in pills:
         w, h, pill_box = chip(draw, (px, py), pill, (255, 248, 224, 238), font_semi(19), return_box=True)
-        check_card_containment(pill, 'pill', pill_box, box, padding=22)
+        check_card_containment(pill, 'pill', pill_box, box, padding=30)
         px += w + 12
-        if px > x2 - 78:
-            px, py = x2 - 560, py + h + 12
+        if px > x2 - 70:
+            px, py = x2 - 512, py + h + 12
 
 
 def docs_stack_diagram():
@@ -185,10 +185,10 @@ def docs_stack_diagram():
     chip(d, (268, 328), 'CLI + Rust SDK path', COL['teal'])
 
     layers = [
-        ((185, 430, 1615, 560), 'App integration', 'Rust SDK maps product values into Stoffel programs.', COL['teal'], ['Rust SDK', 'typed bindings', 'clients']),
-        ((235, 596, 1565, 726), 'Language + CLI', 'Write .stfl, run check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'stoffel CLI', 'Stoffel.toml']),
-        ((285, 762, 1515, 892), 'Bytecode + VM', 'The VM separates clear values from secret shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
-        ((335, 928, 1465, 1058), 'MPC runtime', 'Parties compute over shares and return authorized outputs.', COL['pink'], ['coordinator', 'parties', 'outputs']),
+        ((165, 408, 1635, 558), 'App integration', 'Rust SDK maps product values into programs.', COL['teal'], ['Rust SDK', 'bindings', 'clients']),
+        ((215, 574, 1585, 724), 'Language + CLI', 'Write .stfl, check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'CLI', 'Stoffel.toml']),
+        ((265, 740, 1535, 890), 'Bytecode + VM', 'The VM separates clear values from shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
+        ((315, 906, 1485, 1056), 'MPC runtime', 'Parties compute over shares; outputs are explicit.', COL['pink'], ['coordinator', 'parties', 'outputs']),
     ]
 
     for box, title, sub, accent, pills in layers:

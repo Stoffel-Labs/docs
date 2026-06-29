@@ -34,7 +34,31 @@ COL = {
     'stroke': (255, 255, 255, 84),
 }
 
-qa = {'text_overflow': [], 'box_overflow': [], 'asset': None, 'text_count': 0, 'layer_count': 0}
+qa = {
+    'text_overflow': [],
+    'box_overflow': [],
+    'card_containment_issues': [],
+    'asset': None,
+    'text_count': 0,
+    'layer_count': 0,
+}
+
+
+def inside(inner, outer, padding=0):
+    ix1, iy1, ix2, iy2 = inner
+    ox1, oy1, ox2, oy2 = outer
+    return ix1 >= ox1 + padding and iy1 >= oy1 + padding and ix2 <= ox2 - padding and iy2 <= oy2 - padding
+
+
+def check_card_containment(label, kind, bbox, card_box, padding=18):
+    if not inside(bbox, card_box, padding):
+        qa['card_containment_issues'].append({
+            'label': label,
+            'kind': kind,
+            'bbox': tuple(round(v, 2) for v in bbox),
+            'card_box': card_box,
+            'padding': padding,
+        })
 
 
 def render_logo():
@@ -92,7 +116,7 @@ def draw_text(draw, xy, s, font, fill, maxw=None, spacing=6, label='text'):
     return bbox
 
 
-def chip(draw, xy, s, fill, f=None):
+def chip(draw, xy, s, fill, f=None, return_box=False):
     f = f or font_semi(20)
     bbox = draw.textbbox((0, 0), s, font=f)
     x, y = xy
@@ -103,6 +127,9 @@ def chip(draw, xy, s, fill, f=None):
     draw.text((x + pad_x, y + pad_y - 2), s, font=f, fill=COL['ink'])
     if x + w > W or y + h > H:
         qa['box_overflow'].append({'label': s, 'box': (x, y, x + w, y + h)})
+    box = (x, y, x + w, y + h)
+    if return_box:
+        return w, h, box
     return w, h
 
 
@@ -124,11 +151,14 @@ def layer_card(draw, box, title, subtitle, accent, pills):
     draw.rounded_rectangle((x1 + 10, y1 + 14, x2 + 10, y2 + 14), radius=28, fill=(0, 0, 0, 68))
     draw.rounded_rectangle(box, radius=28, fill=COL['card'], outline=COL['stroke'], width=2)
     draw.rounded_rectangle((x1 + 22, y1 + 24, x1 + 38, y2 - 24), radius=8, fill=accent)
-    draw_text(draw, (x1 + 62, y1 + 24), title, font_semi(34), COL['white'], maxw=520, label=title)
-    draw_text(draw, (x1 + 62, y1 + 74), subtitle, font_reg(24), COL['muted'], maxw=620, spacing=5, label=title + ' subtitle')
+    title_box = draw_text(draw, (x1 + 62, y1 + 24), title, font_semi(34), COL['white'], maxw=520, label=title)
+    check_card_containment(title, 'title', title_box, box, padding=22)
+    subtitle_box = draw_text(draw, (x1 + 62, y1 + 72), subtitle, font_reg(23), COL['muted'], maxw=760, spacing=5, label=title + ' subtitle')
+    check_card_containment(title + ' subtitle', 'subtitle', subtitle_box, box, padding=22)
     px, py = x2 - 560, y1 + 42
     for pill in pills:
-        w, h = chip(draw, (px, py), pill, (255, 248, 224, 238), font_semi(19))
+        w, h, pill_box = chip(draw, (px, py), pill, (255, 248, 224, 238), font_semi(19), return_box=True)
+        check_card_containment(pill, 'pill', pill_box, box, padding=22)
         px += w + 12
         if px > x2 - 78:
             px, py = x2 - 560, py + h + 12
@@ -155,10 +185,10 @@ def docs_stack_diagram():
     chip(d, (268, 328), 'CLI + Rust SDK path', COL['teal'])
 
     layers = [
-        ((185, 446, 1615, 560), 'App integration', 'Rust SDK and generated bindings connect product values to Stoffel programs.', COL['teal'], ['Rust SDK', 'typed bindings', 'clients']),
-        ((235, 604, 1565, 718), 'Language + CLI', 'Write .stfl, run check/build/dev, and produce a portable .stflb artifact.', COL['honey'], ['.stfl source', 'stoffel CLI', 'Stoffel.toml']),
-        ((285, 762, 1515, 876), 'Bytecode + VM', 'The VM loads .stflb functions and separates clear values from secret shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
-        ((335, 920, 1465, 1034), 'MPC runtime', 'Coordinator, networking, and protocols execute over shares and return authorized outputs.', COL['pink'], ['coordinator', 'parties', 'outputs']),
+        ((185, 430, 1615, 560), 'App integration', 'Rust SDK maps product values into Stoffel programs.', COL['teal'], ['Rust SDK', 'typed bindings', 'clients']),
+        ((235, 596, 1565, 726), 'Language + CLI', 'Write .stfl, run check/build/dev, produce .stflb.', COL['honey'], ['.stfl source', 'stoffel CLI', 'Stoffel.toml']),
+        ((285, 762, 1515, 892), 'Bytecode + VM', 'The VM separates clear values from secret shares.', COL['green'], ['.stflb', 'register VM', 'builtins']),
+        ((335, 928, 1465, 1058), 'MPC runtime', 'Parties compute over shares and return authorized outputs.', COL['pink'], ['coordinator', 'parties', 'outputs']),
     ]
 
     for box, title, sub, accent, pills in layers:
@@ -170,7 +200,7 @@ def docs_stack_diagram():
         arrow(d, (ax, a_box[3] + 10), (bx, b_box[1] - 12), COL['honey'], 5)
 
     # Subtle source note, not a competing visual element.
-    draw_text(d, (70, 1068), 'Source: Stoffel docs + 0.1.0 component model', font_reg(20), COL['muted'], label='source note')
+    draw_text(d, (70, 1080), 'Source: Stoffel docs + 0.1.0 component model', font_reg(20), COL['muted'], label='source note')
 
     out = OUT / 'stoffel-stack-docs.png'
     im.convert('RGB').save(out, quality=94, optimize=True)

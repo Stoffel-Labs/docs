@@ -158,12 +158,14 @@
             "pages": [
               "developer-skills/stoffel-app-getting-started",
               "developer-skills/stoffel-cli-app-workflow",
+              "developer-skills/stoffel-full-app-golden-path",
               "developer-skills/stoffel-lang-app-programming",
               "developer-skills/stoffel-secret-mpc-programming",
               "developer-skills/stoffel-rust-app-sdk",
               "developer-skills/stoffel-typed-client-io-bindings",
               "developer-skills/stoffel-local-mpc-dev-loop",
               "developer-skills/stoffel-app-network-and-offchain-integration",
+              "developer-skills/stoffel-deployment-runbook",
               "developer-skills/stoffel-app-troubleshooting",
               "developer-skills/stoffel-ai-agent-implementation"
             ]

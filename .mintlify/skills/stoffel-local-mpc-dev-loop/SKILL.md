@@ -22,7 +22,7 @@ Use this playbook when an app needs local MPC smoke testing, ClientStore input r
 
 ## Goal
 
-Give developers a repeatable local loop for testing private/MPC apps before any real network deployment.
+Give developers a repeatable local loop for testing private/MPC apps before any real network deployment. Local MPC is a verification gate, not the production topology.
 
 ## Current source of truth
 
@@ -32,30 +32,11 @@ Give developers a repeatable local loop for testing private/MPC apps before any 
 - `crates/stoffel-lang/examples/README.md`
 - `crates/stoffel-lang/examples/**/*.stfl`
 
-## Runner setup
-
-For source-based local development, build the runner from a local checkout:
-
-```sh
-cargo install stoffel-vm-runner
-stoffel-run --help
-```
-
-The CLI and SDK can find the runner through:
-
-- `stoffel run --runner /path/to/stoffel-run`
-- `stoffel dev --runner /path/to/stoffel-run`
-- `STOFFEL_RUN_BIN=/path/to/stoffel-run`
-- SDK `.local_runner_path("/path/to/stoffel-run")`
-- SDK `runtime.local_network().runner_path("/path/to/stoffel-run")`
-
-Build the runner inside the same environment where it will be executed.
-
 ## CLI local run
 
 ```sh
 stoffel run --timeout-secs 180
-stoffel run path/to/main.stfl --runner target/debug/stoffel-run --timeout-secs 180
+stoffel run path/to/main.stfl --timeout-secs 180
 stoffel run target/debug/app.stflb --program-info --timeout-secs 180
 ```
 
@@ -93,7 +74,7 @@ stoffel run --client-input 0=40 --client-input 0=2 --expected-output-clients 1
 .expected_output_clients(1)
 ```
 
-The CLI also supports `--input-file` and `--client-input-file` for `.json`, `.csv`, and `.txt` inputs. See Stoffel CLI App Workflow.
+The CLI also supports `--input-file` and `--client-input-file` for `.json`, `.csv`, and `.txt` inputs. See [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow).
 
 ## Use example `run-args` headers
 
@@ -121,7 +102,6 @@ For repeated client slots, order matters: `--client-input 0=50 --client-input 0=
 let result = runtime
     .local_network()
     .entry("main")
-    .runner_path("target/debug/stoffel-run")
     .timeout(std::time::Duration::from_secs(180))
     .run()
     .await?;
@@ -146,7 +126,8 @@ let result = Stoffel::compile_file("src/main.stfl")?
 3. Run `stoffel build --program-info` to inspect bytecode and client IO metadata.
 4. Run `stoffel run --timeout-secs 180` with named inputs or documented `# run-args:` flags.
 5. If using Rust, run `cargo check` and `cargo run` against the same bytecode/source.
-6. Only then move to network/off-chain config.
+6. Record the exact command/output in the app handoff.
+7. Only then move to network/off-chain config with [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook).
 
 ## Validation / done criteria
 
@@ -170,6 +151,7 @@ STOFFEL_PROGRAM_NAME=mpc_runtime_info.stflb ./examples/validate_examples.sh --ho
 ## Common pitfalls
 
 - Compile-only success is not a local MPC smoke test.
+- Local MPC success is not production deployment; it only proves the program and app boundary work on the local test network.
 - Increase `--timeout-secs` before assuming protocol failure.
 - Avoid port/process collisions by serializing tests that spawn local party meshes.
 - Keep `ClientStore` inputs separate from named function inputs.

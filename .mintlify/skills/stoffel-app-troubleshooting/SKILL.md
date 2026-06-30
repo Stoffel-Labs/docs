@@ -93,8 +93,6 @@ Inspect `Stoffel.toml`:
 
 ## Local MPC checklist
 
-- Confirm `stoffel-run` is installed or provide `--runner` / `STOFFEL_RUN_BIN`.
-- Confirm the runner binary was built for the execution environment's OS/architecture.
 - Increase `--timeout-secs` before declaring protocol failure.
 - Avoid concurrent local party meshes that collide on ports/processes.
 - Verify whether the app uses named inputs or ClientStore inputs.
@@ -116,6 +114,8 @@ Inspect `Stoffel.toml`:
 - Generated bindings came from the same `.stflb`.
 - Coordinator address, node RPC addresses, timestamp, identity material, and expected certificates are provided.
 - Network config validates server addresses, expected parties, expected clients, threshold, backend, and preprocessing.
+- Bytecode hash, generated binding version, party configs, coordinator settings, node RPC addresses, and identity material are from the same deployment bundle.
+- If live server startup is delegated to lower-layer tooling, capture the exact service command/supervisor logs instead of reporting SDK builder success as deployment success.
 
 ## Minimal diagnosis report
 
@@ -131,8 +131,8 @@ When handing off a failure, include:
 - whether bytecode was rebuilt
 - whether typed bindings were regenerated
 - exact `# run-args:` header if using an example
-- local MPC runner path/version if relevant
 - network/off-chain config shape with secrets redacted if relevant
+- bytecode hash and generated binding timestamp/hash for deployment failures
 
 ## Common pitfalls
 
@@ -140,3 +140,4 @@ When handing off a failure, include:
 - Do not report success from a command that was not run.
 - Do not leak private client inputs, tokens, identity material, or secrets into notes, logs, Obsidian, HackMD, or public issues.
 - Do not store API tokens in `Stoffel.toml`, app repos, Obsidian, or HackMD.
+- Do not call deployment done from `execute_local()` output or SDK builder construction alone.

@@ -12,7 +12,7 @@ metadata:
 
 # Stoffel AI Agent Implementation
 
-Use this skill when asking an AI coding agent to build, modify, or debug a Stoffel application. The goal is to give the agent enough context to choose the right MPC backend, model secret inputs correctly, and validate the smallest working program before expanding the app.
+Use this skill when asking an AI coding agent to build, modify, deploy, or debug a Stoffel application. The goal is to give the agent enough context to choose the right MPC backend, model secret inputs correctly, and validate the smallest working program before expanding the app.
 
 ## Start with the implementation boundary
 
@@ -25,6 +25,8 @@ Before asking an agent to write code, describe the boundary the Stoffel program 
 5. Whether each output is an opened value, client-output share, public commitment, curve-encoded value, or signature-related artifact.
 6. Which backend is selected and why.
 7. Which command proves the program is valid.
+8. Which command proves local MPC works.
+9. Which artifacts and configs are required before deployment.
 
 For source snippets, the validation command is usually:
 
@@ -90,6 +92,9 @@ Cost and safety constraints:
 
 Validation:
 - run `stoffel check ...`
+- run `stoffel build --program-info`
+- run a local MPC smoke with documented inputs
+- if deployment is requested, produce bytecode, bindings, topology, coordinator/client config, and operator handoff fields
 - if editing docs, run `npx mintlify validate` and `npx mintlify broken-links`
 ```
 
@@ -152,5 +157,7 @@ Useful APIs and concepts:
 - [Performance and Circuit Shaping](/mpc-protocols/performance-and-circuit-shaping)
 - [HoneyBadgerMPC](/mpc-protocols/honeybadger-mpc)
 - [AVSS](/mpc-protocols/avss)
+- [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path)
 - [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming)
 - [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop)
+- [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook)

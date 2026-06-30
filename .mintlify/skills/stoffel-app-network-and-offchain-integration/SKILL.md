@@ -46,7 +46,7 @@ stoffel build --program-info
 stoffel run --timeout-secs 180 <inputs or documented run-args>
 ```
 
-If the app uses typed client IO, generate bindings from the exact bytecode first. See Stoffel Typed Client IO Bindings.
+If the app uses typed client IO, generate bindings from the exact bytecode first. See [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings).
 
 ## Runtime builders
 
@@ -115,8 +115,11 @@ config.validate_server_addresses()?;
 4. Build runtime from bytecode and generated manifest.
 5. Derive off-chain client config for a client slot.
 6. Attach coordinator address, node endpoints/RPC addresses, timestamp, and client identity material.
-7. Run or submit typed client inputs.
-8. Validate typed outputs and consensus/order evidence where applicable.
+7. Configure the separately deployed MPC service layer with the same bytecode, topology, backend, and client/output slots.
+8. Run or submit typed client inputs.
+9. Validate typed outputs and consensus/order evidence where applicable.
+
+The SDK can validate and carry the app-level config, but live network deployment also needs operator-owned process supervision, identity files, node RPC reachability, and persistence/state decisions. Use [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) for that handoff.
 
 ## CLI network execution
 
@@ -131,6 +134,8 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 ## Validation / done criteria
 
 - Local smoke test passes first.
+- Bytecode hash and generated bindings are recorded together.
+- Coordinator address, node mesh addresses, node RPC addresses, identity material, and expected client certificates are explicitly configured or listed as operator handoff fields.
 - Network config validates before starting servers/clients.
 - Client IO metadata matches generated bindings.
 - Real client/server run returns expected output or a concrete error with logs.
@@ -152,3 +157,4 @@ cargo run -p stoffel-rust-sdk --example client_server
 - Keep on-chain coordinator paths marked advanced until public docs and stable APIs exist.
 - Present coordinator/network assumptions with explicit 0.1.0 status and deployment validation guidance.
 - Do not move to network debugging until the local loop has produced a real passing or failing run.
+- Do not hide missing production process startup behind local SDK examples; record the lower-layer service command or mark it as an operator handoff.

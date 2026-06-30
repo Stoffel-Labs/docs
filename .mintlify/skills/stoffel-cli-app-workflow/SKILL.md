@@ -37,7 +37,7 @@ stoffel build                # build bytecode under target/debug/
 stoffel build --release      # build bytecode under target/release/ and default to O3
 stoffel compile src/main.stfl --output target/debug/app.stflb
 stoffel compile --disassemble target/debug/app.stflb
-stoffel run                  # local MPC simulation by default unless --network/--config is set
+stoffel run                  # local MPC testing by default unless --network/--config is set
 stoffel dev --once           # one build+run pass; omit --once for watch mode
 stoffel test --verbose       # run no-argument Stoffel test functions
 stoffel clean --dry-run
@@ -227,7 +227,7 @@ For secret examples copied from the repository, use the exact first-line `# run-
 
 ## Next playbooks
 
-- Stoffel-Lang App Programming
-- Stoffel Secret MPC Programming
-- Stoffel Local MPC Dev Loop
-- Stoffel App Troubleshooting
+- [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming)
+- [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming)
+- [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop)
+- [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting)

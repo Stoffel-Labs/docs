@@ -180,6 +180,6 @@ cargo test -p stoffel-rust-sdk --test compile_fail
 
 ## Next playbooks
 
-- Stoffel App Network and Off-Chain Integration
-- Stoffel Local MPC Dev Loop
-- Stoffel App Troubleshooting
+- [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration)
+- [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop)
+- [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting)

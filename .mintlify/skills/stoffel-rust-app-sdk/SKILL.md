@@ -67,14 +67,37 @@ fn main() -> stoffel::Result<()> {
 }
 ```
 
+## Production-shaped client integration
+
+For application integration, design toward deployed services and packaged artifacts: build bytecode once, deploy MPC nodes separately, and have client software load deployment config plus typed bindings. Use local MPC as the development smoke path, not the production topology.
+
+```rust
+let runtime = Stoffel::load_file("dist/program.stflb")?
+    .parties(5)
+    .threshold(1)
+    .honeybadger()
+    .build()?;
+
+let offchain = runtime
+    .offchain_client_config(0)?
+    .coordinator("coordinator.example.com", 31415)
+    .timestamp(deployment_timestamp)
+    .node_rpc_addresses([
+        "node-0.example.com:40000",
+        "node-1.example.com:40001",
+        "node-2.example.com:40002",
+        "node-3.example.com:40003",
+        "node-4.example.com:40004",
+    ])
+    .identity_files("client-0.crt", "client-0.key")
+    .build()?;
+```
+
+Generated typed bindings should be compiled into the app client or gateway. Production clients should load pinned bytecode/metadata; they should not compile `.stfl` source dynamically for every request.
+
 ## Local MPC execution
 
-Install the runner used by local coordinator-backed execution from crates.io:
-
-```sh
-cargo install stoffel-vm-runner
-stoffel-run --help
-```
+Use local MPC to verify the privacy-sensitive path before deploying. `.execute_local().await?` spawns a local MPC test network on the developer machine.
 
 ```rust
 use stoffel::prelude::*;
@@ -86,7 +109,6 @@ async fn main() -> stoffel::Result<()> {
     )?
     .parties(5)
     .threshold(1)
-    .local_runner_path("$HOME/.cargo/bin/stoffel-run")
     .with_client_input(0, &[42_i64])
     .execute_local()
     .await?;
@@ -106,8 +128,6 @@ let result = Stoffel::compile_file("src/main.stfl")?
     .execute_local()
     .await?;
 ```
-
-The SDK can also use `STOFFEL_RUN_BIN` or `.local_runner_path(...)` / local-network builder runner paths. Build the runner for the same OS/architecture where it will execute.
 
 ## Loading and saving bytecode
 
@@ -179,7 +199,7 @@ Typed client IO maps current manifest types as:
 - boolean secret integers -> `bool`
 - fixed-point shares -> `f64`
 
-See Stoffel Typed Client IO Bindings for generated structs and validation.
+See [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings) for generated structs and validation.
 
 ## Network config builders
 
@@ -208,6 +228,8 @@ let server = StoffelServer::builder(0).network_config(&config).build()?;
 let client = StoffelClient::builder().network_config(&config).build()?;
 ```
 
+For full deployment handoff, also capture coordinator address, node RPC addresses, identity material, bytecode hash, generated binding version, persistence/state location, and process supervision. See [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook).
+
 ## Validation / done criteria
 
 For Rust app setup:
@@ -221,7 +243,6 @@ cargo run
 For local MPC app paths:
 
 ```sh
-cargo install stoffel-vm-runner
 cargo run
 ```
 
@@ -237,13 +258,15 @@ cargo run -p stoffel-rust-sdk --example local_mpc_client_input
 
 - Do not use path dependencies as the default after crates.io publication.
 - Do not simulate protocol behavior in app code; use SDK/runtime execution paths.
+- Do not present `.execute_local().await?` as a production deployment path.
+- Do not compile `.stfl` source dynamically inside production clients; load pinned bytecode and generated metadata.
 - Do not set an explicit backend that conflicts with bytecode metadata. Prefer generated manifests for ClientStore programs.
 - For `ClientStore` apps, validate client input shapes before network submission.
-- If source is shared between host and container/VM/remote environments, confirm that `stoffel-run` was built for the execution environment.
 - Using `stoffel-rust-sdk` as both an app dependency and a build-dependency can trigger Cargo duplicate-crate/output-collision errors with path or git dependencies. Prefer runtime SDK metadata validation for sample apps, or pre-generate bindings outside the app build.
 
 ## Next playbooks
 
-- Stoffel Typed Client IO Bindings
-- Stoffel Local MPC Dev Loop
-- Stoffel App Network and Off-Chain Integration
+- [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings)
+- [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop)
+- [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration)
+- [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook)

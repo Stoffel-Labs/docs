@@ -36,9 +36,9 @@ These are source-inspection references for app behavior, not instructions for ap
 
 - Rust stable and Cargo.
 - The `stoffel` CLI from the documented installation path.
-- Crates.io dependencies for Rust SDK and runner work.
+- Crates.io dependencies for Rust SDK work.
 - A local checkout of the `stoffel` repository when you need repository examples or local crate changes.
-- For local MPC execution: a `stoffel-run` helper binary available through `PATH`, `--runner`, `STOFFEL_RUN_BIN`, or the SDK builder.
+
 
 ## Install
 
@@ -48,13 +48,6 @@ Install the CLI:
 curl -fsSL https://get.stoffelmpc.com | sh
 export PATH="$HOME/.local/bin:$PATH"
 stoffel --help
-```
-
-Install the local MPC runner when your app needs it:
-
-```sh
-cargo install stoffel-vm-runner
-stoffel-run --help
 ```
 
 ## Create the first app
@@ -131,7 +124,7 @@ For a secret ClientStore example, include its documented `# run-args:` flags and
 
 ## Next playbooks
 
-- Stoffel CLI App Workflow
-- Stoffel-Lang App Programming
-- Stoffel Secret MPC Programming
-- Stoffel Rust App SDK
+- [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow)
+- [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming)
+- [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming)
+- [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk)

@@ -15,7 +15,7 @@ SOURCE_DIR = ROOT / "developer-skills"
 SKILL_DIR = ROOT / ".mintlify" / "skills"
 
 COMPATIBILITY = (
-    "Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing "
+    "Requires access to the current Stoffel CLI/SDK docs and app-facing "
     "Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows."
 )
 

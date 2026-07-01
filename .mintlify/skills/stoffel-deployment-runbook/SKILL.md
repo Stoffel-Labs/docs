@@ -2,7 +2,7 @@
 name: stoffel-deployment-runbook
 description: Prepare and verify a production-shaped Stoffel deployment with compiled bytecode, typed client IO, node topology, coordinator settings, identity material, and operational checks.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"

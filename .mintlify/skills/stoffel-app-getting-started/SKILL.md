@@ -2,7 +2,7 @@
 name: stoffel-app-getting-started
 description: Install Stoffel, create your first app, run local checks, and choose the build path your product needs.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -22,7 +22,7 @@ Use this playbook when a developer or coding agent needs the shortest path from 
 
 ## Current source of truth
 
-Use the public docs when available, then verify against the 0.1.0 app-facing repo surfaces:
+Use the public docs when available, then verify against the current app-facing repo surfaces:
 
 - `README.md`
 - `crates/stoffel-cli/src/main.rs`
@@ -116,7 +116,7 @@ For a secret ClientStore example, include its documented `# run-args:` flags and
 
 ## Common pitfalls
 
-- For 0.1.0 development, prefer the documented source dependency or local path dependency.
+- For app development, prefer the documented source dependency or local path dependency.
 - Do not describe `Stoffel VM` internals unless they explain public app behavior.
 - Do not claim local MPC works until a real run has completed.
 - Do not treat `Stoffel.toml` as network/off-chain config.

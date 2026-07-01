@@ -2,7 +2,7 @@
 name: stoffel-lang-app-programming
 description: Write .stfl application logic using supported Stoffel-Lang syntax, types, builtins, and example patterns.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -126,7 +126,7 @@ stoffel build path/to/main.stfl
 stoffel run path/to/main.stfl --timeout-secs 180
 ```
 
-For framework examples in the 0.1.0 docs:
+For framework examples in the current docs:
 
 ```sh
 cd /path/to/stoffel/crates/stoffel-lang

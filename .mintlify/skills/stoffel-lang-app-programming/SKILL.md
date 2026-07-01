@@ -2,7 +2,7 @@
 name: stoffel-lang-app-programming
 description: Write .stfl application logic using supported Stoffel-Lang syntax, types, builtins, and example patterns.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -49,6 +49,7 @@ Current examples cover:
 - `main` entry points plus no-argument test functions run by `stoffel test`.
 - Imports and import aliases.
 - Type aliases and scalar names: signed/unsigned 8/16/32/64-bit integers, `bool`, `float`/`float64`, `fix32`/`fix64`, strings, bytes aliases, `None`.
+- `secret T` type annotations for share-typed private values, including `secret int64`, `secret bool`, `secret fix64`, and nested forms such as `list[secret int64]`.
 - Integer literal widths/suffixes and hex literals.
 - Lists, dictionaries, nested generics, indexing, negative indexing, assignment through index, and slicing where covered by examples.
 - Dynamic objects, runtime field access, object schemas, base object syntax, and secret-typed fields.
@@ -60,7 +61,9 @@ Current examples cover:
 - Fixed-point arithmetic and comparisons with tolerance checks.
 - Field-access method syntax and object builtin syntax.
 - Closures exposed by the language stdlib.
-- Secret-share arithmetic, `secret bool` gates, and client-provided private inputs via `ClientStore`.
+- Secret-share arithmetic with normal operators (`+`, `-`, `*`, `/`) where the value shape supports them, `secret bool` gates, and client-provided private inputs via `ClientStore`.
+
+`secret` is valid inside type annotations for parameters, return types, local variables, list elements, and object fields. Do not write `secret var` or `secret def`; write `var x: secret int64 = ...` or `def f(x: secret int64) -> secret int64:`.
 
 ## Unsupported or not runtime-ready today
 
@@ -89,7 +92,7 @@ Core app builtins:
 - `LocalStorage.load_share` for share-bearing stored values in advanced MPC examples
 - closure helpers such as `create_closure`, `create_closure_with_upvalue`, `call_closure`, `call_closure_with_arg`, `get_upvalue`, `set_upvalue`
 
-Switch to Stoffel Secret MPC Programming when code uses `secret`, `Share.*`, `ClientStore.*`, `Mpc.*`, `MpcOutput.*`, `Crypto.*`, `Bytes.*`, `Rbc.*`, `Aba.*`, or `Avss.*`.
+Switch to [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) when code uses `secret`, `Share.*`, `ClientStore.*`, `Mpc.*`, `MpcOutput.*`, `Crypto.*`, `Bytes.*`, `Rbc.*`, `Aba.*`, or `Avss.*`.
 
 ## Example map
 
@@ -123,7 +126,7 @@ stoffel build path/to/main.stfl
 stoffel run path/to/main.stfl --timeout-secs 180
 ```
 
-For framework examples in the 0.1.0 docs:
+For framework examples in the current docs:
 
 ```sh
 cd /path/to/stoffel/crates/stoffel-lang
@@ -146,4 +149,4 @@ stoffel run crates/stoffel-lang/examples/mpc_top_k/main.stfl \
 - Keep app examples small and runnable.
 - Do not use unsupported control-flow constructs (`break`, `continue`) in developer-facing examples.
 - For secret examples, copy the `# run-args:` header and preserve client-slot ordering.
-- If a program uses secret values or `ClientStore`, switch to Stoffel Secret MPC Programming.
+- If a program uses secret values or `ClientStore`, switch to [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming).

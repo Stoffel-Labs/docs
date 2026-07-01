@@ -3,37 +3,121 @@ title: Stoffel Developer Skills
 description: Agent-ready playbooks for building applications with the Stoffel framework.
 ---
 
-Stoffel Developer Skills are AI-agent-ready playbooks for developers building applications with the Stoffel framework. They are designed to help coding agents and humans choose the right Stoffel workflow, use 0.1.0 CLI and SDK APIs, run local MPC smoke tests, generate typed client IO bindings, and debug common app-level failures.
+Stoffel Developer Skills are AI-agent-ready playbooks for developers building applications with the Stoffel framework. They are designed to help coding agents and humans choose the right Stoffel workflow, use current CLI and SDK APIs, run local MPC smoke tests, generate typed client IO bindings, prepare deployment-shaped network handoffs, and debug common app-level failures.
 
 These skills are app-development guides, not internal maintainer guides. They focus on creating and validating Stoffel applications with public tooling.
 
 ## Use with AI agents
 
-Mintlify serves these skills through the standard skill discovery endpoints:
+Mintlify serves these skills through standard skill discovery endpoints and a hosted search MCP server. Use both when possible:
+
+- Skills tell an agent how to build with Stoffel.
+- MCP gives the agent live read/search access to the current docs.
+
+### Install the Stoffel skills
+
+Install the published Stoffel skills with the `skills` CLI:
 
 ```sh
 npx skills add https://docs.stoffelmpc.com
 ```
 
-Agents can also discover the individual skills programmatically:
+Useful variants:
+
+```sh
+# List available skills without installing
+npx skills add https://docs.stoffelmpc.com --list
+
+# Install all Stoffel skills without prompts
+npx skills add https://docs.stoffelmpc.com --all
+
+# Install globally for supported local agents
+npx skills add https://docs.stoffelmpc.com --global --all
+
+# Install one focused skill
+npx skills add https://docs.stoffelmpc.com --skill stoffel-full-app-golden-path
+
+# Install for a specific supported agent
+npx skills add https://docs.stoffelmpc.com --agent claude-code --skill stoffel-full-app-golden-path
+```
+
+### Connect the Stoffel docs MCP server
+
+Mintlify hosts the Stoffel search MCP server at:
+
+```txt
+https://docs.stoffelmpc.com/mcp
+```
+
+Use the MCP server when an agent needs to search the docs, read full pages as Markdown, or discover the hosted `skill.md` files as MCP resources.
+
+Install it into supported local agents with `add-mcp`:
+
+```sh
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```sh
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+For Hermes Agent native MCP config, add this to `~/.hermes/config.yaml`, then restart Hermes:
+
+```yaml
+mcp_servers:
+  stoffel_docs:
+    url: "https://docs.stoffelmpc.com/mcp"
+    timeout: 120
+    connect_timeout: 60
+```
+
+After connection, the MCP server exposes read-only tools for searching Stoffel docs and querying the docs filesystem. Tool names are client-specific, but they correspond to:
+
+- `search_stoffel_documentation`
+- `query_docs_filesystem_stoffel_documentation`
+
+### Discovery endpoints
+
+Agents can discover skills and MCP metadata programmatically:
 
 - `https://docs.stoffelmpc.com/skill.md`
 - `https://docs.stoffelmpc.com/.well-known/agent-skills/index.json`
 - `https://docs.stoffelmpc.com/.well-known/skills/index.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp`
+- `https://docs.stoffelmpc.com/.well-known/mcp.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp/server-card.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp/server-cards.json`
+
+### Verify agent access
+
+```sh
+# Skills discovery
+npx skills add https://docs.stoffelmpc.com --list
+
+# MCP discovery document
+curl https://docs.stoffelmpc.com/.well-known/mcp
+
+# MCP server card with advertised tools
+curl https://docs.stoffelmpc.com/.well-known/mcp/server-card.json
+```
 
 ## Skills
 
 - [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) — Install the Stoffel tooling, create a new app, run first local smoke tests, and choose the right development path.
 - [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow) — Use the stoffel CLI to init, check, build, compile, run, test, inspect, and troubleshoot Stoffel apps.
+- [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path) — Build a complete app from privacy boundary through StoffelLang, Rust SDK integration, local MPC validation, typed bindings, and deployment handoff.
 - [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming) — Write .stfl application logic using supported Stoffel-Lang syntax, types, builtins, and example patterns.
 - [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) — Build MPC apps with secret types, Share, ClientStore, Mpc, MpcOutput, and runnable private-input examples.
 - [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk) — Embed Stoffel in Rust apps using the SDK for compilation, bytecode loading, local execution, clients, and servers.
 - [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings) — Generate and use Rust typed client input/output bindings from exact Stoffel bytecode manifests.
 - [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop) — Run local MPC smoke tests, ClientStore input flows, hot reload, and SDK local coordinator-backed execution.
 - [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) — Move from local bytecode to client/server builders, network config, and off-chain coordinator integration.
+- [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) — Prepare production-shaped artifacts, topology, coordinator settings, identity material, client config, and operational verification.
 - [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting) — Diagnose app-level init, check, build, run, local MPC, binding, SDK, and network failures with evidence.
 - [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation) — Give AI coding agents backend, input/output, validation, and cost-model context before they write Stoffel code.
 
 ## Source and maintenance
 
-The source playbooks live in the Stoffel Labs knowledge vault and are mirrored here so developers can access them from the public docs and AI agents can fetch them as `SKILL.md` resources.
+The visible pages are mirrored into `.mintlify/skills/<slug>/SKILL.md` so developers can read them in the docs and AI agents can fetch them as skill resources. After editing a page in `developer-skills/`, run `python scripts/sync_developer_skills.py` before validating.

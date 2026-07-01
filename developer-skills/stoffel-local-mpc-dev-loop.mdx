@@ -5,7 +5,7 @@ description: Run local MPC smoke tests, ClientStore input flows, hot reload, and
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -13,7 +13,7 @@ Use this playbook when an app needs local MPC smoke testing, ClientStore input r
 
 ## Goal
 
-Give developers a repeatable local loop for testing private/MPC apps before any real network deployment.
+Give developers a repeatable local loop for testing private/MPC apps before any real network deployment. Local MPC is a verification gate, not the production topology.
 
 ## Current source of truth
 
@@ -117,7 +117,8 @@ let result = Stoffel::compile_file("src/main.stfl")?
 3. Run `stoffel build --program-info` to inspect bytecode and client IO metadata.
 4. Run `stoffel run --timeout-secs 180` with named inputs or documented `# run-args:` flags.
 5. If using Rust, run `cargo check` and `cargo run` against the same bytecode/source.
-6. Only then move to network/off-chain config.
+6. Record the exact command/output in the app handoff.
+7. Only then move to network/off-chain config with [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook).
 
 ## Validation / done criteria
 
@@ -130,7 +131,7 @@ stoffel build --program-info
 stoffel run --timeout-secs 180 <inputs or documented run-args>
 ```
 
-For 0.1.0 framework example validation:
+For framework example validation:
 
 ```sh
 cd /path/to/stoffel/crates/stoffel-lang
@@ -141,6 +142,7 @@ STOFFEL_PROGRAM_NAME=mpc_runtime_info.stflb ./examples/validate_examples.sh --ho
 ## Common pitfalls
 
 - Compile-only success is not a local MPC smoke test.
+- Local MPC success is not production deployment; it only proves the program and app boundary work on the local test network.
 - Increase `--timeout-secs` before assuming protocol failure.
 - Avoid port/process collisions by serializing tests that spawn local party meshes.
 - Keep `ClientStore` inputs separate from named function inputs.

@@ -2,7 +2,7 @@
 name: stoffel-typed-client-io-bindings
 description: Generate and use Rust typed client input/output bindings from exact Stoffel bytecode manifests.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -161,7 +161,7 @@ stoffel run program.stflb \
 - Run the app's local smoke with the same bytecode.
 - For network/off-chain submissions, validate the runtime's program manifest against generated types before submitting.
 
-0.1.0 framework tests:
+Framework tests:
 
 ```sh
 cargo test -p stoffel-rust-sdk generate_bindings_emits_typed_client_io_from_stflb_manifest
@@ -180,6 +180,6 @@ cargo test -p stoffel-rust-sdk --test compile_fail
 
 ## Next playbooks
 
-- Stoffel App Network and Off-Chain Integration
-- Stoffel Local MPC Dev Loop
-- Stoffel App Troubleshooting
+- [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration)
+- [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop)
+- [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting)

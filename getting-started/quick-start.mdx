@@ -186,6 +186,37 @@ Use the fastest command that answers your current question:
 | Build the Rust app wrapper | `cargo build` |
 | Run the Rust app wrapper | `cargo run` |
 
+## Use with AI coding agents
+
+If you want an AI coding agent to help build a Stoffel app, give it the Stoffel skills and live docs access before asking it to write code.
+
+Install the skills:
+
+```bash
+npx skills add https://docs.stoffelmpc.com
+```
+
+Connect the Mintlify-hosted docs MCP server:
+
+```bash
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```bash
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+Verify discovery if setup fails:
+
+```bash
+npx skills add https://docs.stoffelmpc.com --list
+curl https://docs.stoffelmpc.com/.well-known/mcp
+```
+
+Use the skills for task guidance and MCP for current docs lookup. For full app work, start with the `stoffel-full-app-golden-path` skill.
+
 ## Troubleshooting
 
 ### The program asks for inputs

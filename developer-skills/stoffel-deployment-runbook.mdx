@@ -1,0 +1,269 @@
+---
+title: Stoffel Deployment Runbook
+description: Prepare and verify a production-shaped Stoffel deployment with compiled bytecode, typed client IO, node topology, coordinator settings, identity material, and operational checks.
+---
+
+> Scope: app/operator playbook for moving a verified Stoffel app from local MPC into a production-shaped network deployment. This is not a maintainer guide for protocol internals.
+>
+> Dependency assumption: use public CLI/SDK surfaces first. If a current SDK wrapper does not start the lower-layer service directly, state the lower-layer handoff instead of pretending local MPC is deployment.
+
+## Use when
+
+Use this playbook when a Stoffel app already passes local CLI/SDK smoke tests and now needs deployable artifacts, node/client topology, off-chain coordinator config, or an operator runbook.
+
+## Goal
+
+Make deployment explicit enough that an agent does not guess hidden topology, identity, bytecode, or client-slot details. A deployment is complete only when a client can submit typed inputs to the intended network and receive the authorized output, or when the remaining lower-layer blocker is recorded with logs.
+
+## Deployment model
+
+Production-shaped Stoffel apps have three layers:
+
+1. Build artifacts: `.stflb` bytecode, generated typed bindings, program manifest, and app release metadata.
+2. MPC service layer: coordinator plus long-running MPC parties/nodes with stable network addresses and identity material.
+3. Client/app layer: backend service, CLI, native app, or future browser/WASM client that loads deployment config, selects a client slot, submits inputs, and reads typed outputs.
+
+Do not use `.execute_local().await?` as the deployment model. It is the local development analogue that spawns several MPC nodes/processes on one machine.
+
+## Deployment inputs to collect
+
+Before editing deployment code, fill this table:
+
+| Field | Value |
+| --- | --- |
+| Bytecode path | `dist/program.stflb` |
+| Program hash / build ID |  |
+| Backend | `honeybadger` or `avss:<curve>` |
+| Parties |  |
+| Threshold |  |
+| Expected input clients |  |
+| Expected output clients |  |
+| Coordinator host/port |  |
+| Party mesh addresses |  |
+| Node RPC addresses |  |
+| Client slots |  |
+| Party identity files |  |
+| Client identity files |  |
+| Timestamp / deployment epoch |  |
+| Preprocessing sizes |  |
+| Persistence/state volume |  |
+| Health/log endpoints |  |
+
+If any field is unknown, stop and discover it from source, generated metadata, deployment config, or operator input. Do not invent it.
+
+## Artifact build step
+
+Build artifacts before deploying services:
+
+```sh
+stoffel status --verbose
+stoffel check
+stoffel build --program-info
+```
+
+For Rust app wrappers:
+
+```sh
+cargo check
+cargo test
+```
+
+Expected artifacts:
+
+```text
+dist/program.stflb
+dist/stoffel_bindings.rs or generated bindings in OUT_DIR
+release manifest with backend, parties, threshold, client slots, and output slots
+```
+
+Record the bytecode path and hash in the deployment notes. Production clients should load pinned bytecode/metadata, not compile `.stfl` dynamically.
+
+## Local gate before network work
+
+Run the same program shape locally:
+
+```sh
+stoffel run --timeout-secs 180 <documented inputs or # run-args>
+```
+
+For Rust SDK local smoke:
+
+```sh
+cargo run --bin <local-smoke-or-demo>
+```
+
+The local gate must cover:
+
+- every ClientStore input slot used by deployment;
+- expected output clients;
+- backend/topology selection when configurable;
+- typed output decoding when generated bindings are used.
+
+## Network config plan
+
+Use SDK builders for topology validation when possible:
+
+```rust
+let deployment = NetworkDeployment::builder([
+    "node-0.internal:19200",
+    "node-1.internal:19201",
+    "node-2.internal:19202",
+    "node-3.internal:19203",
+    "node-4.internal:19204",
+])
+.expected_clients(2)
+.threshold(1)
+.honeybadger()
+.consensus_timeout(std::time::Duration::from_secs(60))
+.preprocessing(1000, 500)
+.build()?;
+
+let paths = deployment.save_toml_files("deploy/network")?;
+```
+
+Each party config must agree on:
+
+- party id;
+- bind address;
+- peer addresses;
+- expected parties;
+- expected clients;
+- threshold;
+- backend/curve;
+- preprocessing sizes;
+- coordinator/off-chain settings when using ClientStore IO.
+
+## Server/node handoff
+
+A node service needs:
+
+- the exact `.stflb` bytecode;
+- the party’s network config;
+- coordinator address if using off-chain ClientStore IO;
+- node RPC bind address;
+- party certificate/key material;
+- expected client certificates;
+- persistent state location when the backend/workflow stores shares or commitments;
+- process supervisor and logs.
+
+SDK server builders validate app-level config:
+
+```rust
+let runtime = Stoffel::load_file("dist/program.stflb")?
+    .parties(5)
+    .threshold(1)
+    .honeybadger()
+    .build()?;
+
+let servers = runtime.servers_for_deployment(&deployment);
+let server0 = servers[0].clone().build()?;
+```
+
+Current SDK server builders capture program/config/health metadata; live process startup may delegate to lower-layer networking/VM integration. If the selected SDK version does not expose a single production server start command, write the lower-layer command or service wrapper explicitly and mark it as an operator handoff, not as completed deployment.
+
+## Client/app integration
+
+Client software should load deployment config and submit typed inputs:
+
+```rust
+let runtime = Stoffel::load_file("dist/program.stflb")?
+    .parties(5)
+    .threshold(1)
+    .honeybadger()
+    .build()?;
+
+let offchain = runtime
+    .offchain_client_config(0)?
+    .coordinator("coordinator.example.com", 31415)
+    .timestamp(deployment_timestamp)
+    .node_rpc_addresses([
+        "node-0.example.com:40000",
+        "node-1.example.com:40001",
+        "node-2.example.com:40002",
+        "node-3.example.com:40003",
+        "node-4.example.com:40004",
+    ])
+    .identity_files("client-0.crt", "client-0.key")
+    .build()?;
+
+let client = runtime
+    .client_for_deployment(&deployment)
+    .offchain_io(offchain)
+    .client_id(0)
+    .connect()
+    .await?;
+
+let outputs = client
+    .run_typed::<Client0Inputs, Client0Outputs>(Client0Inputs { input_0: 42 })
+    .await?;
+```
+
+If the app uses a backend gateway, state the security boundary: the gateway sees the user’s raw input before secret sharing. If raw input must stay out of the gateway, the app needs a client-side sharing package or another submission path; do not hide that gap.
+
+## Operational checklist
+
+Before calling deployment done:
+
+- Bytecode and bindings come from the same build.
+- All nodes run the same bytecode hash and compatible configs.
+- The coordinator address is reachable from every node and client.
+- Node mesh ports and node RPC ports are reachable according to the topology.
+- Party and client identity files are present, readable by the process, and not committed.
+- Client slots and output slots match the generated manifest.
+- Preprocessing capacity covers the expected workload shape.
+- Logs redact private inputs, identity material, tokens, and certificates.
+- Restart behavior is documented for coordinator, nodes, and client gateway.
+- Rollback means reverting bytecode, bindings, config, and app client code together.
+
+## Verification commands
+
+Use the commands that exist for the app. A typical ladder is:
+
+```sh
+stoffel check
+stoffel build --program-info
+cargo check
+cargo test
+cargo run --bin build-program
+cargo run --bin validate-network-config
+cargo run --bin client-smoke -- --client-slot 0
+```
+
+For external services, also record:
+
+```sh
+curl -f http://<service>/health
+```
+
+and the process supervisor status/log command used by the deployment target.
+
+## Failure report shape
+
+When deployment fails, capture:
+
+- bytecode hash;
+- branch/commit;
+- party id or client slot;
+- command run;
+- redacted config path;
+- first failing log line;
+- whether local MPC passed;
+- whether typed bindings matched;
+- whether the failure is build, config validation, network reachability, identity, coordinator, protocol, or output decoding.
+
+## Common pitfalls
+
+- Calling local MPC deployment because it returned the right answer on one machine.
+- Letting each node compile source independently instead of distributing pinned bytecode.
+- Running clients against bindings generated from stale bytecode.
+- Forgetting node RPC addresses when using off-chain ClientStore IO.
+- Committing client or party keys.
+- Treating backend/curve changes as config-only changes without rebuilding and revalidating artifacts.
+- Hiding a missing production server wrapper behind local SDK examples.
+
+## Next playbooks
+
+- [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path)
+- [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration)
+- [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk)
+- [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting)

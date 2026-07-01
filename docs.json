@@ -40,6 +40,16 @@
         "sessionRecording": false
     }
   },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "mcp",
+      "add-mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
   "navigation": {
     "tabs": [
       {

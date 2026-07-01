@@ -6,6 +6,40 @@ description: Give AI coding agents the context they need to build and validate S
 
 Use this skill when asking an AI coding agent to build, modify, deploy, or debug a Stoffel application. The goal is to give the agent enough context to choose the right MPC backend, model secret inputs correctly, and validate the smallest working program before expanding the app.
 
+## Give the agent Stoffel docs access
+
+Before a large implementation task, install the Stoffel skills and connect the live docs MCP server so the agent can use current docs instead of training-data guesses.
+
+Install the skills:
+
+```sh
+npx skills add https://docs.stoffelmpc.com
+```
+
+List the published skills first if you need to choose a narrower playbook:
+
+```sh
+npx skills add https://docs.stoffelmpc.com --list
+```
+
+Connect the Mintlify-hosted search MCP server:
+
+```sh
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```sh
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+Programmatic discovery endpoints:
+
+- `https://docs.stoffelmpc.com/.well-known/agent-skills/index.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp`
+- `https://docs.stoffelmpc.com/.well-known/mcp/server-card.json`
+
 ## Start with the implementation boundary
 
 Before asking an agent to write code, describe the boundary the Stoffel program must implement:

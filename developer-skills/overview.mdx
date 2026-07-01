@@ -9,17 +9,99 @@ These skills are app-development guides, not internal maintainer guides. They fo
 
 ## Use with AI agents
 
-Mintlify serves these skills through the standard skill discovery endpoints:
+Mintlify serves these skills through standard skill discovery endpoints and a hosted search MCP server. Use both when possible:
+
+- Skills tell an agent how to build with Stoffel.
+- MCP gives the agent live read/search access to the current docs.
+
+### Install the Stoffel skills
+
+Install the published Stoffel skills with the `skills` CLI:
 
 ```sh
 npx skills add https://docs.stoffelmpc.com
 ```
 
-Agents can also discover the individual skills programmatically:
+Useful variants:
+
+```sh
+# List available skills without installing
+npx skills add https://docs.stoffelmpc.com --list
+
+# Install all Stoffel skills without prompts
+npx skills add https://docs.stoffelmpc.com --all
+
+# Install globally for supported local agents
+npx skills add https://docs.stoffelmpc.com --global --all
+
+# Install one focused skill
+npx skills add https://docs.stoffelmpc.com --skill stoffel-full-app-golden-path
+
+# Install for a specific supported agent
+npx skills add https://docs.stoffelmpc.com --agent claude-code --skill stoffel-full-app-golden-path
+```
+
+### Connect the Stoffel docs MCP server
+
+Mintlify hosts the Stoffel search MCP server at:
+
+```txt
+https://docs.stoffelmpc.com/mcp
+```
+
+Use the MCP server when an agent needs to search the docs, read full pages as Markdown, or discover the hosted `skill.md` files as MCP resources.
+
+Install it into supported local agents with `add-mcp`:
+
+```sh
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```sh
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+For Hermes Agent native MCP config, add this to `~/.hermes/config.yaml`, then restart Hermes:
+
+```yaml
+mcp_servers:
+  stoffel_docs:
+    url: "https://docs.stoffelmpc.com/mcp"
+    timeout: 120
+    connect_timeout: 60
+```
+
+After connection, the MCP server exposes read-only tools for searching Stoffel docs and querying the docs filesystem. Tool names are client-specific, but they correspond to:
+
+- `search_stoffel_documentation`
+- `query_docs_filesystem_stoffel_documentation`
+
+### Discovery endpoints
+
+Agents can discover skills and MCP metadata programmatically:
 
 - `https://docs.stoffelmpc.com/skill.md`
 - `https://docs.stoffelmpc.com/.well-known/agent-skills/index.json`
 - `https://docs.stoffelmpc.com/.well-known/skills/index.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp`
+- `https://docs.stoffelmpc.com/.well-known/mcp.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp/server-card.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp/server-cards.json`
+
+### Verify agent access
+
+```sh
+# Skills discovery
+npx skills add https://docs.stoffelmpc.com --list
+
+# MCP discovery document
+curl https://docs.stoffelmpc.com/.well-known/mcp
+
+# MCP server card with advertised tools
+curl https://docs.stoffelmpc.com/.well-known/mcp/server-card.json
+```
 
 ## Skills
 

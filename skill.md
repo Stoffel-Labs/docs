@@ -26,3 +26,52 @@ Stoffel exposes multiple focused skills under `.mintlify/skills/` and the `/.wel
 - `stoffel-ai-agent-implementation`: Give AI coding agents backend, input/output, validation, and cost-model context before they write Stoffel code.
 
 For human-readable versions, start at `/developer-skills/overview`.
+
+## Install skills and connect docs
+
+Install the Stoffel skills into supported agents with:
+
+```sh
+npx skills add https://docs.stoffelmpc.com
+```
+
+List available skills before installing:
+
+```sh
+npx skills add https://docs.stoffelmpc.com --list
+```
+
+Install all skills non-interactively:
+
+```sh
+npx skills add https://docs.stoffelmpc.com --all
+```
+
+Connect the live Stoffel docs through Mintlify's hosted search MCP server:
+
+```sh
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```sh
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+For Hermes Agent native MCP config:
+
+```yaml
+mcp_servers:
+  stoffel_docs:
+    url: "https://docs.stoffelmpc.com/mcp"
+    timeout: 120
+    connect_timeout: 60
+```
+
+Discovery endpoints:
+
+- `https://docs.stoffelmpc.com/.well-known/agent-skills/index.json`
+- `https://docs.stoffelmpc.com/.well-known/skills/index.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp`
+- `https://docs.stoffelmpc.com/.well-known/mcp/server-card.json`

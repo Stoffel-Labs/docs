@@ -1,57 +1,62 @@
 {
   "diagrams": [
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/stoffel-stack.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/stoffel-stack.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/stoffel-stack-introduction.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/stoffel-stack-introduction.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/mpc-privacy-flow.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/mpc-privacy-flow.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/developer-loop.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/private-computation-boundary.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/compilation-pipeline.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/developer-loop.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/rust-sdk-runtime-paths.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/compilation-pipeline.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/vm-execution-model.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/rust-sdk-runtime-paths.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/honeybadger-network.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/vm-execution-model.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-dev-gap.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/honeybadger-network.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-toolchain.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/why-stoffel-dev-gap.svg",
       "width": 1200,
       "height": 675
     },
     {
-      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-ca4d11ad/images/diagrams/why-stoffel-privacy-boundary.svg",
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/why-stoffel-toolchain.svg",
+      "width": 1200,
+      "height": 675
+    },
+    {
+      "path": "/workspace/stoffel-dev/docs/.worktrees/hermes-intro-blog-links/images/diagrams/why-stoffel-privacy-boundary.svg",
       "width": 1200,
       "height": 675
     }
@@ -174,6 +179,13 @@
       "card_count": 7,
       "zone_count": 3,
       "text_count": 24,
+      "issues": []
+    },
+    {
+      "diagram": "private-computation-boundary",
+      "card_count": 0,
+      "zone_count": 0,
+      "text_count": 34,
       "issues": []
     },
     {

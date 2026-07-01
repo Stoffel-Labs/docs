@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import base64
 import json
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,6 +13,9 @@ from typing import Iterable
 
 OUT_DIR = Path(__file__).resolve().parents[1] / "images" / "diagrams"
 QA_PATH = OUT_DIR / "diagram-qa.json"
+BRAND_DIR = Path("/workspace/internal-skills/design/brand_assets")
+AMBIT_DIR = BRAND_DIR / "Ambit Full Family"
+LOGO_SVG = BRAND_DIR / "Logo" / "SVG" / "Full-logo-mark-SVG.svg"
 W, H = 1200, 675
 
 CSS = """
@@ -238,7 +243,77 @@ def layout_qa_for_svg(root: ET.Element, diagram_name: str) -> dict:
     return {"diagram": diagram_name, "card_count": len(cards), "zone_count": len(zones), "text_count": len(texts), "issues": issues}
 
 
+
+def _font_face_css() -> str:
+    faces = []
+    for family_file, weight in [
+        ("ambit-regular.otf", 400),
+        ("ambit-semibold.otf", 600),
+        ("ambit-semibold.otf", 700),
+        ("ambit-bold.otf", 800),
+    ]:
+        path = AMBIT_DIR / family_file
+        if path.exists():
+            data = base64.b64encode(path.read_bytes()).decode("ascii")
+            faces.append(
+                f"@font-face {{ font-family: 'Ambit'; src: url(data:font/opentype;base64,{data}) format('opentype'); font-weight: {weight}; font-style: normal; }}"
+            )
+    return "\n".join(faces)
+
+
+def _brand_logo(width: int = 142) -> str:
+    if not LOGO_SVG.exists():
+        return ""
+    raw = LOGO_SVG.read_text()
+    m = re.search(r'<svg[^>]*viewBox="([^"]+)"[^>]*>(.*)</svg>', raw, re.S)
+    if not m:
+        return ""
+    viewbox, inner = m.groups()
+    _, _, vb_w, vb_h = [float(v) for v in viewbox.split()]
+    scale = width / vb_w
+    inner = re.sub(r'\sstyle="[^"]*"', '', inner)
+    inner = re.sub(r'fill="#[0-9A-Fa-f]+"', 'fill="#3448f0"', inner)
+    height = vb_h * scale
+    x = W - width - 56
+    y = 44
+    return f'<g aria-hidden="true" transform="translate({x:.1f} {y:.1f}) scale({scale:.6f})">{inner}</g>'
+
+
 def base(diagram: Diagram) -> str:
+    if diagram.name == "private-computation-boundary":
+        font_css = _font_face_css()
+        brand_css = CSS.replace("'DejaVu Sans', Arial, sans-serif", "'Ambit', 'DejaVu Sans', Arial, sans-serif")
+        brand_css = brand_css.replace(".bg { fill: #f8f8fc; }", ".bg { fill: #f4f2ff; }")
+        brand_css = brand_css.replace("fill: #17214f;", "fill: #11143f;", 1)
+        brand_css += "\ntext { font-family: 'Ambit', 'DejaVu Sans', Arial, sans-serif !important; }"
+        logo = _brand_logo()
+        return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="title desc">
+  <title id="title">{esc(diagram.title)}</title>
+  <desc id="desc">{esc(diagram.subtitle)}</desc>
+  <defs>
+    <style>{font_css}
+{brand_css}</style>
+    <radialGradient id="brandGlow" cx="18%" cy="14%" r="72%">
+      <stop offset="0%" stop-color="#E9E6FF"/>
+      <stop offset="56%" stop-color="#F7F5FF"/>
+      <stop offset="100%" stop-color="#EFFCFF"/>
+    </radialGradient>
+    <linearGradient id="laneWash" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#F7FBFF" stop-opacity="0.86"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11 z" fill="#101a45"/></marker>
+    <marker id="arrow-soft" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3448f0"/></marker>
+    <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d7a543" opacity="0.7"/></marker>
+  </defs>
+  <rect width="{W}" height="{H}" fill="url(#brandGlow)"/>
+  <circle cx="108" cy="84" r="130" fill="#5ee3ff" opacity="0.13"/>
+  <circle cx="1088" cy="604" r="170" fill="#3448f0" opacity="0.07"/>
+  <path d="M56,330 C244,300 398,354 596,330 C802,304 936,330 1144,306" stroke="#3448f0" stroke-width="1" opacity="0.09" fill="none"/>
+  {logo}
+  {diagram.body}
+</svg>
+'''
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="title desc">
   <title id="title">{esc(diagram.title)}</title>
   <desc id="desc">{esc(diagram.subtitle)}</desc>
@@ -309,6 +384,92 @@ def mpc_flow() -> Diagram:
         chip(770, 462, 150, "not reconstructed"),
     ])
     return Diagram("mpc-privacy-flow", "MPC privacy flow", "Inputs are shared, computed over, and revealed only at explicit output boundaries", body)
+
+
+def private_computation_boundary() -> Diagram:
+    body = "\n".join([
+        '<rect x="36" y="42" width="1128" height="270" rx="28" fill="url(#laneWash)" stroke="#dedaf8" stroke-width="1.2" opacity="0.88"/>',
+        '<rect x="36" y="354" width="1128" height="276" rx="28" fill="url(#laneWash)" stroke="#cfeff8" stroke-width="1.2" opacity="0.9"/>',
+        '<text x="56" y="78" class="zone-title">Usual app stack</text>',
+        '<text x="56" y="300" class="small">Sensitive context becomes ordinary application state.</text>',
+        '<rect x="56" y="104" width="92" height="58" rx="22" fill="#ebe9ff" stroke="#c6c0ff" stroke-width="1.5"/>',
+        '<circle cx="102" cy="133" r="12" fill="#3448f0" opacity="0.16"/>',
+        '<text x="102" y="188" class="label">user data</text>',
+        '<path d="M148,133 L224,133" class="arrow-soft" opacity="0.56"/>',
+        '<rect x="224" y="104" width="160" height="58" rx="18" fill="#fffaf0" stroke="#edd797" stroke-width="1.3"/>',
+        '<text x="304" y="129" class="label">app server</text>',
+        '<text x="304" y="147" class="label">decrypts to compute</text>',
+        '<path d="M384,133 L468,133" class="arrow-soft" opacity="0.56"/>',
+        '<rect x="468" y="104" width="146" height="58" rx="18" fill="#fffaf0" stroke="#edd797" stroke-width="1.3"/>',
+        '<text x="541" y="129" class="label">plaintext</text>',
+        '<text x="541" y="147" class="label">app state</text>',
+        '<text x="744" y="50" class="label" style="fill:#9a6a14; opacity:.8;">plaintext can spread</text>',
+        '<path d="M614,133 C674,90 710,82 770,82" stroke="#d7a543" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.56" marker-end="url(#arrow-amber)"/>',
+        '<path d="M614,133 C674,118 716,118 770,118" stroke="#d7a543" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.56" marker-end="url(#arrow-amber)"/>',
+        '<path d="M614,133 C674,148 716,158 770,158" stroke="#d7a543" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.56" marker-end="url(#arrow-amber)"/>',
+        '<path d="M614,133 C674,190 710,202 770,202" stroke="#d7a543" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.56" marker-end="url(#arrow-amber)"/>',
+        '<rect x="770" y="64" width="116" height="36" rx="14" fill="#f7efd9" stroke="#edd797" stroke-width="1"/>',
+        '<text x="828" y="87" class="label">logs</text>',
+        '<rect x="770" y="104" width="116" height="36" rx="14" fill="#f7efd9" stroke="#edd797" stroke-width="1"/>',
+        '<text x="828" y="127" class="label">DB</text>',
+        '<rect x="770" y="144" width="150" height="36" rx="14" fill="#f7efd9" stroke="#edd797" stroke-width="1"/>',
+        '<text x="845" y="167" class="label">analytics/tools</text>',
+        '<rect x="770" y="184" width="150" height="36" rx="14" fill="#f7efd9" stroke="#edd797" stroke-width="1"/>',
+        '<text x="845" y="207" class="label">support/admin</text>',
+
+        '<path d="M56,336 L1144,336" stroke="#e1e4f3" stroke-width="1.4" stroke-linecap="round"/>',
+
+        '<text x="56" y="384" class="zone-title">Stoffel stack</text>',
+        '<text x="56" y="616" class="small">Sensitive context crosses the boundary only as shares.</text>',
+        '<rect x="56" y="430" width="92" height="58" rx="22" fill="#ebe9ff" stroke="#c6c0ff" stroke-width="1.5"/>',
+        '<circle cx="102" cy="459" r="12" fill="#3448f0" opacity="0.16"/>',
+        '<text x="102" y="514" class="label">user data</text>',
+        '<path d="M148,459 L224,459" class="arrow-soft"/>',
+        '<rect x="224" y="430" width="126" height="58" rx="18" fill="#e5fbff" stroke="#7be4f5" stroke-width="1.4"/>',
+        '<text x="287" y="455" class="label">split into</text>',
+        '<text x="287" y="473" class="label">shares</text>',
+        '<path d="M350,459 L378,459" stroke="#3448f0" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>',
+        '<path d="M382,411 C374,411 374,459 382,459 C374,459 374,512 382,512" stroke="#7b8af7" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.72"/>',
+        '<rect x="390" y="404" width="92" height="32" rx="12" fill="#e5fbff" stroke="#7be4f5" stroke-width="1.3"/>',
+        '<text x="436" y="425" class="label">share 1</text>',
+        '<rect x="390" y="450" width="92" height="32" rx="12" fill="#e5fbff" stroke="#7be4f5" stroke-width="1.3"/>',
+        '<text x="436" y="471" class="label">share 2</text>',
+        '<rect x="390" y="496" width="92" height="32" rx="12" fill="#e5fbff" stroke="#7be4f5" stroke-width="1.3"/>',
+        '<text x="436" y="517" class="label">share n</text>',
+        '<path d="M482,466 L536,466" class="arrow-soft"/>',
+        '<path d="M536,374 L536,562" stroke="#aeb8ff" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round"/>',
+        '<text x="536" y="362" class="label" text-anchor="middle">private-computation boundary</text>',
+        '<text x="536" y="578" class="label" text-anchor="middle">plaintext does not cross</text>',
+        '<rect x="576" y="384" width="316" height="156" rx="26" fill="#3448f0" stroke="#2335c8" stroke-width="2"/>',
+        '<rect x="646" y="406" width="176" height="38" rx="15" fill="#ffffff" opacity="0.98"/>',
+        '<text x="734" y="431" class="label">Stoffel program</text>',
+        '<rect x="608" y="472" width="76" height="44" rx="14" fill="#ffffff" stroke="#d7daf4" stroke-width="1.2"/>',
+        '<text x="646" y="492" class="label">party 1</text>',
+        '<text x="646" y="510" class="small" text-anchor="middle">share only</text>',
+        '<rect x="696" y="472" width="76" height="44" rx="14" fill="#ffffff" stroke="#d7daf4" stroke-width="1.2"/>',
+        '<text x="734" y="492" class="label">party 2</text>',
+        '<text x="734" y="510" class="small" text-anchor="middle">share only</text>',
+        '<rect x="784" y="472" width="76" height="44" rx="14" fill="#ffffff" stroke="#d7daf4" stroke-width="1.2"/>',
+        '<text x="822" y="492" class="label">party n</text>',
+        '<text x="822" y="510" class="small" text-anchor="middle">share only</text>',
+        '<path d="M684,494 L696,494" stroke="#d5d7f9" stroke-width="1.3" stroke-linecap="round" opacity="0.68"/>',
+        '<path d="M772,494 L784,494" stroke="#d5d7f9" stroke-width="1.3" stroke-linecap="round" opacity="0.68"/>',
+        '<text x="734" y="532" fill="#ffffff" style="font-family: DejaVu Sans, Arial, sans-serif; font-size: 11px; font-weight: 700; text-anchor: middle; opacity:.84;">protocol messages</text>',
+        '<path d="M892,462 L1000,462" class="arrow-soft"/>',
+        '<text x="946" y="438" class="label">explicit output</text>',
+        '<rect x="1000" y="420" width="136" height="88" rx="22" fill="#e5fbff" stroke="#22c55e" stroke-width="1.7"/>',
+        '<circle cx="1068" cy="440" r="10" fill="#22c55e" opacity="0.18"/>',
+        '<path d="M1062,440 L1067,446 L1076,434" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+        '<text x="1068" y="466" class="label">authorized output</text>',
+        '<text x="1068" y="488" class="small" text-anchor="middle">opened result or</text>',
+        '<text x="1068" y="503" class="small" text-anchor="middle">client output</text>',
+    ])
+    return Diagram(
+        "private-computation-boundary",
+        "The private-computation boundary",
+        "Plaintext stays at the app/client edge. Shares enter the boundary. Only explicit outputs leave.",
+        body,
+    )
 
 
 def dev_loop() -> Diagram:
@@ -489,6 +650,7 @@ def write_all() -> dict:
         system_flow,
         Diagram("stoffel-stack-introduction", system_flow.title, system_flow.subtitle, system_flow.body),
         mpc_flow(),
+        private_computation_boundary(),
         dev_loop(),
         compilation(),
         sdk_paths(),

@@ -81,7 +81,7 @@ def secure_sum(a: Share, b: Share) -> int64:
 
 **Comprehensive CLI**
 ```bash
-# Current Stoffel 0.1.0 workflow
+# Current Stoffel workflow
 stoffel init secure-demo
 stoffel check
 stoffel build
@@ -261,7 +261,7 @@ Private voting system:
 Setup:       CLI install and project creation
 Development: clear logic checks plus local MPC smoke tests
 Deployment:  explicit validation of protocol, SDK, infrastructure, and threat model
-Maintenance: versioned bytecode and documented 0.1.0 APIs
+Maintenance: versioned bytecode and documented APIs
 ```
 
 ### Security
@@ -322,7 +322,7 @@ Stoffel: CLI, bytecode, VM, Rust SDK, and deployment/config builders for applica
 
 ### Protocol Evolution
 - Easy integration of new MPC protocols
-- Stable behavior for documented 0.1.0 application workflows
+- Stable behavior for documented application workflows
 - Performance improvements without code changes
 - Research-to-production pipeline
 
@@ -349,6 +349,11 @@ Stoffel transforms MPC from a research curiosity into a practical development to
 - **Writing custom cryptography** vs **using established libraries**
 
 Stoffel aims to be the approachable choice for building with MPC: technical enough to expose the right primitives, but packaged so developers can focus on application logic instead of protocol plumbing.
+
+## Related reading
+
+- [Data in Use Protection: How MPC Keeps Inputs Hidden from the Cloud](https://stoffelmpc.com/stoffel-blog/mpc-data-in-use): how MPC changes the usual backend trust boundary.
+- [Is Your Analytics Platform a Security Liability? What MXP 2026 Taught Me](https://stoffelmpc.com/stoffel-blog/what-mxp-2026-taught-me): a product-focused look at why analytics systems create exposure when they centralize behavioral data.
 
 ## Next Steps
 

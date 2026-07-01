@@ -1,27 +1,36 @@
 ---
 title: "Introduction"
-description: "Stoffel 0.1.0 release: approachable tools for building applications with secure multiparty computation."
+description: "Write StoffelLang programs, build `.stflb` bytecode, run local MPC, and integrate private computation into Rust applications."
 ---
 
-<Note>
-**Stoffel 0.1.0 docs**
+## Build a Stoffel application
 
-These docs track the Stoffel 0.1.0 release. Use component pages for current API, security, and deployment status.
-</Note>
+Stoffel is a programming and runtime stack for the private computation inside an application.
 
-## What Stoffel is
+You write the private workflow in StoffelLang, compile it to `.stflb` bytecode, run it through local MPC during development, and call it from Rust application code with the SDK.
 
-Stoffel is a developer stack for secure multiparty computation (MPC). It gives application developers a practical way to write programs that operate on secret-shared data, test them locally, and integrate them through familiar CLI and Rust SDK workflows.
+Use these docs to:
 
-Most software privacy has a missing layer: we encrypt data at rest, encrypt data in transit, and then decrypt it to compute. MPC addresses that data-in-use gap by letting multiple parties jointly compute over shares of private inputs. Stoffel packages that model into developer tooling: a language, compiler, VM, CLI, and SDK surface that let you focus on the application logic instead of implementing MPC protocols from scratch.
+- install the `stoffel` CLI;
+- create a project;
+- check and build `.stflb` bytecode;
+- run local MPC on your machine;
+- call a Stoffel program from Rust;
+- understand how shares, parties, thresholds, and openings fit into the application boundary.
 
-![Campaign-style Stoffel architecture diagram showing how a StoffelLang program becomes app-prepared inputs, a build contract, and networked MPC runtime execution.](/images/campaign/stoffel-how-it-works-architecture.png)
+## The private-computation boundary
+
+Most application stacks encrypt data at rest and in transit, then decrypt it so the app can run its logic. That makes sensitive user context part of ordinary application state: available to services, logs, analytics, support tools, operators, and downstream integrations unless every layer is carefully constrained.
+
+Stoffel gives you a different boundary for the sensitive part of the workflow. Private values enter the computation as shares. The program computes over those shares. Only explicit openings or client outputs leave the boundary.
+
+![Side-by-side Stoffel-branded data-flow comparison: the usual app stack decrypts user data into plaintext app state that fans out to logs, databases, analytics, and support systems; the Stoffel stack splits user data into shares, sends only shares across the private-computation boundary, runs MPC parties that hold shares only, and returns authorized output through an explicit opening or client output.](/images/diagrams/introduction-private-computation-boundary-branded.svg)
+
+Read the diagram as a data-form comparison. In the usual app stack, decrypting to compute turns sensitive context into plaintext app state that can spread through ordinary infrastructure. In the Stoffel stack, plaintext stays at the app/client edge; shares cross the private-computation boundary; MPC parties exchange protocol messages while holding shares only; and only an explicit authorized output leaves.
 
 ## How the stack fits together
 
 ![Docs-optimized Stoffel stack diagram showing app integration, language and CLI, bytecode and VM, and MPC runtime layers.](/images/campaign/stoffel-stack-ecosystem-v6.png)
-
-Start with application code and the Rust SDK. Write the private workflow in Stoffel Lang, build `.stflb` bytecode with the CLI/compiler, then run that artifact through the VM and MPC runtime.
 
 | Layer | Developer-facing surface | What it does |
 | --- | --- | --- |
@@ -30,28 +39,18 @@ Start with application code and the Rust SDK. Write the private workflow in Stof
 | Bytecode + VM | `.stflb` / register VM | Loads the compiled artifact, separates clear values from shares, and executes builtins and runtime hooks. |
 | MPC runtime | coordinator / parties / outputs | Runs secret-shared execution and opens or sends only the outputs the program authorizes. |
 
-## What you can do today
+## Choose a path
 
-- Write computations in Stoffel Lang with explicit `secret` values.
-- Use clear local execution for fast logic checks.
-- Use the Rust SDK as the primary app integration path.
-- Run local MPC smoke tests with the SDK or CLI.
-- Generate, save, load, inspect, and execute `.stflb` bytecode.
-- Create project templates for Stoffel, Rust, Python, Foundry, and Hardhat workflows.
+| If you want to... | Start here |
+| --- | --- |
+| Install Stoffel | [Installation](./getting-started/installation) |
+| Create and run a project | [Quick start](./getting-started/quick-start) |
+| Learn the daily CLI loop | [Basic usage](./getting-started/basic-usage) |
+| Build a first private computation | [Your first MPC project](./getting-started/first-project) |
+| Call Stoffel from an app | [Rust SDK overview](./rust-sdk/overview) |
+| Understand the runtime layers | [System architecture](./architecture/system) |
 
-## How to think about the release
+## Related reading
 
-These docs describe the current Stoffel release. The Rust SDK and CLI are the documented application path for building, testing, and deploying Stoffel applications. Other SDK and on-chain surfaces are present for exploration and integration planning.
-
-MPC is a powerful primitive, not a complete security product by itself. Deployment teams should validate component status, threat models, output design, metadata exposure, operational hardening, and application-level access control for their use case.
-
-## Security review and deployment
-
-`mpc-protocols` has received an external audit from Zellic. Other parts of the codebase have had AI-assisted security review, including tools such as veria.dev. Treat this coverage as component-scoped: deployment teams should validate the full application, integration code, configuration, and threat model they rely on.
-
-## Start here
-
-1. [Install Stoffel](./getting-started/installation)
-2. [Run the quick start](./getting-started/quick-start)
-3. [Use the Rust SDK](./rust-sdk/overview)
-4. [Read the system architecture](./architecture/system)
+- [Data in Use Protection: How MPC Keeps Inputs Hidden from the Cloud](https://stoffelmpc.com/stoffel-blog/mpc-data-in-use): a longer explanation of the compute-time privacy gap MPC is designed to close.
+- [Is Your Analytics Platform a Security Liability? What MXP 2026 Taught Me](https://stoffelmpc.com/stoffel-blog/what-mxp-2026-taught-me): a product example of how centralizing sensitive behavioral data creates exposure.

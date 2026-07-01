@@ -13,6 +13,7 @@ Use this page to install the `stoffel` CLI, verify that the command is on your p
 - `curl` or `wget`
 - [Rust and Cargo](https://www.rust-lang.org/tools/install) only when building the CLI from source
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) only when building from source or using repository examples
+- [Node.js](https://nodejs.org/) only when using the optional `npx` commands for AI agent skills or MCP setup
 - 4 GB RAM minimum; 8 GB recommended
 
 ## Prebuilt CLI (recommended)
@@ -118,6 +119,40 @@ Built .../hello-mpc/target/debug/hello-mpc.stflb
 ```
 
 This verifies that the `stoffel` command line tool can create, check, and build a Stoffel app. The [Quick Start](./quick-start) continues from here into local MPC execution and the Rust SDK wrapper.
+
+## Optional: install AI agent skills and docs MCP
+
+If you use AI coding agents, install the Stoffel skills so the agent has Stoffel-specific build, SDK, local MPC, and deployment playbooks:
+
+```bash
+npx skills add https://docs.stoffelmpc.com
+```
+
+List the available skills without installing:
+
+```bash
+npx skills add https://docs.stoffelmpc.com --list
+```
+
+Install all Stoffel skills without prompts:
+
+```bash
+npx skills add https://docs.stoffelmpc.com --all
+```
+
+Connect the live Stoffel docs through Mintlify's hosted MCP server when your agent supports MCP:
+
+```bash
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```bash
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+The MCP server lets agents search the current docs and read pages as Markdown. Skills and MCP are complementary: skills provide task guidance, while MCP provides live docs access.
 
 ## Troubleshooting
 

@@ -2,7 +2,7 @@
 name: stoffel-rust-app-sdk
 description: Embed Stoffel in Rust apps using the SDK for compilation, bytecode loading, local execution, clients, and servers.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -32,12 +32,11 @@ Use this playbook when a Rust application embeds Stoffel compilation, bytecode l
 
 ## Dependencies
 
-Use the released SDK dependency when your app does not need a local checkout:
+Use the released SDK dependency from the current Rust SDK installation docs when your app does not need a local checkout:
 
-```toml
-[dependencies]
-stoffel = { package = "stoffel-rust-sdk", version = "0.1.0" }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```sh
+cargo add stoffel-rust-sdk --rename stoffel
+cargo add tokio --features macros,rt-multi-thread
 ```
 
 Use a local checkout when your app needs SDK source or unreleased workspace changes:
@@ -246,7 +245,7 @@ For local MPC app paths:
 cargo run
 ```
 
-0.1.0 framework validation:
+Framework validation:
 
 ```sh
 cargo test -p stoffel-rust-sdk

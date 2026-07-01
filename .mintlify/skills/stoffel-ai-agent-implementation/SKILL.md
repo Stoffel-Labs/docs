@@ -2,7 +2,7 @@
 name: stoffel-ai-agent-implementation
 description: Give AI coding agents the context they need to build and validate Stoffel applications correctly.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"

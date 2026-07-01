@@ -2,7 +2,7 @@
 name: stoffel-full-app-golden-path
 description: Build a complete Stoffel app from boundary design through StoffelLang, Rust SDK integration, local MPC validation, typed bindings, and deployment handoff.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building complete Stoffel applications. Use this as the orchestrating path, then switch to the narrower skills for implementation details.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 

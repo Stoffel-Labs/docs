@@ -2,7 +2,7 @@
 name: stoffel-cli-app-workflow
 description: Use the stoffel CLI to init, check, build, compile, run, test, inspect, and troubleshoot Stoffel apps.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -53,7 +53,7 @@ A typical app has `Stoffel.toml`:
 ```toml
 [package]
 name = "my-app"
-version = "0.1.0"
+version = "1.0.0" # your app package version
 authors = []
 
 [mpc]
@@ -108,7 +108,7 @@ stoffel init my-foundry-app --template solidity-foundry
 stoffel init my-hardhat-app --template solidity-hardhat
 ```
 
-Treat non-Rust wrapper templates as integration scaffolds; use the Rust SDK for executable 0.1.0 application flows.
+Treat non-Rust wrapper templates as integration scaffolds; use the Rust SDK for executable application flows.
 
 ## Inputs
 

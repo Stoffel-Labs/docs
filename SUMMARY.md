@@ -27,6 +27,7 @@
 # StoffelLang
 - [Language Overview](./stoffel-lang/overview.md)
 - [Syntax and Examples](./stoffel-lang/syntax.md)
+- [Runnable Examples](./stoffel-lang/examples.md)
 - [Compilation](./stoffel-lang/compilation.md)
 - [FFI / C Bindings](./stoffel-lang/ffi.md)
 

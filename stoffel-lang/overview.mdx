@@ -5,7 +5,7 @@ description: "The current Stoffel language for clear local logic and MPC-aware c
 
 StoffelLang is the application language compiled by the `stoffellang` crate in the `stoffel` repository. It uses Python-like indentation, `def` functions, `var` bindings, static type annotations, lists, objects, closures, and explicit MPC share APIs.
 
-Prefer examples from `crates/stoffel-lang/examples/`, the generated project template, and the Rust SDK examples over older syntax outside the documented `def`/`var`/`.stflb` workflow.
+Prefer examples from [`crates/stoffel-lang/examples/`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples), the generated project template, and the Rust SDK examples over older syntax outside the documented `def`/`var`/`.stflb` workflow. Use the [runnable examples guide](./examples) to choose examples by task.
 
 ## Design goals
 
@@ -216,19 +216,12 @@ stoffel compile --disassemble target/debug/main.stflb
 
 ## Examples in the repository
 
-Useful source-of-truth examples live under `crates/stoffel-lang/examples/`:
-
-- `local_control_flow/main.stfl`
-- `local_collections/main.stfl`
-- `mpc_share_arithmetic/main.stfl`
-- `mpc_runtime_info/main.stfl`
-- `mpc_client_private_score/main.stfl`
-- `mpc_aes128_cbc_client_io/main.stfl`
-- `threshold_signatures/*/main.stfl`
+Runnable examples live under [`crates/stoffel-lang/examples/`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples). Start with the [examples guide](./examples) when you want source-level patterns for clear StoffelLang, client-provided private inputs, share arithmetic, reusable MPC building blocks, or larger private workflows.
 
 ## Next steps
 
 - [Syntax and Examples](./syntax)
+- [Runnable Examples](./examples)
 - [Compilation](./compilation)
 - [Built-in Functions](../stoffel-vm/builtins)
 - [Rust SDK Examples](../rust-sdk/examples)

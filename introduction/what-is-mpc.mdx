@@ -1,211 +1,120 @@
 ---
 title: "What is Multi-Party Computation?"
-description: "An introduction to MPC - a cryptographic technique that allows multiple parties to jointly compute a function while keeping their inputs private."
+description: "A developer mental model for MPC: plaintext becomes shares, parties compute over shares, and only explicit outputs become visible."
 ---
 
-Multi-Party Computation (MPC) is a cryptographic technique that enables multiple parties to jointly compute a function over their inputs while keeping those inputs private. Think of it as a way for parties to collaborate on calculations without revealing their sensitive data to each other.
+Multi-Party Computation (MPC) lets several parties compute a result without first collecting every private input in one place.
 
-## The Core Problem
+For an application developer, the important shift is the data form. In a usual stack, sensitive values are decrypted into ordinary application state so code can run. In an MPC stack, sensitive values are transformed into shares before they cross into the computation. MPC parties compute over those shares, exchange protocol messages, and reveal only the output the program explicitly opens or returns to the client.
 
-Imagine three companies want to find out which one pays the highest average salary without revealing their actual salary data to competitors. Traditionally, they would need to:
+## What MPC changes
 
-1. Trust a third party with their sensitive data, or
-2. Reveal their data to each other directly
+MPC changes where plaintext exists during computation.
 
-Both options have serious privacy and competitive disadvantages. MPC provides a third option: compute the answer together without anyone learning anyone else's private data.
+A normal application flow often looks like this:
 
-## How MPC Works
+```text
+user data -> decrypt to compute -> plaintext app state -> result
+```
 
-### The Basic Concept
+That plaintext app state can then touch logs, databases, analytics tools, support systems, queues, caches, and downstream services unless each layer is carefully constrained.
 
-MPC protocols work by:
+An MPC flow is different:
 
-1. **Secret Sharing**: Each party's private input is split into multiple "shares" using cryptographic techniques
-2. **Distributed Computation**: The computation is performed on these shares across multiple nodes
-3. **Result Reconstruction**: The final result is reconstructed from the output shares
+```text
+user data -> shares -> MPC parties compute over shares -> authorized output
+```
 
-Throughout this process, no single party (including the computing nodes) ever sees the raw private data.
+The parties running the computation do not receive the full plaintext input. They receive shares: pieces of the private value that are useful to the protocol but not meaningful on their own.
 
 ![MPC privacy flow showing input owners splitting private values into shares, MPC parties computing over shares, and only the opened result returning.](/images/diagrams/mpc-privacy-flow.svg)
 
-### A Simple Example
+## The core vocabulary
 
-Consider two parties, Alice and Bob, who want to compute `(Alice's number + Bob's number) > 100` without revealing their numbers:
+| Term | Meaning |
+| --- | --- |
+| Plaintext value | The original value before it is protected. In a Stoffel application, this should stay at the app/client edge. |
+| Share | A protocol value derived from plaintext. A single share does not reveal the full input by itself. |
+| MPC party | A node that runs the protocol over shares. Parties hold shares, not complete plaintext inputs. |
+| Threshold | The number of shares or parties needed for a protocol action, such as reconstructing or opening a value. |
+| Protocol messages | Network messages parties exchange to evaluate operations that cannot be computed locally on one share. |
+| Opening | The moment a secret-shared value is intentionally reconstructed or returned as an output. |
+| Authorized output | A value the program is designed to reveal, either as an opened result or as output material returned to the client. |
 
-```
-Alice has: 75 (secret)
-Bob has: 30 (secret)
+If you keep those nouns straight, the rest of MPC becomes easier to reason about: what exists as plaintext, what exists as shares, which nodes hold which material, and where values are allowed to become visible.
 
-1. Secret Sharing:
-   Alice's 75 → shares: [23, 17, 35]
-   Bob's 30 → shares: [8, 12, 10]
+## What MPC parties see
 
-2. Distributed Computation:
-   Node 1: 23 + 8 = 31
-   Node 2: 17 + 12 = 29
-   Node 3: 35 + 10 = 45
+An MPC party sees:
 
-   Each node computes: share > threshold_share
+- its own share of each private input;
+- the compiled computation it is supposed to run;
+- protocol messages from other parties;
+- output shares or opened values that the program authorizes.
 
-3. Result Reconstruction:
-   Combine results → 105 > 100 = true
-```
+An MPC party should not see the full private input just because it participates in the computation.
 
-Neither Alice nor Bob learns the other's number, but they both learn that their sum exceeds 100.
+That is the core security boundary. MPC is not magic privacy dust around an ordinary app server. It is a different execution model: move the sensitive part of the computation into a protocol where parties work over shares.
 
-## Types of MPC
+## What computation over shares means
 
-### By Security Model
+Some operations over shares are straightforward. For example, adding two shared values can often be represented as each party adding its local shares.
 
-**Semi-Honest (Honest-but-Curious)**
-- Parties follow the protocol correctly but try to learn extra information
-- More efficient but assumes participants won't actively cheat
-- Suitable for many real-world scenarios where reputation matters
+Other operations require interaction. Multiplication, comparisons, conditionals over secret values, and many higher-level operations need protocol support. Parties exchange messages that let the computation advance without revealing the underlying plaintext inputs.
 
-**Malicious**
-- Parties may deviate from the protocol arbitrarily
-- Stronger security guarantees but higher computational cost
-- Required when participants cannot be trusted to follow rules
+A useful mental model:
 
-### By Network Assumptions
-
-**Honest Majority**
-- Assumes more than half of participants are honest
-- Generally more efficient
-- Used by protocols like Stoffel's HoneyBadgerMPC and AVSS backends, with backend-specific threshold rules
-
-**Dishonest Majority**
-- Works even if most participants are malicious
-- Higher computational and communication overhead
-- Typically used in two-party scenarios
-
-## Real-World Applications
-
-### Financial Services
-
-**Private Credit Scoring**
-```
-Multiple banks → Collaborative credit risk assessment → Individual scores
-(without sharing customer data)
+```text
+share-local operations:     parties update their own shares
+interactive operations:     parties exchange protocol messages
+openings / outputs:         selected values become visible by design
 ```
 
-**Market Data Analysis**
-```
-Trading firms → Joint market analysis → Insights
-(without revealing trading strategies)
-```
+This distinction matters for developers because private computation is not just normal code with encryption sprinkled on top. The shape of the program affects what the protocol has to do.
 
-### Healthcare
+For a deeper explanation of why multiplication needs protocol support, read [Computing with Secret Shares - Introducing Beaver Triples](https://stoffelmpc.com/stoffel-blog/beaver-triples-tuples).
 
-**Medical Research**
-```
-Hospitals → Disease pattern analysis → Research findings
-(without sharing patient records)
-```
+## Openings: where secrecy intentionally ends
 
-**Drug Discovery**
-```
-Pharmaceutical companies → Compound effectiveness → New drugs
-(without sharing proprietary research)
-```
+An opening is not a bug. It is the point where the program intentionally turns a shared value into something visible.
 
-### Government & Compliance
+Good MPC program design is explicit about outputs:
 
-**Tax Fraud Detection**
-```
-Tax agencies → Cross-border fraud detection → Investigation leads
-(without sharing taxpayer information)
-```
+- Which result should become visible?
+- Who should receive it?
+- Is the output an opened value, output shares, or a client-consumable result?
+- Does the output itself reveal more than the application intends?
 
-**Supply Chain Verification**
-```
-Companies → Ethical sourcing verification → Compliance reports
-(without revealing supplier details)
-```
+MPC protects inputs during computation. It does not automatically make every possible output safe. The application still needs to decide what should be revealed.
 
-## MPC vs Other Privacy Technologies
+## What this means in Stoffel
 
-| Technology | Privacy Level | Performance | Use Cases |
-|------------|---------------|-------------|-----------|
-| **MPC** | High - inputs remain secret | Moderate | Multi-party computation |
-| **Homomorphic Encryption** | High - single party holds data | Low | Outsourced computation |
-| **Differential Privacy** | Medium - statistical privacy | High | Data analysis/sharing |
-| **Secure Enclaves** | High - hardware-based | High | Trusted execution |
+Stoffel packages this model into a developer workflow:
 
-## Challenges and Limitations
+| MPC concept | Stoffel surface |
+| --- | --- |
+| Computation | StoffelLang source (`.stfl`) |
+| Build artifact | `.stflb` bytecode |
+| Local development | `stoffel check`, `stoffel build`, and local MPC runs |
+| Parties | Local or networked Stoffel VM parties |
+| Private values | Shares passed through the MPC runtime |
+| Outputs | Explicit openings or client outputs defined by the program |
 
-### Performance Considerations
+The goal is not to hide every MPC concept. You still need to understand shares, parties, thresholds, and openings. Stoffel makes those concepts concrete in a compiler, VM, CLI, and Rust SDK instead of making every application team implement protocols from scratch.
 
-**Computational Overhead**
-- MPC operations are significantly slower than plain computation
-- Cryptographic operations add substantial cost
-- Trade-off between security and performance
+## What MPC does not remove
 
-**Communication Complexity**
-- Multiple rounds of communication between parties
-- Network latency affects overall computation time
-- Bandwidth requirements can be substantial
+MPC narrows where sensitive plaintext exists during computation. It does not remove every security or product-design responsibility.
 
-### Practical Constraints
+You still need to design:
 
-**Setup Requirements**
-- Coordinating multiple parties can be complex
-- Trust assumptions about protocol participants
-- Key management and secure channels
+- which values are private inputs;
+- which values are allowed to become outputs;
+- how outputs are delivered to the right client or system;
+- what metadata, timing, access patterns, logs, and deployment details may reveal;
+- which parties, thresholds, and backend assumptions match the application.
 
-**Programming Complexity**
-- Traditional programming models don't directly apply
-- Need specialized tools and languages
-- Debugging and testing require new approaches
-
-## The Promise of MPC
-
-Despite these challenges, MPC offers unprecedented opportunities:
-
-### Enabling New Business Models
-
-**Data Collaboration Without Exposure**
-- Competitors can collaborate on common problems
-- Data monetization without data sharing
-- Cross-organizational analytics
-
-**Regulatory Compliance**
-- GDPR-compliant data analysis
-- Financial privacy regulations
-- Healthcare data protection
-
-### Technical Advantages
-
-**Distributed Trust**
-- No single point of failure
-- Reduced trust requirements
-- Cryptographic security guarantees
-
-**Selective Disclosure**
-- Compute only what's needed
-- Reveal only specific results
-- Fine-grained privacy control
-
-## MPC in Practice
-
-Modern MPC is becoming practical for real applications:
-
-**Performance Improvements**
-- Specialized protocols for specific use cases
-- Hardware acceleration (GPUs, specialized chips)
-- Optimized implementations
-
-**Developer Tools**
-- High-level programming languages
-- Automated optimization
-- Debugging and testing frameworks
-
-**Deployment Infrastructure**
-- Cloud-based MPC services
-- Standardized protocols
-- Integration with existing systems
-
-This is where Stoffel comes in: it packages MPC concepts into a compiler, VM, CLI, and SDK so developers can build with shares, parties, thresholds, and openings without implementing the protocols from scratch.
+Use MPC to move the sensitive computation out of ordinary plaintext application state. Then design the rest of the system around that boundary.
 
 ## Related reading
 
@@ -213,8 +122,8 @@ This is where Stoffel comes in: it packages MPC concepts into a compiler, VM, CL
 - [Introduction to Secret Sharing from First Principles](https://stoffelmpc.com/stoffel-blog/guide-to-secret-sharing): build intuition for shares, thresholds, and reconstruction.
 - [Computing with Secret Shares - Introducing Beaver Triples](https://stoffelmpc.com/stoffel-blog/beaver-triples-tuples): why private multiplication uses protocol support such as Beaver triples.
 
-## Next Steps
+## Next steps
 
-To understand how Stoffel addresses these challenges and makes MPC practical for developers, see:
-- **[Why Stoffel?](./why-stoffel)** - How Stoffel solves MPC development challenges
-- **[System architecture](../architecture/system)** - See how app code, bytecode, VM parties, and MPC backends fit together
+- [Why Stoffel?](./why-stoffel): how Stoffel turns MPC concepts into a development workflow.
+- [Quick start](../getting-started/quick-start): create a project, build bytecode, and run local MPC.
+- [System architecture](../architecture/system): see how app code, bytecode, VM parties, and MPC backends fit together.

@@ -79,17 +79,16 @@ For local MPC runs, use the CLI local MPC path and provide any required client-s
 stoffel run --client-input 0=42 --parties 5 --threshold 1
 ```
 
-## Compiler source examples
+## Validate repository examples
 
-Current syntax examples live in the repository:
+The repository examples are runnable programs under [`crates/stoffel-lang/examples/`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples). From the Stoffel repository root, compile the examples and run local-only examples through the VM with:
 
-```text
-crates/stoffel-lang/examples/local_control_flow/main.stfl
-crates/stoffel-lang/examples/local_collections/main.stfl
-crates/stoffel-lang/examples/mpc_share_arithmetic/main.stfl
-crates/stoffel-lang/examples/mpc_client_private_score/main.stfl
-crates/stoffel-lang/examples/mpc_runtime_info/main.stfl
+```bash
+cd crates/stoffel-lang
+./examples/validate_examples.sh
 ```
+
+Compiled bytecode is written to `examples/dist/`. Use the [runnable examples guide](./examples) to choose examples by task.
 
 ## Common errors
 
@@ -113,4 +112,5 @@ Do not branch on secret values. Reveal/open only the output you intend to disclo
 
 - [StoffelLang Overview](./overview)
 - [Syntax and Examples](./syntax)
+- [Runnable Examples](./examples)
 - [Basic Usage](../getting-started/basic-usage)

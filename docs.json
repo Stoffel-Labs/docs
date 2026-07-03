@@ -83,6 +83,7 @@
             "pages": [
               "stoffel-lang/overview",
               "stoffel-lang/syntax",
+              "stoffel-lang/examples",
               "stoffel-lang/compilation",
               "stoffel-lang/ffi"
             ]

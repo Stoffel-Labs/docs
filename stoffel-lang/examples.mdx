@@ -1,0 +1,104 @@
+---
+title: "Runnable Examples"
+description: "A guided path through runnable StoffelLang examples in the Stoffel repository."
+---
+
+The Stoffel repository includes runnable StoffelLang programs under [`crates/stoffel-lang/examples/`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples). Use them to learn the language, read client-provided private inputs, compose MPC primitives, and adapt private workflows into your own app.
+
+## Recommended path
+
+If you are new to StoffelLang, start with these examples in order:
+
+1. [`local_control_flow`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_control_flow) — learn functions, loops, ranges, branching, and arithmetic.
+2. [`local_collections`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_collections) — work with lists, indexing, appending, and length checks.
+3. [`mpc_client_private_score`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_client_private_score) — read a client-provided private input and return an output share.
+4. [`mpc_secure_comparison`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_secure_comparison) — study a reusable MPC primitive that reveals only a comparison bit.
+5. [`mpc_histogram`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_histogram) or [`mpc_first_price_auction`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_first_price_auction) — see how primitives become app-shaped private workflows.
+
+This path starts with clear StoffelLang syntax, then moves into private inputs, explicit reveal boundaries, and larger MPC application patterns.
+
+## Run the examples
+
+Clone the Stoffel repository and validate the examples from the repository root:
+
+```bash
+git clone https://github.com/Stoffel-Labs/stoffel.git
+cd stoffel/crates/stoffel-lang
+./examples/validate_examples.sh
+```
+
+The validation script compiles the examples, runs local-only examples through the VM, and writes compiled bytecode to `examples/dist/`. A failure usually means the local CLI/compiler checkout is out of sync or the example needs a specific input shape from its README.
+
+### Run a clear language example
+
+Start with a clear example when you want the lowest-friction check:
+
+```bash
+cd examples/local_control_flow
+stoffel check main.stfl
+stoffel run main.stfl
+```
+
+### Run a client-input MPC example
+
+Read each example README before running MPC examples, because client slots and input values are example-specific. For [`mpc_client_private_score`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_client_private_score):
+
+```bash
+cd examples/mpc_client_private_score
+stoffel check main.stfl
+stoffel run main.stfl --client-input 0=42 --parties 5 --threshold 1
+```
+
+## Choose by job
+
+| Job | Start with | Why |
+| --- | --- | --- |
+| Learn StoffelLang syntax | [`local_control_flow`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_control_flow), [`local_collections`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_collections), [`local_nested_generics`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_nested_generics) | Clear programs isolate language mechanics before MPC value handling. |
+| Split code across files | [`language_policy_engine`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/language_policy_engine) | Shows imports, aliases, numeric widths, and app-shaped policy code. |
+| Model private inputs | [`mpc_client_private_score`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_client_private_score), [`mpc_client_federated_average`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_client_federated_average) | Shows `ClientStore` input slots and client output paths. |
+| Compute on shares | [`mpc_share_arithmetic`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_share_arithmetic), [`mpc_boolean_circuit`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_boolean_circuit), [`mpc_bitwise_share`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_bitwise_share) | Shows secret arithmetic, secret booleans, and share-oriented operators. |
+| Inspect runtime metadata | [`mpc_runtime_info`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_runtime_info) | Shows party count, threshold, backend, curve, field, and capabilities. |
+| Explore broad builtin coverage | [`mpc_share_toolkit`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_share_toolkit) | Collects Share, ClientStore, MpcOutput, and crypto builtin patterns. |
+
+## Reuse MPC building blocks
+
+These examples are useful when you need source-level patterns for a private computation boundary:
+
+| Building block | Examples |
+| --- | --- |
+| Secure comparison | [`mpc_secure_comparison`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_secure_comparison), [`mpc_compare_family`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_compare_family) |
+| Oblivious select / mux | [`mpc_select_minmax`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_select_minmax), [`mpc_mux_tree`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_mux_tree), [`bits/secret/oblivious_mux`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/bits/secret/oblivious_mux) |
+| Equality and membership | [`bits/secret/equality_check`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/bits/secret/equality_check), [`mpc_set_membership`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_set_membership), [`mpc_is_zero`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_is_zero) |
+| Range checks and clamps | [`mpc_range_check`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_range_check), [`mpc_clamp`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_clamp) |
+| Oblivious reads and writes | [`mpc_oblivious_read`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_oblivious_read), [`mpc_oblivious_write`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_oblivious_write), [`mpc_lookup_table`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_lookup_table) |
+| Sorting and order statistics | [`mpc_sorting_network`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_sorting_network), [`mpc_bitonic_sort`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_bitonic_sort), [`mpc_median`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_median), [`mpc_top_k`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_top_k) |
+| Secret integer bit operations | [`mpc_bit_decomposition`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_bit_decomposition), [`mpc_bitwise_int`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_bitwise_int), [`mpc_popcount_secret`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_popcount_secret), [`mpc_parity`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_parity) |
+| Fixed-point approximation | [`mpc_transcendental`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_transcendental), [`mpc_reciprocal`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_reciprocal), [`mpc_sqrt`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_sqrt) |
+
+When adapting these examples, copy the computation pattern, not the whole directory structure. Keep private inputs at `ClientStore`, keep intermediate values secret, and make reveal or client-output points explicit.
+
+## Study larger workflows
+
+Use these after you understand the smaller building blocks:
+
+| Workflow | Examples |
+| --- | --- |
+| Private analytics | [`mpc_histogram`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_histogram), [`mpc_mean`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_mean), [`mpc_variance`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_variance), [`mpc_covariance`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_covariance) |
+| Private inference | [`mpc_logistic_regression`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_logistic_regression), [`mpc_decision_tree`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_decision_tree), [`mpc_mlp_inference`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_mlp_inference), [`mpc_knn`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_knn) |
+| Auctions and voting | [`mpc_first_price_auction`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_first_price_auction), [`mpc_second_price_auction`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_second_price_auction), [`mpc_voting_tally`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_voting_tally), [`mpc_weighted_voting`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_weighted_voting) |
+| Private set workflows | [`mpc_set_intersection`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_set_intersection), [`mpc_set_cardinality`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_set_cardinality), [`mpc_dh_psi`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_dh_psi) |
+| Encrypted-data and client-IO patterns | [`mpc_aes128_circuit`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_aes128_circuit), [`mpc_aes128_ctr_client_io`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_aes128_ctr_client_io), [`mpc_aes128_cbc_client_io`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_aes128_cbc_client_io) |
+| Threshold crypto and AVSS | [`threshold_signatures/*`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/threshold_signatures), [`avss_certificate/*`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/avss_certificate), [`avss_share_auditor`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/avss_share_auditor) |
+
+Ordinary app logic should stay in the host application. The StoffelLang program should contain the private computation, the client input reads, and the explicit reveal or client-output boundary. Use the [Rust SDK examples](../rust-sdk/examples) when you are ready to embed a StoffelLang program in application code.
+
+## Coverage matrix
+
+For complete language and builtin coverage, read [`crates/stoffel-lang/examples/COVERAGE.md`](https://github.com/Stoffel-Labs/stoffel/blob/main/crates/stoffel-lang/examples/COVERAGE.md). The matrix maps syntax, runtime semantics, ClientStore APIs, Share APIs, MPC metadata, crypto builtins, AVSS helpers, and RBC helpers to specific examples.
+
+## See also
+
+- [StoffelLang Overview](./overview)
+- [Syntax and Examples](./syntax)
+- [Compilation](./compilation)
+- [Built-in Functions](../stoffel-vm/builtins)

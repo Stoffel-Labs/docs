@@ -189,6 +189,15 @@ def main() -> int64:
   return score
 ```
 
+## Runnable examples for this page
+
+Use the [runnable examples guide](./examples) for a guided path through the examples. For the syntax on this page, these examples are the most direct references:
+
+- [`local_control_flow`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_control_flow) for functions, loops, ranges, branching, and arithmetic.
+- [`local_collections`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_collections) and [`local_nested_generics`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/local_nested_generics) for lists and nested generic list shapes.
+- [`mpc_share_arithmetic`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_share_arithmetic) and [`mpc_boolean_circuit`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_boolean_circuit) for share arithmetic and `secret bool` values.
+- [`mpc_client_private_score`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_client_private_score) and [`mpc_client_federated_average`](https://github.com/Stoffel-Labs/stoffel/tree/main/crates/stoffel-lang/examples/mpc_client_federated_average) for `ClientStore` input slots and client-output patterns.
+
 ## Build and run
 
 ```bash
@@ -201,5 +210,6 @@ stoffel compile --disassemble target/debug/<project>.stflb
 ## See also
 
 - [StoffelLang Overview](./overview)
+- [Runnable Examples](./examples)
 - [Compilation](./compilation)
 - [Built-in Functions](../stoffel-vm/builtins)

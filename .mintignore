@@ -1,0 +1,3 @@
+# Local Git worktrees are development scratch space, not docs content.
+.worktrees/
+.worktrees/**

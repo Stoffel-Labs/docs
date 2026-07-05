@@ -1,0 +1,110 @@
+---
+title: "Design the Privacy Boundary"
+description: "Decide which app facts stay private, which facts are public, and which computed outputs Stoffel is allowed to reveal."
+---
+
+A Stoffel app starts with a product question, not a protocol question:
+
+```text
+What facts should this app be allowed to reveal, to whom, and when?
+```
+
+That answer defines the privacy boundary. The host app can still own routing, accounts, public metadata, UI, persistence, and ordinary business rules. Stoffel owns the privacy-sensitive computation over private inputs and opens only the result the app is allowed to reveal.
+
+Use this page while adapting the tutorial path:
+
+- [Private matchmaking](./private-matchmaking) gives the full app-shaped pattern.
+- [Private lottery](./private-lottery) isolates the authorized-output/reveal-boundary pattern.
+- [N-party Battleship](./n-party-battleship) isolates hidden state and recipient-specific reveal policies.
+
+The progression is app-led: see the full Rust service first, then use the focused tutorials to deepen the mental models.
+
+## Core terms
+
+| Term | Meaning |
+| --- | --- |
+| Private input | A value supplied by a client or party for use inside the computation. It should not become ordinary backend data. |
+| Public input | A value the app can already know, such as participant slots, feature dimensions, topology, or a public threshold. |
+| Intermediate state | Private values produced while computing: tickets, scores, comparison bits, hidden board cells, rankings, hit masks. |
+| Authorized output | A computed fact the app is allowed to reveal to a named recipient at a specific time. In code, this is an opened result or client-routed output. |
+| Reveal boundary | The line between private inputs/intermediate state and the facts the program opens. |
+| Leakage policy | The explicit list of facts the app accepts will become known. Outputs leak information too; the point is to make that leakage deliberate and minimal. |
+
+## Boundary design checklist
+
+Before writing StoffelLang, write down:
+
+1. Which product feature needs private computation?
+2. Who owns each private input?
+3. Which facts are already public?
+4. Which intermediate facts would be harmful in logs, analytics, admin tools, support exports, or another user's view?
+5. What exact output does the app need?
+6. Which recipient receives that output?
+7. What can the recipient infer from the output?
+8. Which facts must never be opened by this program?
+
+Then encode that boundary in code:
+
+- client payload structs own private input values;
+- `ClientStore.take_share(...)` loads private input slots;
+- normal Rust code validates public app shape and maps outputs into domain types;
+- StoffelLang computes over shares;
+- `.reveal()`, `Share.open(...)`, `MpcOutput.send_to_client(...)`, or `Share.send_to_client(...)` appears only at the intended output boundary.
+
+## Example: private lottery
+
+The product needs to announce a winner. It does not need the operator, support team, analytics job, or other participants to see the full draw board.
+
+| Fact | Boundary decision |
+| --- | --- |
+| Participant slots | Public. The app needs them to map winner index to display name. |
+| Eligibility bit per participant | Private input. Each participant may know their own value; the operator and other participants do not need the full eligibility board. |
+| MPC-generated random tickets | Private intermediate state. Do not open. |
+| Ticket comparison trace | Private intermediate state. Do not open. |
+| Winner index | Authorized output. Open it so the app can announce the winner. |
+
+The private computation can reveal the winner without giving the provider a board it can rerun, tune, export, or use to rank non-winners.
+
+## Example: private matchmaking
+
+The product needs to route matches. It does not need the platform to learn every raw vector, score, ranking, and rejection path.
+
+| Fact | Boundary decision |
+| --- | --- |
+| Public profiles and participant set | Public app data. |
+| Feature and preference vectors | Private inputs owned by daters. |
+| Compatibility scores | Private intermediate state. |
+| Derived rankings | Private intermediate state. |
+| Proposal/rejection path | Private intermediate state. |
+| Final match | Authorized output, routed to named recipients according to product policy. |
+
+The final match still leaks something: a user learns who they matched with. The privacy boundary prevents that necessary output from expanding into a score table or preference dossier.
+
+## Example: private state transition
+
+In a Battleship-style game, the app needs to advance one shot. It does not need a global plaintext god view of all hidden boards.
+
+| Fact | Boundary decision |
+| --- | --- |
+| Turn order and player list | Public liveness state. |
+| Target board cells | Private input/state. |
+| Hit mask and remaining health | Private intermediate state. |
+| Shot coordinate | Policy-dependent: public, private to attacker/target, or delayed. |
+| Hit/miss/sunk result | Authorized output according to the chosen reveal policy. |
+
+Recipient-specific rules matter. A public combat log, private result, and delayed reveal policy are different products with different leakage.
+
+## Common mistakes
+
+- Opening helper values because they are convenient to debug.
+- Returning a whole board, ranking table, or score vector when the product needs one decision.
+- Treating encrypted storage as enough when the backend still decrypts every input to compute.
+- Aggregating all private inputs into one synthetic client slot when the product has distinct participants.
+- Hiding product policy inside MPC when it can safely remain ordinary Rust logic.
+- Saying “the server learns less” without naming who no longer sees which fact.
+
+## Next steps
+
+- [Tutorials](./overview)
+- [Embed Stoffel in a Rust service](../rust-sdk/app-integration)
+- [MPC Backends](../mpc-protocols/overview)

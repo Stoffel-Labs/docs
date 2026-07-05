@@ -1,0 +1,158 @@
+---
+title: "Docker Local Network"
+description: "Run a multi-party Stoffel network with Docker Compose to understand coordinator, party, client, and backend topology."
+---
+
+Use the Docker Compose stacks in the Stoffel repository when you need to inspect the networked runtime shape: coordinator, MPC parties, client input processes, node RPC addresses, identity material, backend selection, and persistent preprocessing or local stores.
+
+This is an operator/deployment-oriented workflow. For normal app development, start with local MPC through the `stoffel` CLI or Rust SDK.
+
+## What the Docker stacks show
+
+The Compose files are useful because they make the runtime topology explicit:
+
+| Runtime piece | What to look for |
+| --- | --- |
+| Coordinator | A service that tracks the computation round, known parties, expected clients, output clients, and backend settings. |
+| Leader party | Party `0`, which also acts as the bootstrap point for peer discovery in the local Compose network. |
+| Other parties | Party processes with their own bind address, party ID, node certificate, key, and optional local/preprocessing store. |
+| Client processes | Containers that submit client input values to node RPC endpoints and, when configured, receive outputs. |
+| Program bytecode | A `.stflb` artifact mounted or packaged into the runtime image. |
+| Identity material | Node and client certificates/keys used by the coordinator and parties. |
+| Backend settings | Environment variables for HoneyBadger or AVSS and curve selection. |
+
+## Source files
+
+From the Stoffel repository:
+
+| File | Use it for |
+| --- | --- |
+| [`Dockerfile`](https://github.com/Stoffel-Labs/stoffel/blob/main/Dockerfile) | Building the runtime image that packages `stoffel-run`, example bytecode, identity material, and the node entrypoint. |
+| [`docker/entrypoint.sh`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker/entrypoint.sh) | Understanding role-specific runtime flags for leader, party, bootnode, and client modes. |
+| [`docker/coordinator.Dockerfile`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker/coordinator.Dockerfile) | Building the off-chain coordinator wrapper image. |
+| [`docker-compose.yml`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker-compose.yml) | Five-party HoneyBadger run with coordinator and fixed local networking. |
+| [`docker-compose.coordinator.reserve-index.yml`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker-compose.coordinator.reserve-index.yml) | Coordinator, five parties, and two client containers using deterministic client index reservation. |
+| [`docker-compose.coordinator.reserve-index.preproc.yml`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker-compose.coordinator.reserve-index.preproc.yml) | Persistent preprocessing volumes layered on the reserve-index coordinator stack. |
+| [`docker-compose.avss.yml`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker-compose.avss.yml) | Five-party AVSS/DKG-style local-store testbed and curve selection examples. |
+
+## Run a HoneyBadger Compose network
+
+From a Stoffel source checkout:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+  docker compose -f docker-compose.yml up --build
+```
+
+The default stack builds the runtime image, starts the coordinator, starts five party containers, and runs the packaged program named by `STOFFEL_PROGRAM`.
+
+You can swap the packaged program and backend settings with environment variables:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+STOFFEL_PROGRAM=/app/programs/client_mul.stflb \
+STOFFEL_MPC_BACKEND=honeybadger \
+STOFFEL_MPC_CURVE=bls12-381 \
+  docker compose -f docker-compose.yml up --build
+```
+
+## Run the coordinator/client reserve-index stack
+
+Use this stack when you want to see the off-chain coordinator path with explicit client containers:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+  docker compose -f docker-compose.coordinator.reserve-index.yml up --build
+```
+
+The stack contains:
+
+- one coordinator service on port `31415`;
+- five MPC party services;
+- node RPC endpoints on ports such as `16180` through `16184` inside the Compose network;
+- two client containers that submit inputs to deterministic client indices;
+- node and client certificates mounted from `ids/`.
+
+Swap client index assignment to check that the result follows the reserved index, not container start timing:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+STOFFEL_CLIENT0_INDEX=1 \
+STOFFEL_CLIENT1_INDEX=0 \
+  docker compose -f docker-compose.coordinator.reserve-index.yml up --build
+```
+
+Add persistent preprocessing storage:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+  docker compose \
+    -f docker-compose.coordinator.reserve-index.yml \
+    -f docker-compose.coordinator.reserve-index.preproc.yml \
+    up --build
+```
+
+## Run an AVSS local-store stack
+
+Use the AVSS stack to exercise AVSS backend and local-store behavior:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+  docker compose -f docker-compose.avss.yml up --build
+```
+
+Select a curve or program with environment variables:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+STOFFEL_MPC_CURVE=secp256k1 \
+STOFFEL_PROGRAM=/app/programs/threshold_ecdsa_secp256k1.stflb \
+  docker compose -f docker-compose.avss.yml up --build
+```
+
+## Environment variables to understand
+
+| Variable | Meaning |
+| --- | --- |
+| `STOFFEL_AUTH_TOKEN` | Shared secret used for authenticated discovery/registration in these local stacks. Use a random value outside local demos. |
+| `STOFFEL_ROLE` | Runtime mode: leader, party, bootnode, or client. |
+| `STOFFEL_PARTY_ID` | Party index for an MPC node. |
+| `STOFFEL_N_PARTIES` | Total party count. |
+| `STOFFEL_THRESHOLD` | Fault/security threshold. |
+| `STOFFEL_PROGRAM` | Bytecode path inside the runtime container. |
+| `STOFFEL_ENTRY` | Entry function to execute. |
+| `STOFFEL_COORD_ADDR` | Off-chain coordinator address. |
+| `STOFFEL_RPC_ADDR` | Node RPC bind address used by clients. |
+| `STOFFEL_SERVERS` | Client-side list of node RPC endpoints. |
+| `STOFFEL_INPUTS` | Client input values submitted by a client container. |
+| `STOFFEL_CLIENT_INDEX` | Client slot/index claimed by a client container. |
+| `STOFFEL_CERT` / `STOFFEL_KEY` | Identity material for node or client mode. |
+| `STOFFEL_PREPROC_STORE` | Persistent preprocessing store path. |
+| `STOFFEL_LOCAL_STORE` | Persistent local store path. |
+| `STOFFEL_MPC_BACKEND` / `STOFFEL_MPC_CURVE` | Backend and curve selection. |
+
+## How to read this as an app developer
+
+The Docker stacks do not replace the app-facing CLI or SDK workflow. They show what your local `.execute_local().await?` or `stoffel run` workflow is abstracting away:
+
+- several MPC node processes;
+- a coordinator or bootstrap path;
+- configured parties and threshold;
+- client input submission;
+- bytecode execution;
+- explicit output reconstruction or delivery.
+
+Use the stacks to understand topology, test packaged bytecode, or prepare operator runbooks. Keep first-project docs focused on `stoffel` CLI and Rust SDK surfaces.
+
+## Current caveats
+
+- These stacks are source-checkout workflows, not a managed production deployment product.
+- Some coordinator paths are HoneyBadger/BLS12-381-specific while AVSS is exercised by a separate local-store stack.
+- Compose networking uses fixed local subnets and checked-in local identity fixtures; production deployments need real identity, secret, network, and operations management.
+- The runtime image packages selected example bytecode. For your app, build your own `.stflb` and point `STOFFEL_PROGRAM` at it.
+
+## Next steps
+
+- [MPC Backends](../mpc-protocols/overview)
+- [Rust SDK app integration](../rust-sdk/app-integration)
+- [CLI overview](../cli/overview)

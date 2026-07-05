@@ -1,0 +1,80 @@
+---
+title: "Tutorials"
+description: "Start with a private matchmaking service, then use focused tutorials to understand reveal boundaries and hidden state."
+---
+
+Start with the tutorial that looks most like an application: a Rust service that computes private matches. Then use the focused tutorials to isolate the two privacy patterns you will reuse in your own app: reveal boundaries and hidden state.
+
+## Start here
+
+<CardGroup cols={1}>
+  <Card title="Build a private matchmaking service" href="/tutorials/private-matchmaking" icon="heart">
+    Compute matches from private feature and preference vectors without exposing raw vectors, scores, rankings, or rejection paths. This is the best starting point if you want to see the full Rust service boundary around a Stoffel computation.
+  </Card>
+</CardGroup>
+
+## Deepen the mental model
+
+<CardGroup cols={3}>
+  <Card title="Private lottery" href="/tutorials/private-lottery" icon="trophy">
+    Reveal the winner without exposing eligibility bits, ticket values, losing order, or comparison trace.
+  </Card>
+
+  <Card title="N-party Battleship" href="/tutorials/n-party-battleship" icon="crosshairs">
+    Update hidden state while revealing only the shot result each recipient is allowed to see.
+  </Card>
+
+  <Card title="Privacy boundary" href="/tutorials/privacy-boundary" icon="diagram-project">
+    Decide what is private, public, opened, routed, or never revealed before adapting the tutorial pattern.
+  </Card>
+</CardGroup>
+
+## Run the source
+
+The runnable projects live in the [Stoffel tutorials repository](https://github.com/Stoffel-Labs/Stoffel-tutorials).
+
+From the repository root:
+
+```bash
+cargo test
+```
+
+Then run the matching tutorial directly:
+
+```bash
+cd tutorials/02-private-matchmaking
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run src/main.stfl \
+  --client-input 0=1,0,1,0 \
+  --client-input 1=0,1,1,0 \
+  --client-input 2=1,0,0,1 \
+  --client-input 3=1,0,0,1 \
+  --client-input 4=0,1,1,0 \
+  --client-input 5=1,0,1,0 \
+  --timeout-secs 600
+```
+
+Each tutorial README includes its exact `cargo run`, `stoffel check`, `stoffel build`, and `stoffel run` commands.
+
+## What to copy into your app
+
+Copy the boundary pattern, not the sample domain:
+
+1. Keep public product data in ordinary application code.
+2. Give each logical client an explicit client slot and private payload type.
+3. Put only the private computation boundary in StoffelLang.
+4. Attach client inputs with one `with_client_input(slot, values)` call per logical client slot.
+5. Validate the client input shape before running local MPC.
+6. Open only the authorized output your product needs.
+7. Map the opened result back into a typed Rust domain object.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Build a private matchmaking service" href="/tutorials/private-matchmaking" />
+  <Card title="Embed Stoffel in a Rust service" href="/rust-sdk/app-integration" />
+  <Card title="Run a local Docker MPC network" href="/deployment/docker-local-network" />
+  <Card title="Browse StoffelLang examples" href="/stoffel-lang/examples" />
+</CardGroup>

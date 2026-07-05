@@ -7,6 +7,10 @@ The `stoffel` command line tool can currently be run on Linux and macOS, and on 
 
 Use this page to install the `stoffel` CLI, verify that the command is on your path, and create a first project. The CLI is the entry point for creating projects, checking source, building bytecode, and running local MPC development workflows.
 
+<Note>
+Using an AI coding agent? Install the CLI first, then use the optional agent setup below to add Stoffel skills and live docs access. Keep the main CLI docs as the source of truth; use the skills as the agent's task playbooks.
+</Note>
+
 ## Requirements
 
 - A Unix-like shell: Linux, macOS, or Windows with WSL2
@@ -57,8 +61,10 @@ stoffel --version
 Pin a version when you want every developer or CI job to use the same CLI:
 
 ```bash
-curl -fsSL https://get.stoffelmpc.com | sh -s -- --version 0.1.0
+curl -fsSL https://get.stoffelmpc.com | sh -s -- --version <version>
 ```
+
+For example, use `--version 0.1.0` when a project or CI job intentionally standardizes on that CLI version.
 
 Install into a different directory when your environment manages tool paths explicitly:
 
@@ -153,6 +159,8 @@ claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
 ```
 
 The MCP server lets agents search the current docs and read pages as Markdown. Skills and MCP are complementary: skills provide task guidance, while MCP provides live docs access.
+
+After setup, ask the agent to verify access by listing the installed Stoffel skills and searching the docs for `ClientStore`. Then ask it to use [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) for a first app or [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path) for a custom app.
 
 ## Troubleshooting
 

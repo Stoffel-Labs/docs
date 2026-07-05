@@ -7,6 +7,26 @@ This guide gets you from a fresh install to a working Stoffel project. You will 
 
 ![Stoffel development loop from writing source through check, build, local MPC run, and Rust SDK integration.](/images/diagrams/developer-loop.svg)
 
+## Copy-paste path
+
+Use this block when you want the fastest verified default app, or when you are asking an AI coding agent to do the setup for you:
+
+```bash
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --version
+stoffel init hello-mpc
+cd hello-mpc
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run --timeout-secs 180
+cargo build
+cargo run
+```
+
+Success means the CLI creates the project, `stoffel check` validates `src/main.stfl`, `stoffel build` writes `.stflb` bytecode under `target/`, the local MPC run completes, and the Rust wrapper builds and runs. If any command fails, keep its exact output and use the troubleshooting section before changing the app.
+
 ## Create a Stoffel project
 
 After installing the `stoffel` CLI, create and enter a new project:
@@ -216,6 +236,19 @@ curl https://docs.stoffelmpc.com/.well-known/mcp
 ```
 
 Use the skills for task guidance and MCP for current docs lookup. For full app work, start with the `stoffel-full-app-golden-path` skill.
+
+Choose the skill based on the task:
+
+| User task | Start with |
+| --- | --- |
+| Create the first app and prove the toolchain works | [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) |
+| Build a custom private-computation app | [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path) |
+| Write or modify `.stfl` source | [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming) |
+| Use `ClientStore`, secret shares, or client outputs | [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) |
+| Integrate with Rust application code | [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk) |
+| Prepare network or deployment handoff | [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) |
+
+When reviewing agent work, ask for the exact command output from `stoffel check`, `stoffel build`, a local MPC run, and any Rust build/test command the agent changed. Do not accept a code-only answer for a runnable app task.
 
 ## Troubleshooting
 

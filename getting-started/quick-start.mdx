@@ -7,6 +7,26 @@ This guide gets you from a fresh install to a working Stoffel project. You will 
 
 ![Stoffel development loop from writing source through check, build, local MPC run, and Rust SDK integration.](/images/diagrams/developer-loop.svg)
 
+## Copy-paste path
+
+Use this block when you want the fastest verified default app, or when you are asking an AI coding agent to do the setup for you:
+
+```bash
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --version
+stoffel init hello-mpc
+cd hello-mpc
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run --timeout-secs 180
+cargo build
+cargo run
+```
+
+Success means the CLI creates the project, `stoffel check` validates `src/main.stfl`, `stoffel build` writes `.stflb` bytecode under `target/`, the local MPC run completes, and the Rust wrapper builds and runs. If any command fails, keep its exact output and use the troubleshooting section before changing the app.
+
 ## Create a Stoffel project
 
 After installing the `stoffel` CLI, create and enter a new project:
@@ -185,6 +205,23 @@ Use the fastest command that answers your current question:
 | Iterate on an MPC program | `stoffel dev` |
 | Build the Rust app wrapper | `cargo build` |
 | Run the Rust app wrapper | `cargo run` |
+
+## Use with AI coding agents
+
+If you want an AI coding agent to help build a Stoffel app, give it the Stoffel skills and live docs access before asking it to write code. See [Installation](./installation#optional-install-ai-agent-skills-and-docs-mcp) for setup commands.
+
+Choose the skill based on the task:
+
+| User task | Start with |
+| --- | --- |
+| Create the first app and prove the toolchain works | [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) |
+| Build a custom private-computation app | [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation) |
+| Write or modify `.stfl` source | [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming) |
+| Use `ClientStore`, secret shares, or client outputs | [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) |
+| Integrate with Rust application code | [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk) |
+| Run local MPC loops or debug local execution | [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop) |
+
+When reviewing agent work, ask for the exact command output from `stoffel check`, `stoffel build`, a local MPC run, and any Rust build/test command the agent changed. Do not accept a code-only answer for a runnable app task.
 
 ## Troubleshooting
 

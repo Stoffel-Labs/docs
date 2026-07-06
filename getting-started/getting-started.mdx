@@ -5,12 +5,25 @@ description: "Start building Stoffel apps with the CLI, local MPC testing, and t
 
 Start with the `stoffel` CLI. The CLI creates projects, checks StoffelLang source, builds `.stflb` bytecode, and runs local MPC development workflows.
 
+The main docs are the source of truth for how Stoffel works. The [Developer Skills](/developer-skills/overview) tab is the execution layer for AI coding agents: it turns these docs into task playbooks with ordering, validation gates, and common pitfalls.
+
 ## Recommended path
 
 1. [Install the `stoffel` CLI](./installation).
 2. [Create and run a project](./quick-start).
 3. [Learn the daily CLI commands](./basic-usage).
 4. [Build a small secret-shared example](./first-project).
+
+## If you are using an AI coding agent
+
+Use the same getting-started path, but give the agent Stoffel-specific context before it edits code:
+
+1. Install the Stoffel skills and connect the docs MCP server from [Installation](./installation#optional-install-ai-agent-skills-and-docs-mcp).
+2. Ask the agent to start with [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) for a first app, or [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation) for a custom implementation task.
+3. Require real command output from `stoffel check`, `stoffel build`, and a local MPC run before accepting the work.
+4. For Rust app integration, require `cargo build` or `cargo test` output as well.
+
+Keep short agent setup instructions in the main docs. Keep long agent checklists in Developer Skills so they can be maintained as playbooks instead of duplicating reference docs.
 
 ## What you will use
 

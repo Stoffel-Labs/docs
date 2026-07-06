@@ -3,16 +3,53 @@ title: Stoffel Developer Skills
 description: Agent-ready playbooks for building applications with the Stoffel framework.
 ---
 
-Stoffel Developer Skills are AI-agent-ready playbooks for developers building applications with the Stoffel framework. They are designed to help coding agents and humans choose the right Stoffel workflow, use 0.1.0 CLI and SDK APIs, run local MPC smoke tests, generate typed client IO bindings, and debug common app-level failures.
+Stoffel Developer Skills are AI-agent-ready playbooks for developers building applications with the Stoffel framework. They are designed to help coding agents and humans choose the right Stoffel workflow, use current CLI and SDK APIs, run local MPC smoke tests, generate typed client IO bindings, and debug common app-level failures.
 
 These skills are app-development guides, not internal maintainer guides. They focus on creating and validating Stoffel applications with public tooling.
 
+Use the main docs for canonical CLI, SDK, language, and deployment behavior. Use this tab as the agent execution layer: it tells an AI coding agent which docs to consult, what order to work in, what commands to run, and what evidence to collect before reporting that a task is done.
+
+Short agent setup guidance belongs in [Getting Started](/getting-started/getting-started), [Installation](/getting-started/installation), and [Quick Start](/getting-started/quick-start), where humans begin. Longer task checklists belong here so the main docs do not become a second set of agent prompts.
+
 ## Use with AI agents
 
-Mintlify serves these skills through the standard skill discovery endpoints:
+Mintlify serves these skills through standard skill discovery endpoints and a hosted search MCP server. Use both when possible:
+
+- Skills tell an agent how to execute a Stoffel task.
+- MCP gives the agent live read/search access to the current docs.
+
+Install the published Stoffel skills with the `skills` CLI:
 
 ```sh
 npx skills add https://docs.stoffelmpc.com
+```
+
+Useful variants:
+
+```sh
+# List available skills without installing
+npx skills add https://docs.stoffelmpc.com --list
+
+# Install all Stoffel skills without prompts
+npx skills add https://docs.stoffelmpc.com --all
+
+# Install globally for supported local agents
+npx skills add https://docs.stoffelmpc.com --global --all
+
+# Install one focused skill
+npx skills add https://docs.stoffelmpc.com --skill stoffel-app-getting-started
+```
+
+Connect the Stoffel docs MCP server when your agent supports MCP:
+
+```sh
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```sh
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
 ```
 
 Agents can also discover the individual skills programmatically:
@@ -20,6 +57,26 @@ Agents can also discover the individual skills programmatically:
 - `https://docs.stoffelmpc.com/skill.md`
 - `https://docs.stoffelmpc.com/.well-known/agent-skills/index.json`
 - `https://docs.stoffelmpc.com/.well-known/skills/index.json`
+- `https://docs.stoffelmpc.com/.well-known/mcp`
+- `https://docs.stoffelmpc.com/.well-known/mcp.json`
+
+After MCP is connected, ask the agent to search the Stoffel docs for `ClientStore` or `local MPC` and summarize the relevant command. That verifies the agent can use live docs, not just installed skill text.
+
+## Choose the first skill
+
+| If the user asks for... | Start with |
+| --- | --- |
+| Toolchain setup or a first runnable project | [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) |
+| CLI commands, project config, inputs, local runs, or bytecode inspection | [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow) |
+| StoffelLang syntax, functions, types, or examples | [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming) |
+| Private inputs, `ClientStore`, secret arithmetic, or client outputs | [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) |
+| Rust host integration, local SDK execution, clients, or servers | [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk) |
+| Generated Rust input/output types | [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings) |
+| Local MPC debugging or hot reload | [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop) |
+| Network/off-chain integration | [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) |
+| A failing app or unclear error | [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting) |
+
+For runnable app tasks, the agent should return command output from each changed layer. A code diff without `stoffel check`, `stoffel build`, and a local MPC run is not enough.
 
 ## Skills
 

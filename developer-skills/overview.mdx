@@ -87,11 +87,19 @@ Connect the Stoffel docs MCP server when your agent supports MCP:
 npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
 ```
 
-For Claude Code directly:
+## Agent harness setup
 
-```sh
-claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
-```
+Use the generic setup prompt above first. If your agent needs explicit MCP configuration, add the same Stoffel docs MCP URL through that harness's MCP setup path.
+
+| Agent harness | Start here |
+| --- | --- |
+| Claude Code | `claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp` |
+| Cursor | Add `https://docs.stoffelmpc.com/mcp` in Cursor's MCP server settings. |
+| Codex CLI | Use `npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp` if your local Codex setup supports MCP helpers; otherwise add the same URL in its MCP config. |
+| Gemini CLI | Use `npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp` if your local Gemini setup supports MCP helpers; otherwise add the same URL in its MCP config. |
+| Windsurf | Add `https://docs.stoffelmpc.com/mcp` in Windsurf's MCP server settings. |
+
+After setup, ask the agent to prove it can search the Stoffel docs before asking it to edit code.
 
 Agents can also discover the individual skills programmatically:
 

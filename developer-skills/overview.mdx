@@ -93,6 +93,7 @@ Use the generic setup prompt above first. If your agent needs explicit MCP confi
 
 | Agent harness | Start here |
 | --- | --- |
+| Hermes Agent | Add an HTTP MCP server under `mcp_servers` in Hermes config, for example `stoffel_docs: { url: "https://docs.stoffelmpc.com/mcp" }`, then run `/reload-mcp` or restart Hermes. |
 | Claude Code | `claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp` |
 | Cursor | Add `https://docs.stoffelmpc.com/mcp` in Cursor's MCP server settings. |
 | Codex CLI | Use `npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp` if your local Codex setup supports MCP helpers; otherwise add the same URL in its MCP config. |

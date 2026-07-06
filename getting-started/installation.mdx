@@ -128,25 +128,7 @@ This verifies that the `stoffel` command line tool can create, check, and build 
 
 ## Optional: install AI agent skills and docs MCP
 
-If you use AI coding agents, install the Stoffel skills so the agent has Stoffel-specific build, SDK, local MPC, and troubleshooting playbooks:
-
-If you do not already have a terminal-based agent, install one first. For example:
-
-```bash
-# Claude Code
-npm install -g @anthropic-ai/claude-code
-claude
-
-# Codex CLI
-npm install -g @openai/codex
-codex
-
-# Gemini CLI
-npm install -g @google/gemini-cli
-gemini
-```
-
-Then paste this prompt into the agent:
+If you use an AI coding agent, paste this prompt into your agent. It tells the agent to install the `stoffel` CLI binary, install the Stoffel skills, connect docs access, and verify the setup before writing code:
 
 ```text
 You are helping me build a Stoffel app.

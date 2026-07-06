@@ -151,19 +151,27 @@ Then paste this prompt into the agent:
 ```text
 You are helping me build a Stoffel app.
 
-First, install the Stoffel agent context for this workspace:
+First, completely install Stoffel and the agent context for this workspace:
 
 1. Confirm this terminal can run shell commands and that Node.js is available:
    node --version
    npm --version
 
-2. Install the Stoffel developer skills:
+2. Install the `stoffel` CLI binary and put it on PATH for this shell:
+   curl -fsSL https://get.stoffelmpc.com | sh
+   export PATH="$HOME/.local/bin:$PATH"
+
+3. Verify the CLI works:
+   stoffel --version
+   stoffel --help
+
+4. Install the Stoffel developer skills:
    npx skills add https://docs.stoffelmpc.com --all
 
-3. If this agent supports MCP, connect the live Stoffel docs:
+5. If this agent supports MCP, connect the live Stoffel docs:
    npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
 
-4. Verify access by listing the installed Stoffel skills and searching the docs for `ClientStore` or `local MPC`.
+6. Verify access by listing the installed Stoffel skills and searching the docs for `ClientStore` or `local MPC`.
 
 Use the main Stoffel docs as the source of truth for CLI, SDK, StoffelLang, and local MPC behavior. Use Developer Skills as task playbooks.
 
@@ -187,6 +195,9 @@ If a command fails, report the exact error and fix the root cause instead of inv
 You can also run the setup commands yourself:
 
 ```bash
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --version
 npx skills add https://docs.stoffelmpc.com
 ```
 

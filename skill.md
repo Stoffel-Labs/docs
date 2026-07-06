@@ -26,9 +26,12 @@ For human-readable versions, start at `/developer-skills/overview`.
 
 ## Agent bootstrap
 
-If you are setting up a local coding agent for Stoffel work, install a terminal agent such as Claude Code, Codex CLI, or Gemini CLI, then install these skills and connect live docs access:
+If you are setting up a local coding agent for Stoffel work, install a terminal agent such as Claude Code, Codex CLI, or Gemini CLI, then install the `stoffel` CLI, these skills, and live docs access:
 
 ```sh
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --version
 npx skills add https://docs.stoffelmpc.com --all
 npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
 ```

@@ -34,6 +34,11 @@ export PATH="$HOME/.local/bin:$PATH"
 stoffel --version
 npx skills add https://docs.stoffelmpc.com --all
 npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+stoffel init hello-mpc
+cd hello-mpc
+stoffel status --verbose
+stoffel check
+stoffel build
 ```
 
 For runnable app tasks, report real output from `stoffel status --verbose`, `stoffel check`, `stoffel build`, a local MPC run, and any relevant Cargo command before claiming completion.

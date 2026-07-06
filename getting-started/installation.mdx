@@ -8,7 +8,7 @@ The `stoffel` command line tool can currently be run on Linux and macOS, and on 
 Use this page to install the `stoffel` CLI, verify that the command is on your path, and create a first project. The CLI is the entry point for creating projects, checking source, building bytecode, and running local MPC development workflows.
 
 <Note>
-Using an AI coding agent? Install and verify the CLI first. Then use the optional agent setup below to install Stoffel skills and connect live docs access. The CLI docs remain canonical; the skills are task playbooks for agents.
+Using an AI coding agent? Use the agent setup prompt below. It installs the `stoffel` CLI, installs Stoffel skills, connects docs access, and verifies the setup before the agent writes code.
 </Note>
 
 ## Requirements
@@ -19,6 +19,82 @@ Using an AI coding agent? Install and verify the CLI first. Then use the optiona
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) only when building from source or using repository examples
 - [Node.js](https://nodejs.org/) only when using the optional `npx` commands for AI agent skills or MCP setup
 - 4 GB RAM minimum; 8 GB recommended
+
+## Install Stoffel with an AI coding agent
+
+Paste this prompt into your AI coding agent if you want it to install Stoffel, connect the docs context, and prove the setup works:
+
+```text
+You are helping me build a Stoffel app.
+
+First, install Stoffel and the agent context for this workspace:
+
+1. Confirm this terminal can run shell commands and that Node.js is available:
+   node --version
+   npm --version
+
+2. Install the `stoffel` CLI binary and put it on PATH for this shell:
+   curl -fsSL https://get.stoffelmpc.com | sh
+   export PATH="$HOME/.local/bin:$PATH"
+
+3. Verify the CLI works:
+   stoffel --version
+   stoffel --help
+
+4. Install the Stoffel developer skills:
+   npx skills add https://docs.stoffelmpc.com --all
+
+5. If this agent supports MCP, connect the live Stoffel docs:
+   npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+
+6. Verify docs access by listing the installed Stoffel skills and searching the docs for `ClientStore` or `local MPC`.
+
+7. Create and verify a smoke project:
+   stoffel init hello-mpc
+   cd hello-mpc
+   stoffel status --verbose
+   stoffel check
+   stoffel build
+
+Use the main Stoffel docs as the source of truth for CLI, SDK, StoffelLang, and local MPC behavior. Use Developer Skills as task playbooks.
+
+After setup, use the Developer Skills overview to choose the right playbook for the task.
+
+Do not claim the setup is complete unless you can show real output from `stoffel --version`, `stoffel check`, and `stoffel build`. If a command fails, report the exact error and fix the root cause instead of inventing expected output.
+```
+
+### Manual agent-context setup
+
+If you do not want your agent to run setup commands, run the same setup yourself:
+
+```bash
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --version
+npx skills add https://docs.stoffelmpc.com --all
+```
+
+List the available skills without installing:
+
+```bash
+npx skills add https://docs.stoffelmpc.com --list
+```
+
+Connect the live Stoffel docs through Mintlify's hosted MCP server when your agent supports MCP:
+
+```bash
+npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+```
+
+For Claude Code directly:
+
+```bash
+claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
+```
+
+The MCP server lets agents search the current docs and read pages as Markdown. Skills and MCP are complementary: skills provide task guidance, while MCP provides live docs access.
+
+After setup, ask the agent to verify access by listing the installed Stoffel skills and searching the docs for `ClientStore`. Then ask it to use [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) for a first app or [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation) for a custom implementation task.
 
 ## Prebuilt CLI (recommended)
 
@@ -56,7 +132,28 @@ You can also check the installed version:
 stoffel --version
 ```
 
-### Pin a CLI version
+## Verify with a new project
+
+Create and build a project:
+
+```bash
+stoffel init hello-mpc
+cd hello-mpc
+stoffel check
+stoffel build
+```
+
+Expected output includes:
+
+```text
+Created Stoffel project at hello-mpc
+Checked .../hello-mpc/src/main.stfl
+Built .../hello-mpc/target/debug/hello-mpc.stflb
+```
+
+This verifies that the `stoffel` command line tool can create, check, and build a Stoffel app. The [Quick Start](./quick-start) continues from here into local MPC execution and the Rust SDK wrapper.
+
+## Pin a CLI version
 
 Pin a version when you want every developer or CI job to use the same CLI:
 
@@ -105,112 +202,6 @@ stoffel/target/release/stoffel
 Use the prebuilt CLI for the normal app development loop. Build the CLI from source only when you need local CLI changes or repository examples.
 </Note>
 
-## Verify with a new project
-
-Create and build a project:
-
-```bash
-stoffel init hello-mpc
-cd hello-mpc
-stoffel check
-stoffel build
-```
-
-Expected output includes:
-
-```text
-Created Stoffel project at hello-mpc
-Checked .../hello-mpc/src/main.stfl
-Built .../hello-mpc/target/debug/hello-mpc.stflb
-```
-
-This verifies that the `stoffel` command line tool can create, check, and build a Stoffel app. The [Quick Start](./quick-start) continues from here into local MPC execution and the Rust SDK wrapper.
-
-## Optional: install AI agent skills and docs MCP
-
-If you use an AI coding agent, paste this prompt into your agent. It tells the agent to install the `stoffel` CLI binary, install the Stoffel skills, connect docs access, and verify the setup before writing code:
-
-```text
-You are helping me build a Stoffel app.
-
-First, completely install Stoffel and the agent context for this workspace:
-
-1. Confirm this terminal can run shell commands and that Node.js is available:
-   node --version
-   npm --version
-
-2. Install the `stoffel` CLI binary and put it on PATH for this shell:
-   curl -fsSL https://get.stoffelmpc.com | sh
-   export PATH="$HOME/.local/bin:$PATH"
-
-3. Verify the CLI works:
-   stoffel --version
-   stoffel --help
-
-4. Install the Stoffel developer skills:
-   npx skills add https://docs.stoffelmpc.com --all
-
-5. If this agent supports MCP, connect the live Stoffel docs:
-   npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
-
-6. Verify access by listing the installed Stoffel skills and searching the docs for `ClientStore` or `local MPC`.
-
-Use the main Stoffel docs as the source of truth for CLI, SDK, StoffelLang, and local MPC behavior. Use Developer Skills as task playbooks.
-
-For a first app, start with Stoffel App Getting Started.
-For custom `.stfl` work, use Stoffel-Lang App Programming.
-For private inputs, `ClientStore`, secret shares, or client outputs, use Stoffel Secret MPC Programming.
-For Rust host integration, use Stoffel Rust App SDK.
-For local MPC debugging, use Stoffel Local MPC Dev Loop.
-
-Do not claim the task is complete unless you have run the relevant commands and can show real output. For runnable app work, run:
-
-- stoffel status --verbose
-- stoffel check
-- stoffel build
-- a local MPC run with stoffel run or stoffel dev --once
-- cargo build or cargo test if Rust code changed
-
-If a command fails, report the exact error and fix the root cause instead of inventing expected output.
-```
-
-You can also run the setup commands yourself:
-
-```bash
-curl -fsSL https://get.stoffelmpc.com | sh
-export PATH="$HOME/.local/bin:$PATH"
-stoffel --version
-npx skills add https://docs.stoffelmpc.com
-```
-
-List the available skills without installing:
-
-```bash
-npx skills add https://docs.stoffelmpc.com --list
-```
-
-Install all Stoffel skills without prompts:
-
-```bash
-npx skills add https://docs.stoffelmpc.com --all
-```
-
-Connect the live Stoffel docs through Mintlify's hosted MCP server when your agent supports MCP:
-
-```bash
-npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
-```
-
-For Claude Code directly:
-
-```bash
-claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
-```
-
-The MCP server lets agents search the current docs and read pages as Markdown. Skills and MCP are complementary: skills provide task guidance, while MCP provides live docs access.
-
-After setup, ask the agent to verify access by listing the installed Stoffel skills and searching the docs for `ClientStore`. Then ask it to use [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) for a first app or [Stoffel AI Agent Implementation](/developer-skills/stoffel-ai-agent-implementation) for a custom implementation task.
-
 ## Troubleshooting
 
 ### `stoffel` is not found
@@ -240,7 +231,7 @@ The CLI source build compiles several workspace crates. The first Cargo build ma
 
 ### Native Windows issues
 
-Use WSL2 for the 0.1.0 workflow unless you are specifically testing native Windows support.
+Use WSL2 unless you are specifically testing native Windows support.
 
 ## Next steps
 

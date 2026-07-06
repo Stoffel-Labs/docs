@@ -27,47 +27,25 @@ Stoffel exposes multiple focused skills under `.mintlify/skills/` and the `/.wel
 
 For human-readable versions, start at `/developer-skills/overview`.
 
-## Install skills and connect docs
+## Agent bootstrap
 
-Install the Stoffel skills into supported agents with:
-
-```sh
-npx skills add https://docs.stoffelmpc.com
-```
-
-List available skills before installing:
+Install the `stoffel` CLI, these skills, and live docs access:
 
 ```sh
-npx skills add https://docs.stoffelmpc.com --list
-```
-
-Install all skills non-interactively:
-
-```sh
+curl -fsSL https://get.stoffelmpc.com | sh
+export PATH="$HOME/.local/bin:$PATH"
+stoffel --version
+stoffel --help
 npx skills add https://docs.stoffelmpc.com --all
-```
-
-Connect the live Stoffel docs through Mintlify's hosted search MCP server:
-
-```sh
 npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
+stoffel init hello-mpc
+cd hello-mpc
+stoffel status --verbose
+stoffel check
+stoffel build
 ```
 
-For Claude Code directly:
-
-```sh
-claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
-```
-
-For Hermes Agent native MCP config:
-
-```yaml
-mcp_servers:
-  stoffel_docs:
-    url: "https://docs.stoffelmpc.com/mcp"
-    timeout: 120
-    connect_timeout: 60
-```
+For runnable app tasks, report real output from `stoffel status --verbose`, `stoffel check`, `stoffel build`, a local MPC run, and any relevant Cargo command before claiming completion.
 
 Discovery endpoints:
 

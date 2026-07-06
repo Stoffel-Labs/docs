@@ -208,34 +208,7 @@ Use the fastest command that answers your current question:
 
 ## Use with AI coding agents
 
-If you want an AI coding agent to help build a Stoffel app, give it the Stoffel skills and live docs access before asking it to write code.
-
-Install the skills:
-
-```bash
-npx skills add https://docs.stoffelmpc.com
-```
-
-Connect the Mintlify-hosted docs MCP server:
-
-```bash
-npx add-mcp --name stoffel-docs --transport http https://docs.stoffelmpc.com/mcp
-```
-
-For Claude Code directly:
-
-```bash
-claude mcp add --transport http stoffel-docs https://docs.stoffelmpc.com/mcp
-```
-
-Verify discovery if setup fails:
-
-```bash
-npx skills add https://docs.stoffelmpc.com --list
-curl https://docs.stoffelmpc.com/.well-known/mcp
-```
-
-Use the skills for task guidance and MCP for current docs lookup. For full app work, start with the `stoffel-full-app-golden-path` skill.
+If you want an AI coding agent to help build a Stoffel app, give it the Stoffel skills and live docs access before asking it to write code. See [Installation](./installation#install-stoffel-with-an-ai-coding-agent) for the copy-paste setup prompt, skills setup, and docs MCP setup.
 
 Choose the skill based on the task:
 
@@ -246,6 +219,7 @@ Choose the skill based on the task:
 | Write or modify `.stfl` source | [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming) |
 | Use `ClientStore`, secret shares, or client outputs | [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) |
 | Integrate with Rust application code | [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk) |
+| Run local MPC loops or debug local execution | [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop) |
 | Prepare network or deployment handoff | [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) |
 
 When reviewing agent work, ask for the exact command output from `stoffel check`, `stoffel build`, a local MPC run, and any Rust build/test command the agent changed. Do not accept a code-only answer for a runnable app task.

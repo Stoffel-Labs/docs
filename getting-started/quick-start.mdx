@@ -139,9 +139,17 @@ If the generated program asks for inputs, check the generated `README.md` and `s
 
 ## Use with AI coding agents
 
-If you want an AI coding agent to help build a Stoffel app, give it the Stoffel skills and live docs access before asking it to write code. See [Installation](./installation#install-stoffel-with-an-ai-coding-agent) for the setup prompt, skills setup, and docs MCP setup.
+Delegating this quickstart to an AI coding agent? Complete the [agent setup in Installation](./installation#install-stoffel-with-an-ai-coding-agent) first so the agent has Stoffel skills and live docs access before it edits code.
 
-When reviewing agent work, ask for the exact command output from `stoffel check`, `stoffel build`, a local MPC run, and any Rust build or test command the agent changed. Do not accept a code-only answer for a runnable app task.
+Require the agent to return real command output from:
+
+- `stoffel --version`
+- `stoffel check`
+- `stoffel build`
+- `stoffel run` or `stoffel dev --once`
+- `cargo build` or `cargo run`
+
+Do not accept a code-only summary for a runnable app task. If a command fails, the agent should report the exact error and fix the root cause instead of inventing expected output.
 
 ## Next steps
 

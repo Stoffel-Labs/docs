@@ -2,7 +2,7 @@
 name: stoffel-app-network-and-offchain-integration
 description: Move from local bytecode to client/server builders, network config, and off-chain coordinator integration.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -22,7 +22,7 @@ Use this playbook when an app moves beyond local runs and needs client/server bu
 
 ## Goal
 
-Guide advanced app developers from local bytecode to app-level network/off-chain integration using public SDK builders, while labeling lower-layer behavior with its 0.1.0 component status.
+Guide advanced app developers from local bytecode to app-level network/off-chain integration using public SDK builders, while labeling lower-layer behavior with the current component status.
 
 ## Current source of truth
 
@@ -46,7 +46,7 @@ stoffel build --program-info
 stoffel run --timeout-secs 180 <inputs or documented run-args>
 ```
 
-If the app uses typed client IO, generate bindings from the exact bytecode first. See Stoffel Typed Client IO Bindings.
+If the app uses typed client IO, generate bindings from the exact bytecode first. See [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings).
 
 ## Runtime builders
 
@@ -115,8 +115,11 @@ config.validate_server_addresses()?;
 4. Build runtime from bytecode and generated manifest.
 5. Derive off-chain client config for a client slot.
 6. Attach coordinator address, node endpoints/RPC addresses, timestamp, and client identity material.
-7. Run or submit typed client inputs.
-8. Validate typed outputs and consensus/order evidence where applicable.
+7. Configure the separately deployed MPC service layer with the same bytecode, topology, backend, and client/output slots.
+8. Run or submit typed client inputs.
+9. Validate typed outputs and consensus/order evidence where applicable.
+
+The SDK can validate and carry the app-level config, but live network deployment also needs operator-owned process supervision, identity files, node RPC reachability, and persistence/state decisions. Use [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) for that handoff.
 
 ## CLI network execution
 
@@ -131,12 +134,14 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 ## Validation / done criteria
 
 - Local smoke test passes first.
+- Bytecode hash and generated bindings are recorded together.
+- Coordinator address, node mesh addresses, node RPC addresses, identity material, and expected client certificates are explicitly configured or listed as operator handoff fields.
 - Network config validates before starting servers/clients.
 - Client IO metadata matches generated bindings.
 - Real client/server run returns expected output or a concrete error with logs.
-- Any coordinator/network assumptions are labeled with 0.1.0 component status and paired with deployment validation guidance.
+- Any coordinator/network assumptions are labeled with current component status and paired with deployment validation guidance.
 
-0.1.0 framework validation:
+Framework validation:
 
 ```sh
 cargo test -p stoffel-rust-sdk
@@ -150,5 +155,6 @@ cargo run -p stoffel-rust-sdk --example client_server
 - Do not duplicate lower-level networking/protocol logic in app code.
 - Do not bypass typed IO validation for ClientStore apps.
 - Keep on-chain coordinator paths marked advanced until public docs and stable APIs exist.
-- Present coordinator/network assumptions with explicit 0.1.0 status and deployment validation guidance.
+- Present coordinator/network assumptions with explicit current status and deployment validation guidance.
 - Do not move to network debugging until the local loop has produced a real passing or failing run.
+- Do not hide missing production process startup behind local SDK examples; record the lower-layer service command or mark it as an operator handoff.

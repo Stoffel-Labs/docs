@@ -1,8 +1,16 @@
 ---
-title: Stoffel AI Agent Implementation
-sidebarTitle: AI Agent Implementation
+name: stoffel-ai-agent-implementation
 description: Give AI coding agents the context they need to build and validate Stoffel applications correctly.
+license: MIT
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+metadata:
+  author: Stoffel Labs
+  version: "1.0"
+  docs-page: /developer-skills/stoffel-ai-agent-implementation
+  source: Stoffel App Developer Skills
 ---
+
+# Stoffel AI Agent Implementation
 
 Use this skill when asking an AI coding agent to build, modify, deploy, or debug a Stoffel application. The goal is to give the agent enough context to choose the right MPC backend, model secret inputs correctly, and validate the smallest working program before expanding the app.
 

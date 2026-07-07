@@ -2,7 +2,7 @@
 name: stoffel-cli-app-workflow
 description: Use the stoffel CLI to init, check, build, compile, run, test, inspect, and troubleshoot Stoffel apps.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -37,7 +37,7 @@ stoffel build                # build bytecode under target/debug/
 stoffel build --release      # build bytecode under target/release/ and default to O3
 stoffel compile src/main.stfl --output target/debug/app.stflb
 stoffel compile --disassemble target/debug/app.stflb
-stoffel run                  # local MPC simulation by default unless --network/--config is set
+stoffel run                  # local MPC testing by default unless --network/--config is set
 stoffel dev --once           # one build+run pass; omit --once for watch mode
 stoffel test --verbose       # run no-argument Stoffel test functions
 stoffel clean --dry-run
@@ -53,7 +53,7 @@ A typical app has `Stoffel.toml`:
 ```toml
 [package]
 name = "my-app"
-version = "0.1.0"
+version = "1.0.0" # your app package version
 authors = []
 
 [mpc]
@@ -108,7 +108,7 @@ stoffel init my-foundry-app --template solidity-foundry
 stoffel init my-hardhat-app --template solidity-hardhat
 ```
 
-Treat non-Rust wrapper templates as integration scaffolds; use the Rust SDK for executable 0.1.0 application flows.
+Treat non-Rust wrapper templates as integration scaffolds; use the Rust SDK for executable application flows.
 
 ## Inputs
 
@@ -227,7 +227,7 @@ For secret examples copied from the repository, use the exact first-line `# run-
 
 ## Next playbooks
 
-- Stoffel-Lang App Programming
-- Stoffel Secret MPC Programming
-- Stoffel Local MPC Dev Loop
-- Stoffel App Troubleshooting
+- [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming)
+- [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming)
+- [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop)
+- [Stoffel App Troubleshooting](/developer-skills/stoffel-app-troubleshooting)

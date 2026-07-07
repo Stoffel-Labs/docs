@@ -2,7 +2,7 @@
 name: stoffel-secret-mpc-programming
 description: Build MPC apps with secret types, Share, ClientStore, Mpc, MpcOutput, and runnable private-input examples.
 license: MIT
-compatibility: Requires access to the Stoffel CLI/SDK docs and 0.1.0 app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
+compatibility: Requires access to the current Stoffel CLI/SDK docs and app-facing Stoffel tooling. Rust stable and Cargo are required for CLI and Rust SDK workflows.
 metadata:
   author: Stoffel Labs
   version: "1.0"
@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public 0.1.0 install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
 
 ## Use when
 
@@ -67,10 +67,22 @@ Common patterns:
 ```stfl
 var x: secret int64 = Share.random()
 var y = Share.from_clear_int(5, 1)
-var sum = Share.add(x, y)
-var product = Share.mul(x, y)
-var opened: int64 = sum.open()
+var sum: secret int64 = x + y
+var product: secret int64 = x * y
+var opened: int64 = sum.reveal()
 ```
+
+Prefer `secret T` annotations when you know the share's scalar shape. The `secret` keyword belongs inside type annotations for parameters, return types, local variables, list elements, and object fields:
+
+```stfl
+def score(raw: secret int64, weight: int64) -> secret int64:
+  var scaled: secret int64 = raw * weight
+  return scaled + 10
+```
+
+Do not use `secret` as a declaration modifier before `def` or `var`. Use `var x: secret int64 = ...`, not `secret var x = ...`.
+
+Use normal arithmetic operators (`+`, `-`, `*`, `/`) for secret values when the operation fits the value shape. Method/function forms such as `Share.add`, `Share.mul`, `.add_scalar`, and `.mul_scalar` remain useful when you want to call a specific builtin explicitly.
 
 For fixed-point client inputs:
 
@@ -82,22 +94,18 @@ For boolean circuits:
 
 ```stfl
 def gate_and(a: secret bool, b: secret bool) -> secret bool:
-  return Share.mul(a, b)
+  return a * b
 
 def gate_not(a: secret bool) -> secret bool:
-  var one = Share.from_clear_int(1, 1)
-  return Share.sub(one, a)
+  return 1 - a
 
 def gate_or(a: secret bool, b: secret bool) -> secret bool:
   var ab: secret bool = gate_and(a, b)
-  var sum = Share.add(a, b)
-  return Share.sub(sum, ab)
+  return a + b - ab
 
 def gate_xor(a: secret bool, b: secret bool) -> secret bool:
   var ab: secret bool = gate_and(a, b)
-  var sum = Share.add(a, b)
-  var two_ab = Share.mul_scalar(ab, 2)
-  return Share.sub(sum, two_ab)
+  return a + b - (ab * 2)
 ```
 
 ## Client input shares
@@ -121,7 +129,7 @@ stoffel run src/main.stfl \
   --expected-output-clients 2
 ```
 
-Input-file equivalents are documented in Stoffel CLI App Workflow.
+Input-file equivalents are documented in [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow).
 
 ## Client outputs
 
@@ -206,7 +214,7 @@ stoffel run crates/stoffel-lang/examples/mpc_bitonic_sort/main.stfl \
   --timeout-secs 180
 ```
 
-0.1.0 framework validation:
+Framework validation:
 
 ```sh
 cd /path/to/stoffel/crates/stoffel-lang

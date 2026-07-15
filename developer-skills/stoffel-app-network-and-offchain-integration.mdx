@@ -39,6 +39,40 @@ stoffel run --timeout-secs 180 <inputs or documented run-args>
 
 If the app uses typed client IO, generate bindings from the exact bytecode first. See [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings).
 
+## Portability and provenance preflight
+
+Before interpreting a network result, label where every command ran. Keep these contexts distinct in notes and logs:
+
+- **app checkout**: the consumer application repository;
+- **framework checkout**: a Stoffel source tree, only when intentionally used;
+- **deployment host**: the machine that runs a coordinator, party, or client service;
+- **container**: the image plus the mounts and network namespace visible inside it;
+- **CI**: the runner image and job that reproduce the consumer workflow.
+
+Record a provenance manifest before building or connecting:
+
+| Evidence | Record |
+| --- | --- |
+| App repository | canonical repository URL, commit, branch/tag if relevant, and clean/dirty state |
+| Framework repository, if used | canonical repository URL, commit, and clean/dirty state |
+| CLI source | how `stoffel` was installed and the resolved executable path; record its reported version/build identity when available |
+| SDK source | registry/package version or git URL plus revision; if a path dependency is intentional, record its canonical path |
+| Dependency resolution | committed lockfile and its hash, or an explicit reason no lockfile applies |
+| Program artifacts | bytecode hash and generated binding/manifest hashes from the same build |
+| Container, if used | immutable image digest, not only a mutable tag |
+
+Do not treat a framework-checkout example as consumer proof. The portability gate is a **clean external checkout** of the app, outside the framework repository, using only documented public CLI and SDK dependencies. It must build and run without uncommitted files, undeclared path dependencies, workspace inheritance from the framework repository, or framework source mounted into a container. Record the external checkout path, repository URL, commit, clean status, dependency source, commands, and result. If this gate was not run, classify the result as **not clean-room tested** rather than portable.
+
+For a public dependency consumer proof, create or use the smallest app that imports the publicly documented SDK/CLI source, resolves from its committed lockfile, builds bytecode and bindings, and exercises the same client-facing path. A successful framework workspace test is useful framework validation, but is not this proof.
+
+### Containers and addresses
+
+- Mount only declared app inputs, generated deployment bundles, state, and identity files. Do not mount a framework checkout, a developer package cache containing unpublished builds, or a host `target/` directory into the proof run.
+- Record host-to-container mount mappings and verify the bytecode/binding hashes inside the container after mounting. Use read-only mounts for release artifacts and config where practical.
+- Do not copy `127.0.0.1` or `localhost` across host/container boundaries: loopback names the current network namespace. Record bind addresses separately from advertised/reachable coordinator, mesh, and RPC addresses.
+- Bind services deliberately, publish only required ports, and test reachability from the actual peer/client context rather than only from the host.
+- Pin images by digest and include that digest in the result.
+
 ## Runtime builders
 
 The SDK runtime exposes app-level builders:
@@ -131,6 +165,9 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 - Client IO metadata matches generated bindings.
 - Real client/server run returns expected output or a concrete error with logs.
 - Any coordinator/network assumptions are labeled with current component status and paired with deployment validation guidance.
+- The clean external checkout/public dependency consumer proof passes, or the result is explicitly labeled **not clean-room tested**.
+- The provenance manifest identifies every execution context, dependency source, lockfile, artifact hash, and applicable image digest.
+- Services and the client consume the recorded bytecode/binding bundle unchanged; hashes are checked at build, service startup, and client execution boundaries.
 
 Framework validation:
 
@@ -139,6 +176,18 @@ cargo test -p stoffel-rust-sdk
 cargo run -p stoffel-rust-sdk --example network_config
 cargo run -p stoffel-rust-sdk --example client_server
 ```
+
+These framework-checkout commands do not replace the external consumer proof. In CI, use separate jobs or clearly labeled steps for:
+
+1. app-checkout check/build/local smoke;
+2. clean external public-dependency consumer build;
+3. bytecode/binding hash and lockfile verification;
+4. container build and digest capture when containers are used;
+5. config validation and a real service/client smoke test in the relevant network namespaces.
+
+Fail CI on a dirty checkout, an unexpected path or patched dependency, a changed lockfile, artifact hash drift, a tag-only container reference where a digest is required, or a service/client smoke failure. Do not silently skip a gate. The job summary must list every check as `passed`, `failed`, or `skipped`, and every skipped check must include the exact reason, affected context, and consequence (for example, **not clean-room tested** or **network deployment unverified**).
+
+When reporting a failure, include the labeled execution context, exact command and working directory, exit status, first actionable error plus the unabridged log location, repository and dependency provenance, artifact/image hashes, and all skipped checks. Do not replace a failed service run with builder construction or a local-only success.
 
 ## Common pitfalls
 
@@ -149,3 +198,4 @@ cargo run -p stoffel-rust-sdk --example client_server
 - Present coordinator/network assumptions with explicit current status and deployment validation guidance.
 - Do not move to network debugging until the local loop has produced a real passing or failing run.
 - Do not hide missing production process startup behind local SDK examples; record the lower-layer service command or mark it as an operator handoff.
+- Do not let an undeclared host mount, path dependency, `[patch]`, package cache, or loopback address make a container/CI run appear portable.

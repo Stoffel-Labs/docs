@@ -44,6 +44,42 @@ If local MPC is involved:
 stoffel run --timeout-secs 180 <inputs or documented run-args>
 ```
 
+Label every command with its execution context: **app checkout**, **framework checkout**, **deployment host**, **container**, or **CI**. Include the working directory; do not merge output from different contexts into one unlabeled transcript.
+
+## Portability and provenance diagnosis
+
+Capture provenance before changing code or dependencies:
+
+- app repository URL, commit, branch/tag if relevant, and clean/dirty state;
+- framework repository URL, commit, and clean/dirty state if a framework checkout is in use;
+- CLI installation source, resolved executable path, and reported version/build identity when available;
+- SDK source (public package version or git URL and revision, or the exact intentional local path);
+- committed lockfile path and hash, or why no lockfile applies;
+- bytecode hash and generated binding/manifest hashes;
+- immutable build/runtime image digest when containers are involved.
+
+For Rust consumers, inspect the resolved graph rather than trusting the manifest alone:
+
+```sh
+cargo metadata --format-version 1
+cargo tree
+```
+
+Inspect all relevant `Cargo.toml` files for `[patch]`, `[replace]`, `path =`, git revisions, and workspace-inherited dependencies. Inspect repository and applicable user/global `.cargo/config` and `.cargo/config.toml` files for source replacement, registries, aliases, target settings, and injected build flags. Record the resolved SDK package source from `cargo metadata` and compare it with the lockfile. Do not delete a patch or path dependency until you know whether it was intentional; do not call the result portable while it remains dependent on undeclared local state.
+
+Reproduce the failure from a **clean external app checkout**, outside the framework repository, with only documented public CLI/SDK dependencies and the committed lockfile. The public dependency consumer proof must check/build, produce bytecode and bindings, and exercise the relevant client-facing path without framework workspace inheritance, source mounts, unpublished package caches, or dirty generated files. Framework workspace tests do not substitute for this proof.
+
+If that external proof was not run or requires local framework state, classify the result explicitly as **not clean-room tested**. State why, instead of reporting a portability success.
+
+### Container and CI diagnosis
+
+- Record the image digest, network mode, published ports, working directory, environment overrides, and every host-to-container mount.
+- Inspect mounts for framework checkouts, host `target/` directories, local SDK paths, package caches containing unpublished builds, stale generated bindings, and shadowed config/lockfiles.
+- Hash bytecode and bindings both outside and inside the container. Treat a mismatch as bundle mutation or a mount-selection failure.
+- Remember that `localhost`/`127.0.0.1` names the current network namespace. Record bind and advertised addresses separately, then test coordinator, mesh, and RPC reachability from the failing peer/client context.
+- In CI, make clean checkout, public dependency resolution, lockfile stability, artifact hash agreement, image digest capture, config validation, and real service/client smoke separate gates. Fail on unexpected path/patched dependencies or bundle drift.
+- Report every gate as `passed`, `failed`, or `skipped`. Every skip needs the exact reason, execution context, and impact; use **not clean-room tested** or **deployment unverified** where appropriate.
+
 ## Config checklist
 
 Inspect `Stoffel.toml`:
@@ -124,6 +160,14 @@ When handing off a failure, include:
 - exact `# run-args:` header if using an example
 - network/off-chain config shape with secrets redacted if relevant
 - bytecode hash and generated binding timestamp/hash for deployment failures
+- labeled execution context and exact working directory
+- app/framework repository URL, commit, and clean/dirty state
+- CLI source/path, SDK source, lockfile path/hash, and applicable image digest
+- relevant `cargo metadata` package source plus any `[patch]`, `.cargo` source replacement, local path, or workspace inheritance found
+- container mount map and bind/advertised addresses when applicable
+- exit status, first actionable error, and location of complete unabridged output
+- each check that passed, failed, or was skipped; include the reason and impact of every skip
+- clean external consumer proof result, or the explicit classification **not clean-room tested**
 
 ## Common pitfalls
 
@@ -132,3 +176,5 @@ When handing off a failure, include:
 - Do not leak private client inputs, tokens, identity material, or secrets into notes, logs, Obsidian, HackMD, or public issues.
 - Do not store API tokens in `Stoffel.toml`, app repos, Obsidian, or HackMD.
 - Do not call deployment done from `execute_local()` output or SDK builder construction alone.
+- Do not mistake a host framework mount, package cache, `[patch]`, `.cargo` source replacement, or path dependency for public dependency portability.
+- Do not summarize a partial run as success: preserve the exact failure and list checks that never ran.

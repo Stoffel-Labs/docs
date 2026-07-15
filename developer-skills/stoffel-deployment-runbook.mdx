@@ -25,6 +25,22 @@ Production-shaped Stoffel apps have three layers:
 
 Do not use `.execute_local().await?` as the deployment model. It is the local development analogue that spawns several MPC nodes/processes on one machine.
 
+## Portability and provenance preflight
+
+Label each command and artifact observation with one execution context: **app checkout**, **framework checkout**, **deployment host**, **container**, or **CI**. A host command does not prove what a container sees, and a framework workspace command does not prove that an external app can consume the public packages.
+
+Before building the release bundle, record:
+
+- app repository URL, commit, and clean/dirty state;
+- framework repository URL, commit, and clean/dirty state when a framework checkout is intentionally involved;
+- CLI installation source, resolved executable path, and reported version/build identity when available;
+- SDK source as a public package version or git URL plus revision; record any intentional path source explicitly;
+- committed lockfile path and hash, or the reason a lockfile does not apply;
+- bytecode, generated binding, and program/deployment manifest hashes;
+- immutable container image digest for every applicable build and runtime image.
+
+The release candidate must pass in a **clean external app checkout** outside the framework repository. Resolve only documented public dependencies: no undeclared path dependencies, workspace inheritance, unpublished local packages, framework source mounts, or dirty generated files. Run a minimal public dependency consumer through check, build, binding generation, and its client-facing smoke path. Record its repository URL/commit, clean state, lockfile, dependency resolution, commands, and outputs. A framework-checkout test does not substitute for this proof. If the proof is unavailable, label the candidate **not clean-room tested** and do not present it as portable.
+
 ## Deployment inputs to collect
 
 Before editing deployment code, fill this table:
@@ -48,6 +64,15 @@ Before editing deployment code, fill this table:
 | Preprocessing sizes |  |
 | Persistence/state volume |  |
 | Health/log endpoints |  |
+| App repo URL / commit / clean state |  |
+| Framework repo URL / commit / clean state, if used |  |
+| CLI source / resolved path |  |
+| SDK source |  |
+| Lockfile path / hash |  |
+| Bytecode / binding / manifest hashes |  |
+| Build and runtime image digests, if used |  |
+| Execution contexts used | app checkout / framework checkout / deployment host / container / CI |
+| Clean external consumer proof | pass / fail / skipped with reason |
 
 If any field is unknown, stop and discover it from source, generated metadata, deployment config, or operator input. Do not invent it.
 
@@ -76,7 +101,7 @@ dist/stoffel_bindings.rs or generated bindings in OUT_DIR
 release manifest with backend, parties, threshold, client slots, and output slots
 ```
 
-Record the bytecode path and hash in the deployment notes. Production clients should load pinned bytecode/metadata, not compile `.stfl` dynamically.
+Record all bundle member hashes in the deployment notes. Make the release bundle immutable after this point. Production services and clients must load this unchanged bytecode, bindings, manifest, and config set; do not rebuild, regenerate, or dynamically compile `.stfl` independently on deployment hosts. Recheck hashes at distribution, service startup, and client execution.
 
 ## Local gate before network work
 
@@ -161,6 +186,14 @@ let server0 = servers[0].clone().build()?;
 
 Current SDK server builders capture program/config/health metadata; live process startup may delegate to lower-layer networking/VM integration. If the selected SDK version does not expose a single production server start command, write the lower-layer command or service wrapper explicitly and mark it as an operator handoff, not as completed deployment.
 
+### Container and host safeguards
+
+- Pin every image by digest and record that digest with the node/client result.
+- Record each host-to-container mount. Mount the immutable release bundle read-only where possible, keep state and identity mounts separate, and verify bundle hashes inside every runtime container.
+- Never mount a framework checkout, developer `target/`, or unpublished package cache to make a release work. Such a run is **not clean-room tested**.
+- Distinguish bind addresses from advertised/reachable addresses. `127.0.0.1` and `localhost` refer to the current network namespace and normally cannot identify a service across host/container boundaries.
+- Publish only required ports, and test coordinator, mesh, RPC, and client reachability from the actual source container/host. Record DNS resolution and the address used, not only a host-side health result.
+
 ## Client/app integration
 
 Client software should load deployment config and submit typed inputs:
@@ -214,6 +247,12 @@ Before calling deployment done:
 - Logs redact private inputs, identity material, tokens, and certificates.
 - Restart behavior is documented for coordinator, nodes, and client gateway.
 - Rollback means reverting bytecode, bindings, config, and app client code together.
+- Repository, CLI, SDK, lockfile, artifact, and image provenance is recorded for each labeled execution context.
+- The external clean-checkout/public dependency consumer proof passed.
+- Every deployment host/container verified the unchanged release bundle hashes before startup.
+- The real service processes started and an actual SDK client traversed the intended coordinator/node service path and decoded the authorized typed output.
+
+Builder construction, config serialization, `.execute_local()`, `execute_local`, or any other local-only executor is not deployment completion. If no live service path is available, report the deployment as blocked or incomplete with the exact handoff and logs. Do not rebuild the bundle merely to make the client smoke pass.
 
 ## Verification commands
 
@@ -237,6 +276,12 @@ curl -f http://<service>/health
 
 and the process supervisor status/log command used by the deployment target.
 
+## CI/release gates
+
+Use separately visible gates for provenance capture, clean app build, public dependency consumer proof, lockfile/dependency inspection, bytecode/binding/manifest hash agreement, image digest capture, deployment config validation, service startup/health, cross-namespace reachability, and the real SDK client/service smoke. CI must fail on a dirty checkout, unexpected local/path/patched dependency, lockfile drift, mutable-only image identity, bundle mutation, or failed service/client flow.
+
+Never omit a gate from the report. Mark each one `passed`, `failed`, or `skipped`. For a skip, record the exact reason, execution context, owner/handoff, and impact; for example, **not clean-room tested**, **container provenance unknown**, or **deployment unverified**. A skipped completion gate cannot produce a successful deployment status.
+
 ## Failure report shape
 
 When deployment fails, capture:
@@ -249,7 +294,13 @@ When deployment fails, capture:
 - first failing log line;
 - whether local MPC passed;
 - whether typed bindings matched;
-- whether the failure is build, config validation, network reachability, identity, coordinator, protocol, or output decoding.
+- whether the failure is build, config validation, network reachability, identity, coordinator, protocol, or output decoding;
+- labeled execution context and working directory;
+- exact command, exit status, first actionable error, and unabridged log location;
+- app/framework repository URLs, commits, and dirty state;
+- CLI source, SDK source, lockfile hash, bundle member hashes, and applicable image digest;
+- mount map and bind/advertised addresses when containers are involved;
+- every skipped check and why it was skipped.
 
 ## Common pitfalls
 

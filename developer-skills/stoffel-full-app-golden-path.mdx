@@ -5,7 +5,7 @@ description: Build a complete Stoffel app from boundary design through StoffelLa
 
 > Scope: AI-agent-agnostic playbook for building complete Stoffel applications. Use this as the orchestrating path, then switch to the narrower skills for implementation details.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use portable public dependencies by default. A local checkout is a separate, nonportable framework-development workflow and is allowed only when explicitly requested.
 
 ## Use when
 
@@ -15,8 +15,21 @@ Use this playbook when the task is larger than one `.stfl` snippet: an app idea 
 
 Make an AI agent build the smallest complete app first, verify every layer, then expand. Do not let the agent stop at plausible code, skip local MPC, or treat `execute_local()` as deployment.
 
+## Milestone 0: establish portability
+
+Complete this milestone before privacy design or implementation:
+
+1. Discover and confirm the project root from the current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. Do not invent or require a machine-specific path such as `/workspace/...`.
+2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, an official GitHub tag or release, then a full immutable commit SHA in the official GitHub repository.
+3. Reject floating branches and any default workflow that requires a local path, sibling checkout, or external filesystem checkout.
+4. Use a local Stoffel checkout only if the user explicitly requests framework development. Label that route **nonportable**, document it separately, and keep the app's default build on public dependencies.
+5. If no suitable public dependency is available, stop and report the missing dependency and attempted public sources instead of substituting a local checkout.
+
+Record the discovered root and selected public source in the task evidence. Keep this skill version-agnostic; concrete versions belong in installation docs and the app's dependency manifest.
+
 ## End-to-end sequence
 
+0. Establish the dependency and filesystem portability contract.
 1. Define the privacy boundary.
 2. Choose backend and topology.
 3. Implement the minimal StoffelLang program.
@@ -26,7 +39,8 @@ Make an AI agent build the smallest complete app first, verify every layer, then
 7. Generate typed client IO bindings from the exact bytecode.
 8. Add app tests and a smoke command.
 9. Prepare deployment artifacts and network/client config.
-10. Hand off with real command output and remaining production assumptions.
+10. Prove the app in a clean-room environment.
+11. Hand off with real command output and remaining production assumptions.
 
 ## 1. Privacy boundary worksheet
 
@@ -195,6 +209,16 @@ git diff --check
 
 Do not report success unless at least one command exercised each changed layer.
 
+### Clean-room completion evidence
+
+Before declaring the app complete, test it from a fresh temporary directory or clean environment that has no Stoffel source checkout, sibling repository, or undeclared path dependency available. Starting from only the delivered app files, documented prerequisites, and network access to the selected public source:
+
+1. install or resolve dependencies using the recorded public source;
+2. run the verification ladder for every delivered layer; and
+3. capture the clean environment description, dependency-resolution output, commands, exit status, and relevant test or smoke output.
+
+A warm build in the implementation worktree is not clean-room evidence. If the clean build reaches for an external local path, a floating branch, an undeclared file, or an unavailable public dependency, the milestone fails; fix it or stop and report the blocker.
+
 ## 7. Deployment handoff
 
 Before handing the app to deployment work, produce:
@@ -219,6 +243,8 @@ Then switch to [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment
 - Compiling `.stfl` at runtime in production clients instead of loading pinned bytecode.
 - Forgetting to regenerate typed bindings after changing ClientStore shape.
 - Reporting generated code without running `stoffel check`, `stoffel build`, and a local MPC smoke.
+- Building only in a worktree that hides a required local or sibling Stoffel checkout.
+- Claiming completion without clean-room dependency resolution and execution evidence.
 
 ## Next playbooks
 

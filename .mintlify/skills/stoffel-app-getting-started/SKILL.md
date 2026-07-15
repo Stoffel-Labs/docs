@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use portable public dependencies by default. A local checkout is a separate, nonportable framework-development workflow and is allowed only when explicitly requested.
 
 ## Use when
 
@@ -32,12 +32,23 @@ Use the public docs when available, then verify against the current app-facing r
 
 These are source-inspection references for app behavior, not instructions for app developers to edit framework internals.
 
+## Mandatory portability contract
+
+Apply these rules before installing dependencies or creating files:
+
+1. Discover and confirm the project root from the current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. Do not invent or require a machine-specific path such as `/workspace/...`.
+2. Resolve Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, an official GitHub tag or release, then a full immutable commit SHA in the official GitHub repository.
+3. Never use a floating branch or require a local path, sibling checkout, or other external filesystem checkout for the default app path.
+4. Use a local Stoffel checkout only when the user explicitly requests framework development. Label that workflow **nonportable** and keep it separate from the default instructions below.
+5. If no suitable public dependency is available, stop and report the missing dependency and attempted public sources. Do not silently replace it with a local path.
+
+This playbook stays version-agnostic. Obtain concrete versions from the installation docs and record them in the app's dependency manifest.
+
 ## Prerequisites
 
 - Rust stable and Cargo.
 - The `stoffel` CLI from the documented installation path.
 - Crates.io dependencies for Rust SDK work.
-- A local checkout of the `stoffel` repository when you need repository examples or local crate changes.
 
 
 ## Install
@@ -88,9 +99,9 @@ A new app normally includes:
 
 ## Fast examples to inspect
 
-- Clear language basics: `crates/stoffel-lang/examples/local_control_flow`, `local_collections`, `local_text_processing`.
-- First private input flow: `crates/stoffel-lang/examples/mpc_client_private_score`.
-- ClientStore gallery with run commands: `crates/stoffel-lang/examples/bits/secret/*`, `matrix/secret/*`, `polynomials/secret/*`, `number_theory/secret/*`, and the app-level `mpc_*` algorithm examples.
+- In the official GitHub tag, release, or immutable commit selected by the portability contract, inspect clear language basics under `crates/stoffel-lang/examples/local_control_flow`, `local_collections`, and `local_text_processing`.
+- Inspect the first private input flow at `crates/stoffel-lang/examples/mpc_client_private_score` in that same official source revision.
+- Inspect the ClientStore gallery under `crates/stoffel-lang/examples/bits/secret/*`, `matrix/secret/*`, `polynomials/secret/*`, `number_theory/secret/*`, and the app-level `mpc_*` algorithm examples in that revision.
 
 Many secret examples now include a first-line `# run-args:` header. Copy those flags when running the example locally.
 
@@ -116,7 +127,8 @@ For a secret ClientStore example, include its documented `# run-args:` flags and
 
 ## Common pitfalls
 
-- For app development, prefer the documented source dependency or local path dependency.
+- For app development, use the public dependency precedence in the portability contract; do not recommend a local path dependency.
+- Do not confuse browsing examples in an official source revision with requiring that repository as a sibling checkout.
 - Do not describe `Stoffel VM` internals unless they explain public app behavior.
 - Do not claim local MPC works until a real run has completed.
 - Do not treat `Stoffel.toml` as network/off-chain config.

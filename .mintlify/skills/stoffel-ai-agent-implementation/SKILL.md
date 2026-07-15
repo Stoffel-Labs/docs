@@ -48,6 +48,18 @@ Programmatic discovery endpoints:
 - `https://docs.stoffelmpc.com/.well-known/mcp`
 - `https://docs.stoffelmpc.com/.well-known/mcp/server-card.json`
 
+## Mandatory portability contract
+
+Before changing files or dependencies, the agent must:
+
+1. Discover and confirm the project root from its current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. It must not invent or require a machine-specific path such as `/workspace/...`.
+2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, an official GitHub tag or release, then a full immutable commit SHA in the official GitHub repository.
+3. Never use a floating branch or require a local path, sibling checkout, or other external filesystem checkout in the default app implementation.
+4. Use a local Stoffel checkout only when the user explicitly requests framework development. Mark that route **nonportable** and keep it separate from the default public-dependency implementation.
+5. Stop and report the unavailable dependency and attempted public sources if no suitable public dependency exists. Never silently fall back to a local checkout.
+
+Keep the implementation prompt version-agnostic. Concrete versions belong in installation docs or the generated project manifest.
+
 ## Start with the implementation boundary
 
 Before asking an agent to write code, describe the boundary the Stoffel program must implement:
@@ -61,6 +73,9 @@ Before asking an agent to write code, describe the boundary the Stoffel program 
 7. Which command proves the program is valid.
 8. Which command proves local MPC works.
 9. Which artifacts and configs are required before deployment.
+10. Which discovered project root the agent will modify.
+11. Which public dependency source satisfies the portability contract.
+12. Whether framework development was explicitly requested; otherwise local checkout use is forbidden.
 
 For source snippets, the validation command is usually:
 
@@ -116,6 +131,14 @@ Output boundary:
 Backend:
 - honeybadger or avss:<curve>
 - reason for choosing it
+
+Project and dependency portability:
+- discovered project root and the repository markers used to confirm it
+- dependency source: current crates.io release / official GitHub tag or release / full immutable official GitHub SHA
+- public-source availability confirmed: yes/no
+- framework-development exception explicitly requested: yes/no
+- if yes, describe the separate nonportable local-checkout route; if no, do not use local or sibling path dependencies
+- if no suitable public source is available, stop and report the attempted sources
 
 Cost and safety constraints:
 - keep public constants, transcript bytes, hashes, and encodings public until a secret operation needs them

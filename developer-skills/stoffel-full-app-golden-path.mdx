@@ -20,7 +20,7 @@ Make an AI agent build the smallest complete app first, verify every layer, then
 Complete this milestone before privacy design or implementation:
 
 1. Discover and confirm the project root from the current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. Do not invent or require a machine-specific path such as `/workspace/...`.
-2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, an official GitHub tag or release, then a full immutable commit SHA in the official GitHub repository.
+2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, then the official GitHub repository pinned to a full immutable commit SHA when the needed change is not published.
 3. Reject floating branches and any default workflow that requires a local path, sibling checkout, or external filesystem checkout.
 4. Use a local Stoffel checkout only if the user explicitly requests framework development. Label that route **nonportable**, document it separately, and keep the app's default build on public dependencies.
 5. If no suitable public dependency is available, stop and report the missing dependency and attempted public sources instead of substituting a local checkout.
@@ -139,7 +139,8 @@ The Rust host should look like an app service, not a wrapper that shells out to 
 Local smoke path:
 
 ```rust
-let result = Stoffel::compile_file("src/main.stfl")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let result = Stoffel::compile_file(app_root.join("src/main.stfl"))?
     .parties(5)
     .threshold(1)
     .expected_output_clients(2)
@@ -152,7 +153,8 @@ let result = Stoffel::compile_file("src/main.stfl")?
 Deployment-shaped path:
 
 ```rust
-let runtime = Stoffel::load_file("dist/program.stflb")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = Stoffel::load_file(app_root.join("dist/program.stflb"))?
     .parties(5)
     .threshold(1)
     .honeybadger()
@@ -194,9 +196,9 @@ stoffel status --verbose
 stoffel check
 stoffel build --program-info
 stoffel run --timeout-secs 180 <documented inputs>
-cargo check
-cargo test
-cargo run
+cargo check --locked
+cargo test --locked
+cargo run --locked
 ```
 
 For docs or skill changes, also run:

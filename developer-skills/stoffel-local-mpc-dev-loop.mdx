@@ -139,8 +139,13 @@ For a repository script, derive a stable root from the script path:
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 APP_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 APP_MANIFEST="$APP_ROOT/Cargo.toml"
+STOFFEL_ROOT="$APP_ROOT"
+if [ ! -f "$STOFFEL_ROOT/Stoffel.toml" ] && [ -f "$APP_ROOT/stoffel/Stoffel.toml" ]; then
+  STOFFEL_ROOT="$APP_ROOT/stoffel"
+fi
+test -f "$STOFFEL_ROOT/Stoffel.toml"
 
-stoffel check "$APP_ROOT/stoffel"
+stoffel check "$STOFFEL_ROOT"
 cargo check --locked --manifest-path "$APP_MANIFEST"
 cargo metadata --locked --format-version 1 --manifest-path "$APP_MANIFEST" \
   > "$APP_ROOT/cargo-metadata.json"
@@ -153,10 +158,10 @@ The Stoffel package in metadata must have a `registry+...` source or a pinned of
 For app local-MPC work:
 
 ```sh
-stoffel status --verbose "$APP_ROOT/stoffel"
-stoffel check "$APP_ROOT/stoffel"
-stoffel build "$APP_ROOT/stoffel" --program-info
-stoffel run "$APP_ROOT/stoffel" --timeout-secs 180 <inputs or documented run-args>
+stoffel status --verbose "$STOFFEL_ROOT"
+stoffel check "$STOFFEL_ROOT"
+stoffel build "$STOFFEL_ROOT" --program-info
+stoffel run "$STOFFEL_ROOT" --timeout-secs 180 <inputs or documented run-args>
 cargo check --locked --manifest-path "$APP_ROOT/Cargo.toml"
 ```
 

@@ -89,8 +89,8 @@ stoffel build --program-info
 For Rust app wrappers:
 
 ```sh
-cargo check
-cargo test
+cargo check --locked
+cargo test --locked
 ```
 
 Expected artifacts:
@@ -114,7 +114,7 @@ stoffel run --timeout-secs 180 <documented inputs or # run-args>
 For Rust SDK local smoke:
 
 ```sh
-cargo run --bin <local-smoke-or-demo>
+cargo run --locked --bin <local-smoke-or-demo>
 ```
 
 The local gate must cover:
@@ -174,7 +174,8 @@ A node service needs:
 SDK server builders validate app-level config:
 
 ```rust
-let runtime = Stoffel::load_file("dist/program.stflb")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = Stoffel::load_file(app_root.join("dist/program.stflb"))?
     .parties(5)
     .threshold(1)
     .honeybadger()
@@ -199,7 +200,8 @@ Current SDK server builders capture program/config/health metadata; live process
 Client software should load deployment config and submit typed inputs:
 
 ```rust
-let runtime = Stoffel::load_file("dist/program.stflb")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = Stoffel::load_file(app_root.join("dist/program.stflb"))?
     .parties(5)
     .threshold(1)
     .honeybadger()
@@ -261,11 +263,11 @@ Use the commands that exist for the app. A typical ladder is:
 ```sh
 stoffel check
 stoffel build --program-info
-cargo check
-cargo test
-cargo run --bin build-program
-cargo run --bin validate-network-config
-cargo run --bin client-smoke -- --client-slot 0
+cargo check --locked
+cargo test --locked
+cargo run --locked --bin build-program
+cargo run --locked --bin validate-network-config
+cargo run --locked --bin client-smoke -- --client-slot 0
 ```
 
 For external services, also record:

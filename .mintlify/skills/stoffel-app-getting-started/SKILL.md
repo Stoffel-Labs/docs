@@ -37,7 +37,7 @@ These are source-inspection references for app behavior, not instructions for ap
 Apply these rules before installing dependencies or creating files:
 
 1. Discover and confirm the project root from the current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. Do not invent or require a machine-specific path such as `/workspace/...`.
-2. Resolve Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, an official GitHub tag or release, then a full immutable commit SHA in the official GitHub repository.
+2. Resolve Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, then the official GitHub repository pinned to a full immutable commit SHA when the needed change is not published.
 3. Never use a floating branch or require a local path, sibling checkout, or other external filesystem checkout for the default app path.
 4. Use a local Stoffel checkout only when the user explicitly requests framework development. Label that workflow **nonportable** and keep it separate from the default instructions below.
 5. If no suitable public dependency is available, stop and report the missing dependency and attempted public sources. Do not silently replace it with a local path.
@@ -75,8 +75,8 @@ stoffel run --timeout-secs 180
 The default project template includes a Rust wrapper as well as `.stfl` source. Run the wrapper too:
 
 ```sh
-cargo build
-cargo run
+cargo build --locked
+cargo run --locked
 ```
 
 ## Know the app shape
@@ -99,7 +99,7 @@ A new app normally includes:
 
 ## Fast examples to inspect
 
-- In the official GitHub tag, release, or immutable commit selected by the portability contract, inspect clear language basics under `crates/stoffel-lang/examples/local_control_flow`, `local_collections`, and `local_text_processing`.
+- At the full immutable official GitHub commit selected by the portability contract, inspect clear language basics under `crates/stoffel-lang/examples/local_control_flow`, `local_collections`, and `local_text_processing`.
 - Inspect the first private input flow at `crates/stoffel-lang/examples/mpc_client_private_score` in that same official source revision.
 - Inspect the ClientStore gallery under `crates/stoffel-lang/examples/bits/secret/*`, `matrix/secret/*`, `polynomials/secret/*`, `number_theory/secret/*`, and the app-level `mpc_*` algorithm examples in that revision.
 
@@ -119,8 +119,8 @@ stoffel run --timeout-secs 180
 For Rust wrapper apps, also collect output from:
 
 ```sh
-cargo build
-cargo run
+cargo build --locked
+cargo run --locked
 ```
 
 For a secret ClientStore example, include its documented `# run-args:` flags and `--expected-output-clients` if present.

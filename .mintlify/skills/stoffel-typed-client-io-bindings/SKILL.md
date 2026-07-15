@@ -145,7 +145,8 @@ let mpc = stoffel::MpcConfig::builder()
     .manifest::<ProgramManifest>()
     .build()?;
 
-let runtime = stoffel::Stoffel::load_file("program.stflb")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = stoffel::Stoffel::load_file(app_root.join("program.stflb"))?
     .manifest::<ProgramManifest>()
     .build()?;
 ```
@@ -228,9 +229,9 @@ Both `stoffel-rust-sdk` and `stoffel-bindgen` must resolve from `registry+...` o
 Framework tests:
 
 ```sh
-cargo test -p stoffel-rust-sdk generate_bindings_emits_typed_client_io_from_stflb_manifest
-cargo test -p stoffel-rust-sdk generated_bindings_type_check_federated_average_example
-cargo test -p stoffel-rust-sdk --test compile_fail
+cargo test --locked -p stoffel-rust-sdk generate_bindings_emits_typed_client_io_from_stflb_manifest
+cargo test --locked -p stoffel-rust-sdk generated_bindings_type_check_federated_average_example
+cargo test --locked -p stoffel-rust-sdk --test compile_fail
 ```
 
 ## Common pitfalls

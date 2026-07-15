@@ -285,8 +285,10 @@ The final portability proof must run from a clean checkout outside the Stoffel f
 
 ```sh
 APP_REPO_URL="<app-repository-url>"
+APP_COMMIT="<reviewed-app-commit-sha>"
 PROOF_DIR="$(mktemp -d)"
 git clone "$APP_REPO_URL" "$PROOF_DIR/app"
+git -C "$PROOF_DIR/app" checkout --detach "$APP_COMMIT"
 cargo check --locked --manifest-path "$PROOF_DIR/app/Cargo.toml"
 cargo test --locked --manifest-path "$PROOF_DIR/app/Cargo.toml"
 ```
@@ -302,15 +304,15 @@ cargo check --locked --manifest-path "$REPO_ROOT/apps/my-app/Cargo.toml"
 For local MPC app paths:
 
 ```sh
-cargo run
+cargo run --locked
 ```
 
 Framework validation:
 
 ```sh
-cargo test -p stoffel-rust-sdk
-cargo run -p stoffel-rust-sdk --example quickstart
-cargo run -p stoffel-rust-sdk --example local_mpc_client_input
+cargo test --locked -p stoffel-rust-sdk
+cargo run --locked -p stoffel-rust-sdk --example quickstart
+cargo run --locked -p stoffel-rust-sdk --example local_mpc_client_input
 ```
 
 ## Common pitfalls

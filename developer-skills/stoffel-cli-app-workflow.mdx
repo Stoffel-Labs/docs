@@ -142,7 +142,9 @@ Prove portability from a clean external checkout with no sibling Stoffel reposit
 
 ```sh
 PROOF_DIR="$(mktemp -d)"
+APP_COMMIT="<reviewed-app-commit-sha>"
 git clone "<generated-app-repository-url>" "$PROOF_DIR/app"
+git -C "$PROOF_DIR/app" checkout --detach "$APP_COMMIT"
 cargo check --locked --manifest-path "$PROOF_DIR/app/Cargo.toml"
 ```
 
@@ -151,7 +153,12 @@ Repository scripts must derive their root from the script file; callers may invo
 ```sh
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 APP_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
-stoffel check "$APP_ROOT/stoffel"
+STOFFEL_ROOT="$APP_ROOT"
+if [ ! -f "$STOFFEL_ROOT/Stoffel.toml" ] && [ -f "$APP_ROOT/stoffel/Stoffel.toml" ]; then
+  STOFFEL_ROOT="$APP_ROOT/stoffel"
+fi
+test -f "$STOFFEL_ROOT/Stoffel.toml"
+stoffel check "$STOFFEL_ROOT"
 cargo check --locked --manifest-path "$APP_ROOT/Cargo.toml"
 ```
 

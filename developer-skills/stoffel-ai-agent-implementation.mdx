@@ -45,7 +45,7 @@ Programmatic discovery endpoints:
 Before changing files or dependencies, the agent must:
 
 1. Discover and confirm the project root from its current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. It must not invent or require a machine-specific path such as `/workspace/...`.
-2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, an official GitHub tag or release, then a full immutable commit SHA in the official GitHub repository.
+2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, then the official GitHub repository pinned to a full immutable commit SHA when the needed change is not published.
 3. Never use a floating branch or require a local path, sibling checkout, or other external filesystem checkout in the default app implementation.
 4. Use a local Stoffel checkout only when the user explicitly requests framework development. Mark that route **nonportable** and keep it separate from the default public-dependency implementation.
 5. Stop and report the unavailable dependency and attempted public sources if no suitable public dependency exists. Never silently fall back to a local checkout.
@@ -126,7 +126,7 @@ Backend:
 
 Project and dependency portability:
 - discovered project root and the repository markers used to confirm it
-- dependency source: current crates.io release / official GitHub tag or release / full immutable official GitHub SHA
+- dependency source: current crates.io release / official GitHub repository at a full immutable commit SHA
 - public-source availability confirmed: yes/no
 - framework-development exception explicitly requested: yes/no
 - if yes, describe the separate nonportable local-checkout route; if no, do not use local or sibling path dependencies

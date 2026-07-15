@@ -5,7 +5,7 @@ description: Move from local bytecode to client/server builders, network config,
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use current public crates.io releases by default, then an official GitHub tag/release or full immutable revision. A local checkout is a separate, explicitly requested, nonportable framework-development workflow.
+> Dependency assumption: use current public crates.io releases by default, then the official GitHub repository at a full immutable revision when the needed change is not published. A local checkout is a separate, explicitly requested, nonportable framework-development workflow.
 
 ## Use when
 
@@ -78,7 +78,8 @@ For a public dependency consumer proof, create or use the smallest app that impo
 The SDK runtime exposes app-level builders:
 
 ```rust
-let runtime = stoffel::Stoffel::load_file("program.stflb")?.build()?;
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = stoffel::Stoffel::load_file(app_root.join("program.stflb"))?.build()?;
 
 let client = runtime.client();
 let server0 = runtime.server(0);
@@ -172,9 +173,9 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 Framework validation:
 
 ```sh
-cargo test -p stoffel-rust-sdk
-cargo run -p stoffel-rust-sdk --example network_config
-cargo run -p stoffel-rust-sdk --example client_server
+cargo test --locked -p stoffel-rust-sdk
+cargo run --locked -p stoffel-rust-sdk --example network_config
+cargo run --locked -p stoffel-rust-sdk --example client_server
 ```
 
 These framework-checkout commands do not replace the external consumer proof. In CI, use separate jobs or clearly labeled steps for:

@@ -57,7 +57,7 @@ stoffel check
 stoffel build
 ```
 
-For runnable app tasks, report real output from `stoffel status --verbose`, `stoffel check`, `stoffel build`, a local MPC run, and any relevant Cargo command before claiming completion.
+For runnable app tasks, report real output from `stoffel status --verbose`, `stoffel check`, `stoffel build`, a local MPC run, and any relevant Cargo command before claiming completion. Do not claim completion until portability validation has passed in a clean environment without an external Stoffel checkout.
 
 Discovery endpoints:
 

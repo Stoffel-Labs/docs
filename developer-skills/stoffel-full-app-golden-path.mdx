@@ -214,8 +214,9 @@ Do not report success unless at least one command exercised each changed layer.
 Before declaring the app complete, test it from a fresh temporary directory or clean environment that has no Stoffel source checkout, sibling repository, or undeclared path dependency available. Starting from only the delivered app files, documented prerequisites, and network access to the selected public source:
 
 1. install or resolve dependencies using the recorded public source;
-2. run the verification ladder for every delivered layer; and
-3. capture the clean environment description, dependency-resolution output, commands, exit status, and relevant test or smoke output.
+2. run `cargo metadata --locked --format-version 1` and verify every external Stoffel package resolves from a registry or pinned official Git revision;
+3. run the verification ladder for every delivered layer; and
+4. capture the clean environment description, dependency-resolution output, commands, exit status, and relevant test or smoke output.
 
 A warm build in the implementation worktree is not clean-room evidence. If the clean build reaches for an external local path, a floating branch, an undeclared file, or an unavailable public dependency, the milestone fails; fix it or stop and report the blocker.
 

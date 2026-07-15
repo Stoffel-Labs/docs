@@ -73,6 +73,8 @@ CONCRETE_MACHINE_PATHS = (
     re.compile(r"/workspace/[A-Za-z0-9_-]"),
     re.compile(r"/Users/[A-Za-z0-9_-]"),
     re.compile(r"/home/[A-Za-z0-9_-]"),
+    re.compile(r"[A-Za-z]:\\Users\\[A-Za-z0-9_-]", re.IGNORECASE),
+    re.compile(r"\\\\[A-Za-z0-9._-]+\\[A-Za-z0-9$._-]+\\"),
 )
 
 UMBRELLA_MARKERS = (

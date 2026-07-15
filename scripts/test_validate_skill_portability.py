@@ -50,6 +50,14 @@ class SkillPortabilityValidationTests(unittest.TestCase):
             errors = VALIDATOR.validate(fixture)
             self.assertTrue(any("concrete machine path" in error for error in errors), errors)
 
+    def test_rejects_windows_user_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = self.make_fixture(Path(directory))
+            source = fixture / "developer-skills" / "stoffel-app-getting-started.mdx"
+            source.write_text(source.read_text() + "\n`C:\\Users\\alice\\stoffel`\n")
+            errors = VALIDATOR.validate(fixture)
+            self.assertTrue(any("concrete machine path" in error for error in errors), errors)
+
     def test_rejects_stale_generated_mirror(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             fixture = self.make_fixture(Path(directory))

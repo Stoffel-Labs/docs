@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 from pathlib import Path
+import re
 import sys
 
 PORTABLE_SKILLS = {
@@ -62,10 +63,16 @@ PORTABLE_SKILLS = {
 }
 
 FORBIDDEN_TEXT = (
-    "/workspace/stoffel",
     "/Users/alice/",
     "prefer the documented source dependency or local path dependency",
     "When developing against a local checkout, make that source-based workflow explicit.",
+)
+
+# Placeholder policy text such as /workspace/... remains allowed; concrete paths do not.
+CONCRETE_MACHINE_PATHS = (
+    re.compile(r"/workspace/[A-Za-z0-9_-]"),
+    re.compile(r"/Users/[A-Za-z0-9_-]"),
+    re.compile(r"/home/[A-Za-z0-9_-]"),
 )
 
 UMBRELLA_MARKERS = (
@@ -103,21 +110,31 @@ def validate(root: Path) -> list[str]:
                 errors.append(
                     f"{path.relative_to(root)} contains forbidden portability text: {forbidden!r}"
                 )
+        for pattern in CONCRETE_MACHINE_PATHS:
+            match = pattern.search(text)
+            if match:
+                errors.append(
+                    f"{path.relative_to(root)} contains concrete machine path: {match.group(0)!r}"
+                )
 
     for slug, markers in PORTABLE_SKILLS.items():
         source = root / "developer-skills" / f"{slug}.mdx"
-        mirror = root / ".mintlify" / "skills" / slug / "SKILL.md"
         if not source.is_file():
             errors.append(f"missing source skill: {source.relative_to(root)}")
             continue
-        if not mirror.is_file():
-            errors.append(f"missing generated mirror: {mirror.relative_to(root)}")
-            continue
-
         text = source.read_text()
         for marker in markers:
             if marker not in text:
                 errors.append(f"{source.relative_to(root)} missing portability marker: {marker!r}")
+
+    for source in sorted((root / "developer-skills").glob("*.mdx")):
+        if source.name == "overview.mdx":
+            continue
+        slug = source.stem
+        mirror = root / ".mintlify" / "skills" / slug / "SKILL.md"
+        if not mirror.is_file():
+            errors.append(f"missing generated mirror: {mirror.relative_to(root)}")
+            continue
         fields, body = sync.parse_frontmatter(source)
         expected = sync.render_skill(slug, fields["title"], fields["description"], body)
         if mirror.read_text() != expected:

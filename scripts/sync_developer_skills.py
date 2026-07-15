@@ -9,6 +9,8 @@ machine-discoverable skill files under .mintlify/skills/<slug>/SKILL.md.
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = ROOT / "developer-skills"
@@ -73,6 +75,12 @@ def main() -> None:
         out_path.write_text(render_skill(slug, fields["title"], fields["description"], body))
         written += 1
     print(f"Wrote {written} skill file(s) under {SKILL_DIR.relative_to(ROOT)}")
+    validator = ROOT / "scripts" / "validate_skill_portability.py"
+    if validator.is_file():
+        subprocess.run(
+            [sys.executable, str(validator), "--root", str(ROOT)],
+            check=True,
+        )
 
 
 if __name__ == "__main__":

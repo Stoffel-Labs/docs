@@ -46,9 +46,9 @@ class SkillPortabilityValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             fixture = self.make_fixture(Path(directory))
             source = fixture / "developer-skills" / "stoffel-app-getting-started.mdx"
-            source.write_text(source.read_text() + "\n`/workspace/stoffel-dev/stoffel`\n")
+            source.write_text(source.read_text() + "\n`/workspace/acme/framework`\n")
             errors = VALIDATOR.validate(fixture)
-            self.assertTrue(any("forbidden portability text" in error for error in errors), errors)
+            self.assertTrue(any("concrete machine path" in error for error in errors), errors)
 
     def test_rejects_stale_generated_mirror(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -63,6 +63,20 @@ class SkillPortabilityValidationTests(unittest.TestCase):
             mirror.write_text(mirror.read_text() + "\n<!-- stale -->\n")
             errors = VALIDATOR.validate(fixture)
             self.assertTrue(any("is stale" in error for error in errors), errors)
+
+    def test_rejects_stale_mirror_outside_portability_marker_set(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = self.make_fixture(Path(directory))
+            mirror = (
+                fixture
+                / ".mintlify"
+                / "skills"
+                / "stoffel-lang-app-programming"
+                / "SKILL.md"
+            )
+            mirror.write_text(mirror.read_text() + "\n<!-- stale -->\n")
+            errors = VALIDATOR.validate(fixture)
+            self.assertTrue(any("stoffel-lang-app-programming" in error for error in errors), errors)
 
     def test_rejects_removed_clean_room_gate(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

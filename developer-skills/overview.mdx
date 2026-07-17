@@ -7,6 +7,12 @@ Stoffel Developer Skills are AI-agent-ready playbooks for developers building ap
 
 These skills are app-development guides, not internal maintainer guides. They focus on creating and validating Stoffel applications with public tooling.
 
+## Multi-user application invariant
+
+For client-owned private input, each input owner's device or process is a distinct participant MPC client. It submits directly through the Stoffel client protocol to the separately deployed MPC network. The application control plane handles public metadata, authorization, session/bootstrap configuration, non-sensitive receipts, lifecycle, and explicitly authorized opened aggregates; it must not receive or persist participant plaintext.
+
+A backend gateway that sees raw input is a distinct, weaker trust model and requires explicit approval. For rooms, voting, auctions, private matching, prediction markets, federated analytics, or other multi-user apps, begin with [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path), then apply [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration).
+
 Use the main docs for canonical CLI, SDK, language, and deployment behavior. Use these skills as the agent execution layer: they tell an AI coding agent which docs to consult, what order to work in, what commands to run, and what evidence to collect before reporting that a task is done.
 
 ## Use with AI agents
@@ -111,10 +117,11 @@ After MCP is connected, ask the agent to search the Stoffel docs for `ClientStor
 | If the user asks for... | Start with |
 | --- | --- |
 | Toolchain setup or a first runnable project | [Stoffel App Getting Started](/developer-skills/stoffel-app-getting-started) |
-| A complete custom application | [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path) |
+| A complete custom application, room, auction, vote, private match, or other multi-user app | [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path), then [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) |
 | CLI commands, project config, inputs, local runs, or bytecode inspection | [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow) |
 | StoffelLang syntax, functions, types, or examples | [Stoffel-Lang App Programming](/developer-skills/stoffel-lang-app-programming) |
-| Private inputs, `ClientStore`, secret arithmetic, or client outputs | [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) |
+| Multi-user client-owned private inputs or ClientStore app architecture | [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path), then [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) |
+| StoffelLang secret types, secret arithmetic, `ClientStore` program semantics, or client outputs | [Stoffel Secret MPC Programming](/developer-skills/stoffel-secret-mpc-programming) |
 | Rust host integration, local SDK execution, clients, or servers | [Stoffel Rust App SDK](/developer-skills/stoffel-rust-app-sdk) |
 | Generated Rust input/output types | [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings) |
 | Local MPC debugging or hot reload | [Stoffel Local MPC Dev Loop](/developer-skills/stoffel-local-mpc-dev-loop) |

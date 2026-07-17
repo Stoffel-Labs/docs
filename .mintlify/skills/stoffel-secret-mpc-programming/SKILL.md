@@ -24,6 +24,8 @@ Use this playbook when an app handles private values, secret shares, client-prov
 
 Help developers write MPC-oriented Stoffel apps using `secret` types, `Share.*`, `ClientStore.*`, `Mpc.*`, `MpcOutput.*`, and related builtins, while preserving runnable local examples.
 
+For client-owned private input in a multi-user or networked application, the participant-owned process is the Stoffel MPC client and submits directly to the separately deployed MPC service. The application control plane must not receive or persist participant plaintext. Complete the trust-boundary worksheet in [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path), then use [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) for the production client path.
+
 ## Current source of truth
 
 - `crates/stoffel-lang/examples/README.md`
@@ -45,7 +47,7 @@ def main(a: secret int64, b: secret int64) -> secret int64:
 
 When run locally through the CLI/SDK, source/file programs returning a secret value may be wrapped/opened by the local execution path so app tests can assert clear outputs.
 
-For client-owned private inputs, prefer `ClientStore`:
+For client-owned private inputs, use `ClientStore` in the Stoffel program. The CLI flags below inject plaintext into one trusted local harness process for program testing; they do not define the production application-service path:
 
 ```stfl
 # run-args: --client-input 0=40 --client-input 1=2 --expected-output-clients 2
@@ -110,7 +112,7 @@ def gate_xor(a: secret bool, b: secret bool) -> secret bool:
 
 ## Client input shares
 
-Use `ClientStore` when the app receives private client inputs through the coordinator/client path:
+Use `ClientStore` when participant clients provide private inputs through the coordinator/client path. In production, each participant-owned client submits its own slot directly; do not place `.with_client_input(...)` or plaintext client fields in an application backend:
 
 ```stfl
 var value = ClientStore.take_share(0, 0)
@@ -129,7 +131,7 @@ stoffel run src/main.stfl \
   --expected-output-clients 2
 ```
 
-Input-file equivalents are documented in [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow).
+Input-file equivalents are documented in [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow). Treat CLI flags and input files as trusted local fixtures. They prove program semantics, not that a production control plane is outside the plaintext path.
 
 ## Client outputs
 

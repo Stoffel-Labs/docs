@@ -112,11 +112,21 @@ async fn main() -> stoffel::Result<()> {
 }
 ```
 
-## Shape it like an app integration
+## Shape the local harness like a participant client
 
-A larger app usually separates the code that owns the MPC network from the code that handles user/client requests. MPC nodes run away from input and output clients; the client-facing app identifies the private portion of a request and hands that portion to the Stoffel-backed workflow.
+This section is a trusted local development harness. The file handoff and `.with_client_input(...)` call below expose the fixture plaintext to the local harness process. They prove program behavior; they are not a production privacy architecture and must not be moved into an application backend.
 
-For this tutorial, keep everything on your development machine but split the project like an app would be split:
+For client-owned private input in a deployed app, separate these roles:
+
+```text
+application control plane  <->  participant-owned client  ->  separately deployed MPC network
+public metadata/config          owns plaintext and submits     coordinator and MPC parties
+receipts/authorized aggregate   directly through client IO
+```
+
+The application control plane must not receive the private request field. The participant-owned client obtains public session and client-slot configuration, then connects to the MPC deployment directly. If the participant runtime cannot perform direct client submission, stop at that capability gap or use an explicitly participant-controlled sidecar; do not silently add a plaintext backend gateway.
+
+For this tutorial, keep everything on your development machine but split the participant client from the trusted local MPC harness:
 
 ```text
 src/
@@ -167,7 +177,7 @@ pub fn decision_from_score(
 }
 ```
 
-Create `src/bin/main.rs`. This is the local development network owner: it loads the bytecode built from `src/main.stfl`, waits for client requests, and runs each private score through local MPC. Stop it with `Ctrl-C` when you are done.
+Create `src/bin/local_mpc.rs`. This is the trusted local development harness: it loads the bytecode built from `src/main.stfl`, waits for fixture requests, sees the local fixture plaintext, and runs each score through local MPC. It must not be used as an application backend. Stop it with `Ctrl-C` when you are done.
 
 ```rust
 use std::{fs, path::Path, time::Duration};
@@ -219,7 +229,7 @@ async fn main() -> stoffel::Result<()> {
 }
 ```
 
-Create `src/client.rs`. This file is the client-handling boundary: it accepts an application request, sends only the private score to the local MPC side, then combines the returned score with ordinary app fields.
+Create `src/client.rs`. This file represents participant-owned client code: it accepts its owner's request, sends the private score to the trusted local MPC harness, then combines the returned score with ordinary client-side fields. Do not expose `EligibilityRequest.private_score` as an application-service request schema.
 
 ```rust
 use std::{fs, path::Path, thread, time::Duration};
@@ -287,7 +297,7 @@ fn main() -> stoffel::Result<()> {
 Run the local MPC owner in one terminal:
 
 ```bash
-cargo run --bin main
+cargo run --bin local_mpc
 ```
 
 Then run the client handler from another terminal:
@@ -296,7 +306,7 @@ Then run the client handler from another terminal:
 cargo run --bin eligibility_client -- acct_123 42 ca
 ```
 
-The important separation is that ordinary app logic stays in Rust, client handling lives in its own module, and the Stoffel program owns the private computation. In this local tutorial, `main.rs` starts local MPC nodes on the same development machine. In a deployed setup, that network would run elsewhere, and the client-handling side would connect to it instead of using this local file-based handoff.
+The important local separation is that participant client handling lives in its own module and the Stoffel program owns the private computation. In this tutorial, `main.rs` starts local MPC nodes and sees fixture plaintext on the same development machine. In a deployed setup, the participant-owned client would load pinned bindings and public deployment config, then submit directly to the separately deployed network. A separate application control plane may manage public metadata, session lifecycle, non-sensitive receipts, and authorized opened aggregates, but it must remain outside the plaintext path.
 
 <Note>
 Want to deploy MPC apps instead of running local development networks? [Sign up for Stoffel updates](https://buttondown.com/stoffel) to hear when we launch the platform for deploying MPC apps.

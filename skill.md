@@ -10,7 +10,15 @@ metadata:
 
 # Stoffel Developer Skills
 
-Stoffel exposes multiple focused skills under `.mintlify/skills/` and the `/.well-known/agent-skills/` discovery endpoint. Use the most specific skill for the task:
+Stoffel exposes multiple focused skills under `.mintlify/skills/` and the `/.well-known/agent-skills/` discovery endpoint. Use the most specific skill for the task.
+
+## Multi-user application invariant
+
+For client-owned private input, each input owner's device or process is a distinct participant MPC client. It submits directly through the Stoffel client protocol to the separately deployed MPC network. An application control plane may manage public metadata, authorization, session configuration, client-slot assignment, non-sensitive receipts, lifecycle, and explicitly authorized opened aggregates, but it must not receive or persist participant plaintext.
+
+A backend gateway that receives raw input is a separate, weaker trust model and requires explicit approval. Do not silently introduce one when participant runtime support is unavailable. For complete or networked multi-user apps, start with `stoffel-full-app-golden-path`, then use `stoffel-app-network-and-offchain-integration`.
+
+Use the most specific skill for the remaining task:
 
 - `stoffel-app-getting-started`: Install the Stoffel tooling, create a new app, run first local smoke tests, and choose the right development path.
 - `stoffel-cli-app-workflow`: Use the stoffel CLI to init, check, build, compile, run, test, inspect, and troubleshoot Stoffel apps.

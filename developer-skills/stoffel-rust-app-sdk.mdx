@@ -90,6 +90,8 @@ fn main() -> stoffel::Result<()> {
 
 For application integration, design toward deployed services and packaged artifacts: build bytecode once, deploy MPC nodes separately, and have client software load deployment config plus typed bindings. Use local MPC as the development smoke path, not the production topology.
 
+**Client input ownership rule:** private `ClientStore` values originate in the SDK client. The client validates the generated input shape, encodes its own vector, and submits it through the client/coordinator protocol. Application servers and SDK server/node builders receive deployment configuration and value-blind protocol metadata; they must not receive participant values or proxy plaintext private inputs. Do not add per-client value payloads to `ServerBuilder` to model client slots or input ranges.
+
 ```rust
 let runtime = Stoffel::load_file(app_path("dist/program.stflb"))?
     .parties(5)
@@ -313,6 +315,7 @@ cargo run --locked -p stoffel-rust-sdk --example local_mpc_client_input
 - Do not omit a generated app's `Cargo.lock` or silently drop `--locked` in CI.
 - Do not treat a successful build inside the framework checkout as portability proof; workspace inheritance and nearby paths can hide leaks.
 - Do not simulate protocol behavior in app code; use SDK/runtime execution paths.
+- Do not route `ClientStore` values through an application server or add participant input payloads to SDK server/node builders. Input ownership and submission belong to the SDK client.
 - Do not present `.execute_local().await?` as a production deployment path.
 - Do not compile `.stfl` source dynamically inside production clients; load pinned bytecode and generated metadata.
 - Do not set an explicit backend that conflicts with bytecode metadata. Prefer generated manifests for ClientStore programs.

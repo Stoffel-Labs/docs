@@ -147,6 +147,14 @@ config.validate_server_addresses()?;
 
 The SDK can validate and carry the app-level config, but live network deployment also needs operator-owned process supervision, identity files, node RPC reachability, and persistence/state decisions. Use [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) for that handoff.
 
+### Client input ownership boundary
+
+- Each SDK client owns its private `ClientStore` values and submits its complete typed input vector through the client protocol.
+- The generated manifest plus client configuration bind a client slot to that vector's ordered input shape.
+- An application server may manage public lifecycle, authorization, and bootstrap metadata, but it must not receive or proxy plaintext private inputs.
+- Coordinator and party services may validate value-blind session, identity, slot, range, and topology metadata and process protocol messages. That does not make them application-level input owners.
+- Do not invent server-builder APIs for participant values. If a client transport is missing, implement or fix the SDK client transport instead of moving input ownership to the server.
+
 ## CLI network execution
 
 The CLI can execute against a network config:
@@ -195,6 +203,7 @@ When reporting a failure, include the labeled execution context, exact command a
 - `stoffel run --config` is network/off-chain config, not project `Stoffel.toml`.
 - Do not duplicate lower-level networking/protocol logic in app code.
 - Do not bypass typed IO validation for ClientStore apps.
+- Do not send participant values through an application server or SDK server/node builder; private input submission belongs to each SDK client.
 - Keep on-chain coordinator paths marked advanced until public docs and stable APIs exist.
 - Present coordinator/network assumptions with explicit current status and deployment validation guidance.
 - Do not move to network debugging until the local loop has produced a real passing or failing run.

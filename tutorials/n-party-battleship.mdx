@@ -1,0 +1,118 @@
+---
+title: "N-party Battleship Hidden State"
+description: "A focused tutorial for learning private state transitions and recipient-specific reveal policies."
+---
+
+The N-party Battleship tutorial is a focused mental-model tutorial. It teaches hidden state: an app can update private state and reveal only the facts a product policy allows, without giving the backend a full plaintext god view.
+
+Runnable source:
+
+- [N-party Battleship tutorial](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/03-n-party-battleship)
+- [Full tutorial repository](https://github.com/Stoffel-Labs/Stoffel-tutorials)
+
+## What this teaches
+
+Battleship is useful because the privacy failure is obvious. A hidden-board game should not require the service, spectators, support tools, or analytics jobs to see every unshot ship location.
+
+The tutorial isolates this product shape:
+
+```text
+private state + action -> private next state + authorized view
+```
+
+Use it after the [private matchmaking app](./private-matchmaking) when you want to understand private state transitions in isolation.
+
+## Privacy boundary
+
+| Fact | Boundary decision |
+| --- | --- |
+| Player list and turn order | Public liveness state. The app needs it to coordinate play. |
+| Target board cells | Private state. Do not expose unshot locations to the attacker, bystanders, operators, support tools, or analytics jobs. |
+| Hit mask and remaining health | Private intermediate state unless a reveal policy names a recipient. |
+| Shot coordinate | Policy-dependent. Public combat log, private result, and delayed reveal are different products. |
+| Hit/miss/sunk result | Authorized output according to the chosen reveal policy. |
+| Final winner | Authorized output at game end. |
+
+The tutorial’s core lesson is recipient specificity. “Reveal hit/miss” is incomplete until the product says who receives it and when.
+
+## Reveal policies
+
+The tutorial compares three policies:
+
+1. Public combat log
+   - Everyone sees the coordinate and result.
+   - The board still stays hidden unless the game explicitly allows review.
+
+2. Private result
+   - Attacker and target see the detailed hit/miss result.
+   - Bystanders may see only that a turn happened.
+
+3. Delayed reveal
+   - Details stay hidden during live play.
+   - Selected logs may open after elimination or game end.
+
+None of these is universally correct. The point is that the policy is explicit before the app is implemented.
+
+## Code map
+
+```text
+tutorials/03-n-party-battleship/
+  normal/                 trusted-referee Battleship
+  private/                reveal-policy model
+  src/mpc_helpers.stfl    secret-bit helpers and oblivious lookup
+  src/client.rs           attacker and target-board client payloads
+  src/bin/battleship_client.rs
+  src/app.rs              Rust SDK game-service boundary
+  src/main.rs             runnable sample app
+  src/main.stfl           private state transition walkthrough
+  tests/
+  mental-model.md
+```
+
+Read the files in this order:
+
+1. `normal/battleship.rs`: see the omniscient-referee backend.
+2. `private/battleship.rs`: see recipient-specific authorized views.
+3. `src/client.rs`: see the attacker and target-board payloads.
+4. `src/app.rs`: see the Rust service generate the local run, attach inputs, and decode the shot result.
+5. `src/main.stfl`: see oblivious lookup, private hit-mask update, private remaining-health update, and opened output fields.
+6. `tests/`: see reveal-policy behavior and hidden-state expectations.
+
+## Run it
+
+From the tutorial repository root:
+
+```bash
+cargo test -p n-party-battleship-tutorial
+cargo run -p n-party-battleship-tutorial --bin battleship_client -- attacker alice 2
+cargo run -p n-party-battleship-tutorial
+```
+
+Then run the Stoffel project directly:
+
+```bash
+cd tutorials/03-n-party-battleship
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run \
+  --client-input 0=2 \
+  --client-input 1=0,1,1,0,0,0,0,0,2 \
+  --timeout-secs 600
+```
+
+The direct CLI run returns the opened shot outcome encoded by the tutorial.
+
+## What not to copy
+
+Do not copy Battleship as a claim that every game needs MPC. Copy the hidden-state design habit:
+
+1. Separate public liveness state from private app state.
+2. Define the recipient-specific view before coding.
+3. Update private state without turning it into a backend-readable board.
+4. Open only the facts named by the reveal policy.
+5. Treat logs, support tools, analytics, and spectators as product surfaces with explicit access rules.
+
+## Return to the app-shaped path
+
+After this focused tutorial, return to [Build a private matchmaking service](./private-matchmaking) to see how private computation fits into a Rust service. Use [Private lottery reveal boundary](./private-lottery) for the smaller “one opened result” mental model.

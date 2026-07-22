@@ -1,0 +1,97 @@
+---
+title: "Private Lottery Reveal Boundary"
+description: "A focused tutorial for learning authorized outputs: reveal the winner without exposing the full private draw board."
+---
+
+The private lottery tutorial is a focused mental-model tutorial. It teaches the reveal-boundary habit: a private computation can open one authorized result without turning every private input and intermediate value into app data.
+
+Runnable source:
+
+- [Private lottery tutorial](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/01-private-lottery)
+- [Full tutorial repository](https://github.com/Stoffel-Labs/Stoffel-tutorials)
+
+## What this teaches
+
+A lottery is a small version of a common product shape:
+
+```text
+private eligibility + private draw path -> winner
+```
+
+The app still owns signups, deadlines, participant slots, and winner announcement. Stoffel owns the sensitive draw. The program opens only the winner index.
+
+This tutorial is useful after the [private matchmaking app](./private-matchmaking) because it isolates one concept: the authorized output is not the whole computation trace.
+
+## Privacy boundary
+
+| Fact | Boundary decision |
+| --- | --- |
+| Participant slots | Public. The app needs them to map the winner index to a display name. |
+| Eligibility bit per participant | Private input. Do not expose non-winning eligibility to the operator, other participants, support tools, analytics jobs, or logs. |
+| MPC-generated random tickets | Private intermediate state. Do not open ticket values or let them become a loser-ranking table. |
+| Ticket comparison trace | Private intermediate state. Do not reveal how close each participant came to winning. |
+| Winner index | Authorized output. Open it so the app can announce the winner. |
+
+The private computation can reveal the winner without giving the provider a board it can rerun, tune, export, or use to rank non-winners.
+
+## Code map
+
+```text
+tutorials/01-private-lottery/
+  normal/                  trusted-server implementation
+  private/                 privacy-boundary model
+  src/client.rs            participant client payloads
+  src/bin/participant_client.rs
+  src/app.rs               Rust SDK app service
+  src/main.rs              runnable sample app
+  src/main.stfl            Stoffel draw program
+  tests/                   app and privacy-boundary tests
+  mental-model.md
+```
+
+Read the files in this order:
+
+1. `normal/lottery.rs`: see what the trusted server can see and control.
+2. `private/lottery.rs`: see the authorized output model.
+3. `src/client.rs`: see each participant’s private eligibility payload.
+4. `src/app.rs`: see the Rust service compile, attach inputs, run local MPC, and map the winner index back to a participant.
+5. `src/main.stfl`: see private ticket generation, private comparison, private selection, and the single reveal.
+
+## Run it
+
+From the tutorial repository root:
+
+```bash
+cargo test -p private-lottery-tutorial
+cargo run -p private-lottery-tutorial --bin participant_client -- alice 0 true
+cargo run -p private-lottery-tutorial
+```
+
+Then run the Stoffel project directly:
+
+```bash
+cd tutorials/01-private-lottery
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run \
+  --client-input 0=1 \
+  --client-input 1=1 \
+  --client-input 2=1 \
+  --timeout-secs 240
+```
+
+The direct CLI run returns the opened winner index for the sample slots.
+
+## What not to copy
+
+Do not turn this into a global rule that every app should use lotteries or randomness. Copy the boundary pattern:
+
+1. The product needs one opened decision.
+2. The private inputs and intermediate trace are not useful product surfaces.
+3. The app names the recipient of the opened result.
+4. Everything else stays inside the private computation.
+
+## Return to the app-shaped path
+
+After this focused tutorial, return to [Build a private matchmaking service](./private-matchmaking) to see the same reveal-boundary habit inside a richer Rust app. Use [N-party Battleship hidden state](./n-party-battleship) when you want the next mental model: private state transitions with recipient-specific views.

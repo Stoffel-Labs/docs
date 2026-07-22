@@ -1,0 +1,191 @@
+---
+title: "Rust SDK App Integration"
+description: "Embed a Stoffel program inside a Rust service with explicit client inputs, local MPC execution, and typed domain outputs."
+---
+
+Use the Rust SDK when Stoffel is part of an application rather than a standalone CLI run. The app keeps ordinary product logic in Rust and moves the privacy-sensitive computation into StoffelLang.
+
+If you want a complete minimal project before reading the pattern, run the [Rust SDK quickstart](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/00-rust-sdk-quickstart). It is the smallest app-shaped Rust example before the larger tutorial apps.
+
+The shape to aim for is:
+
+```text
+Rust domain request
+→ client-owned private payloads
+→ Stoffel ClientStore inputs
+→ local MPC development run
+→ opened result
+→ Rust domain response
+```
+
+## Recommended project shape
+
+A small app-shaped project usually has:
+
+```text
+src/
+├── app.rs          # service boundary that calls Stoffel
+├── client.rs       # client-owned private payloads
+├── domain.rs       # ordinary product types
+├── lib.rs          # module exports and generated bindings when used
+├── main.rs         # sample app entrypoint
+├── main.stfl       # private computation
+└── bin/
+    └── *_client.rs # optional client payload demo
+```
+
+The tutorial repository uses this structure in the [Rust SDK quickstart](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/00-rust-sdk-quickstart), [Private Lottery](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/01-private-lottery), [Private Matchmaking](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/02-private-matchmaking), and [N-party Battleship](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/03-n-party-battleship) tutorials.
+
+## Service boundary responsibilities
+
+`src/app.rs` should own the SDK handoff:
+
+1. Receive normal Rust domain input.
+2. Validate public application shape, such as participant count or slot layout.
+3. Keep each client payload attached to a client slot.
+4. Compile `src/main.stfl` or load built `.stflb` bytecode.
+5. Configure local MPC settings such as parties, threshold, backend, and timeout.
+6. Attach private inputs with `.with_client_input(slot, values)`.
+7. Build the runtime and validate client inputs.
+8. Run local MPC for the tutorial/dev smoke test.
+9. Decode the opened result into a Rust domain type.
+10. Keep ordinary policy decisions, persistence, display names, and routing in Rust when they do not need private computation.
+
+## Minimal pattern
+
+```rust
+use std::{path::PathBuf, time::Duration};
+
+use stoffel::prelude::*;
+
+pub struct PrivateFeatureService {
+    program_path: PathBuf,
+    parties: usize,
+    threshold: usize,
+    timeout: Duration,
+}
+
+impl PrivateFeatureService {
+    pub async fn run_round(&self, client_inputs: Vec<(u64, Vec<i64>)>) -> stoffel::Result<i64> {
+        let mut builder = Stoffel::compile_file(&self.program_path)?
+            .parties(self.parties)
+            .threshold(self.threshold)
+            .honeybadger();
+
+        for (slot, values) in client_inputs {
+            builder = builder.with_client_input(slot, &values);
+        }
+
+        let runtime = builder.build()?;
+        runtime.validate_client_inputs()?;
+
+        let values = runtime
+            .local_network()
+            .entry("main")
+            .timeout(self.timeout)
+            .run()
+            .await?;
+
+        values
+            .first()
+            .and_then(Value::as_i64)
+            .ok_or_else(|| Error::Computation(format!("expected int64 output, got {values:?}")))
+    }
+}
+```
+
+This pattern is for local development. It runs several MPC nodes/processes locally on your machine. A deployed network uses the same program boundary but different server/client configuration.
+
+## Client payloads
+
+Give each logical participant a Rust type that owns its private payload:
+
+```rust
+#[derive(Debug, Clone)]
+pub struct VoterClient {
+    pub voter_id: String,
+    pub client_slot: u64,
+    pub approves: bool,
+}
+
+impl VoterClient {
+    pub fn input_values(&self) -> [i64; 1] {
+        [i64::from(self.approves)]
+    }
+}
+```
+
+Then attach the payload at the service boundary:
+
+```rust
+for voter in voters {
+    builder = builder.with_client_input(voter.client_slot, &voter.input_values());
+}
+```
+
+Prefer one client slot per logical participant when the product has distinct participants. That keeps ownership clear and makes the privacy boundary easier to explain.
+
+## StoffelLang boundary
+
+The Stoffel program should load only the private values it needs:
+
+```stoffel
+def main() -> int64:
+  var yes_votes: secret int64 = Share.from_clear_int(0, 64)
+  var client_count = ClientStore.get_number_input_clients()
+
+  for client_id in 0..client_count:
+    var vote: secret int64 = ClientStore.take_share(client_id, 0)
+    yes_votes = yes_votes + vote
+
+  return yes_votes.reveal()
+```
+
+The host app can apply ordinary public policy afterward, such as `yes_votes >= approvals_required`.
+
+## Compile source or load bytecode
+
+For development tutorials, compiling source keeps the example easy to read:
+
+```rust
+let runtime = Stoffel::compile_file("src/main.stfl")?
+    .parties(5)
+    .threshold(1)
+    .build()?;
+```
+
+For application builds, use the CLI to build bytecode and load the artifact:
+
+```bash
+stoffel build
+```
+
+```rust
+let runtime = Stoffel::load_file("target/debug/my-app.stflb")?
+    .parties(5)
+    .threshold(1)
+    .build()?;
+```
+
+Generated bindings can carry program metadata into the Rust app. Regenerate or update them when the `ClientStore` input/output shape changes.
+
+## Verification loop
+
+Use both Rust and Stoffel checks:
+
+```bash
+cargo test
+cargo run
+stoffel status --verbose
+stoffel check
+stoffel build
+```
+
+Then run the tutorial's exact local MPC command. If the tutorial uses newer StoffelLang helpers than your installed CLI supports, use the CLI version named by the tutorial repository until those APIs are in the default installer.
+
+## Next steps
+
+- [Rust SDK quickstart](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/00-rust-sdk-quickstart)
+- [Private Matchmaking tutorial](../tutorials/private-matchmaking)
+- [Design the privacy boundary](../tutorials/privacy-boundary)
+- [Rust SDK examples](./examples)

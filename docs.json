@@ -76,6 +76,7 @@
             "group": "Tutorials",
             "pages": [
               "tutorials/overview",
+              "tutorials/rust-sdk-quickstart",
               "tutorials/private-matchmaking",
               "tutorials/private-lottery",
               "tutorials/n-party-battleship",

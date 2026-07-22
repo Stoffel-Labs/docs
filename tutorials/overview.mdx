@@ -1,15 +1,19 @@
 ---
 title: "Tutorial overview"
-description: "Start with a private matchmaking service, then use focused tutorials to understand reveal boundaries and hidden state."
+description: "Start with the Rust SDK quickstart, then build a private matchmaking service and focused privacy-pattern tutorials."
 ---
 
-Start with the tutorial that looks most like an application: a Rust service that computes private matches. Then use the focused tutorials to isolate the two privacy patterns you will reuse in your own app: reveal boundaries and hidden state.
+Start with the Rust SDK quickstart if you want the smallest app-shaped project. Then move to the private matchmaking tutorial for the full Rust service boundary, and use the focused tutorials to isolate the privacy patterns you will reuse in your own app: reveal boundaries and hidden state.
 
 ## Start here
 
-<CardGroup cols={1}>
+<CardGroup cols={2}>
+  <Card title="Rust SDK quickstart" href="/tutorials/rust-sdk-quickstart" icon="rocket">
+    Build a private approval tally that opens only an aggregate yes-vote count, then maps it into a normal Rust launch decision.
+  </Card>
+
   <Card title="Build a private matchmaking service" href="/tutorials/private-matchmaking" icon="heart">
-    Compute matches from private feature and preference vectors without exposing raw vectors, scores, rankings, or rejection paths. This is the best starting point if you want to see the full Rust service boundary around a Stoffel computation.
+    Compute matches from private feature and preference vectors without exposing raw vectors, scores, rankings, or rejection paths. This is the best next step if you want to see the full Rust service boundary around a Stoffel computation.
   </Card>
 </CardGroup>
 
@@ -39,21 +43,14 @@ From the repository root:
 cargo test
 ```
 
-Then run the matching tutorial directly:
+Then run the quickstart or matching tutorial directly:
 
 ```bash
-cd tutorials/02-private-matchmaking
+cd tutorials/00-rust-sdk-quickstart
 stoffel status --verbose
 stoffel check
 stoffel build
-stoffel run src/main.stfl \
-  --client-input 0=1,0,1,0 \
-  --client-input 1=0,1,1,0 \
-  --client-input 2=1,0,0,1 \
-  --client-input 3=1,0,0,1 \
-  --client-input 4=0,1,1,0 \
-  --client-input 5=1,0,1,0 \
-  --timeout-secs 600
+stoffel run --client-input 0=1 --client-input 1=0 --client-input 2=1 --timeout-secs 180
 ```
 
 Each tutorial README includes its exact `cargo run`, `stoffel check`, `stoffel build`, and `stoffel run` commands.
@@ -73,6 +70,7 @@ Copy the boundary pattern, not the sample domain:
 ## Next steps
 
 <CardGroup cols={2}>
+  <Card title="Rust SDK quickstart" href="/tutorials/rust-sdk-quickstart" />
   <Card title="Build a private matchmaking service" href="/tutorials/private-matchmaking" />
   <Card title="Embed Stoffel in a Rust service" href="/rust-sdk/app-integration" />
   <Card title="Run a local Docker MPC network" href="/deployment/docker-local-network" />

@@ -24,6 +24,21 @@ Use this playbook when an app moves beyond local runs and needs client/server bu
 
 Guide advanced app developers from local bytecode to app-level network/off-chain integration using public SDK builders, while labeling lower-layer behavior with the current component status.
 
+For client-owned private input, the participant-owned process is the Stoffel MPC client. It submits directly to the separately deployed MPC service. The application control plane may issue public session configuration and receive non-sensitive receipts or explicitly authorized opened aggregates, but it must not receive or persist participant plaintext.
+
+## Separate the application roles
+
+Do not combine these roles into one `client/app` layer:
+
+| Role | Responsibility | Plaintext boundary |
+| --- | --- | --- |
+| Application control plane | Public metadata, authentication, session lifecycle, client-slot/capability assignment, network discovery, non-sensitive receipts, authorized aggregates | Must not receive participant private input |
+| Participant MPC client | Loads pinned bindings/config, validates its owner's input, submits its assigned slot, decodes authorized output | May see only its owner's plaintext |
+| MPC service plane | Separately deployed coordinator and long-running parties | Receives client-protocol material according to the deployment, not application-service plaintext |
+| Output recipient | Participant client or application service named by the privacy worksheet | Receives only explicitly authorized output |
+
+A backend gateway that accepts raw input is a distinct, weaker trust model. Name it and require explicit approval; do not introduce it to work around missing participant-runtime support.
+
 ## Current source of truth
 
 - `crates/stoffel-rust-sdk/README.md`
@@ -37,7 +52,9 @@ Guide advanced app developers from local bytecode to app-level network/off-chain
 
 ## Preconditions
 
-Before network integration, verify local behavior:
+Before network integration, complete the trust-boundary worksheet in [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path). Identify the participant runtime, the process that executes client submission, components forbidden from plaintext, the control-plane persistence allowlist, and output recipients.
+
+Then verify local program behavior:
 
 ```sh
 stoffel status --verbose
@@ -151,8 +168,10 @@ config.validate_server_addresses()?;
 5. Derive off-chain client config for a client slot.
 6. Attach coordinator address, node endpoints/RPC addresses, timestamp, and client identity material.
 7. Configure the separately deployed MPC service layer with the same bytecode, topology, backend, and client/output slots.
-8. Run or submit typed client inputs.
-9. Validate typed outputs and consensus/order evidence where applicable.
+8. Have each participant-owned client submit its own typed input directly to that deployment.
+9. Reconcile only non-sensitive submission status with the application control plane.
+10. Deliver typed outputs only to recipients authorized by the privacy worksheet.
+11. Validate typed outputs and consensus/order evidence where applicable.
 
 The SDK can validate and carry the app-level config, but live network deployment also needs operator-owned process supervision, identity files, node RPC reachability, and persistence/state decisions. Use [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) for that handoff.
 
@@ -163,6 +182,49 @@ The SDK can validate and carry the app-level config, but live network deployment
 - An application server may manage public lifecycle, authorization, and bootstrap metadata, but it must not receive or proxy plaintext private inputs.
 - Coordinator and party services may validate value-blind session, identity, slot, range, and topology metadata and process protocol messages. That does not make them application-level input owners.
 - Do not invent server-builder APIs for participant values. If a client transport is missing, implement or fix the SDK client transport instead of moving input ownership to the server.
+
+## Control-plane bootstrap and receipts
+
+A control plane may return public session configuration such as:
+
+```json
+{
+  "sessionId": "session_123",
+  "clientSlot": 1,
+  "programHash": "sha256:...",
+  "inputSchemaId": "prediction-v1",
+  "coordinatorEndpoint": "https://coordinator.example.com",
+  "nodeRpcEndpoints": ["https://node-0.example.com"],
+  "deploymentEpoch": 42,
+  "submissionCapability": "short-lived-signed-token"
+}
+```
+
+A non-sensitive receipt may contain:
+
+```json
+{
+  "sessionId": "session_123",
+  "clientSlot": 1,
+  "submissionId": "sub_456",
+  "status": "accepted",
+  "receivedAt": "..."
+}
+```
+
+Do not place participant predictions, typed private inputs, reversible encodings, generic private payload blobs, secret-sharing randomness, or participant shares in control-plane APIs, persistence, logs, queues, analytics, or receipts.
+
+## Participant runtime capability gate
+
+Resolve this before implementation:
+
+| Participant runtime | Required decision |
+| --- | --- |
+| Native or Rust client, including participant-side Tauri Rust | Use direct participant-to-MPC submission when supported by the current SDK |
+| Browser/WASM with a supported Stoffel client package | Submit directly from the participant client |
+| Browser/WASM without direct support | Stop at the capability gap or use an explicitly participant-controlled sidecar; do not proxy plaintext through the backend |
+| Backend gateway | Degraded trust: the gateway sees raw input and requires explicit approval |
+| Local CLI or fixture harness | Development evidence only; not production private-data-plane evidence |
 
 ## CLI network execution
 
@@ -181,7 +243,11 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 - Coordinator address, node mesh addresses, node RPC addresses, identity material, and expected client certificates are explicitly configured or listed as operator handoff fields.
 - Network config validates before starting servers/clients.
 - Client IO metadata matches generated bindings.
-- Real client/server run returns expected output or a concrete error with logs.
+- Real participant-client/network run returns expected output or a concrete error with logs.
+- Control-plane schemas, persistence, logs, and receipts contain no participant plaintext.
+- A plaintext canary test confirms private input bypasses application-service requests, storage, queues, caches, traces, analytics, and crash reports.
+- The participant runtime has verified direct client-protocol support or an explicit capability blocker/participant-controlled sidecar decision.
+- Every output recipient matches the privacy worksheet.
 - Any coordinator/network assumptions are labeled with current component status and paired with deployment validation guidance.
 - The clean external checkout/public dependency consumer proof passes, or the result is explicitly labeled **not clean-room tested**.
 - The provenance manifest identifies every execution context, dependency source, lockfile, artifact hash, and applicable image digest.
@@ -211,6 +277,10 @@ When reporting a failure, include the labeled execution context, exact command a
 
 - `stoffel run --config` is network/off-chain config, not project `Stoffel.toml`.
 - Do not duplicate lower-level networking/protocol logic in app code.
+- Do not treat participant clients and the application control plane as one trust role.
+- Do not add plaintext private fields to control-plane endpoints or persistence.
+- Do not put `.with_client_input(...)` or `.execute_local()` in a production application-service path.
+- Do not silently replace missing browser/client support with a plaintext backend gateway.
 - Do not bypass typed IO validation for ClientStore apps.
 - Do not send participant values through an application server or SDK server/node builder; private input submission belongs to each SDK client.
 - Keep on-chain coordinator paths marked advanced until public docs and stable APIs exist.

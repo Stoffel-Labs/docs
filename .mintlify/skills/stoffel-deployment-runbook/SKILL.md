@@ -26,13 +26,16 @@ Make deployment explicit enough that an agent does not guess hidden topology, id
 
 ## Deployment model
 
-Production-shaped Stoffel apps have three layers:
+Production-shaped multi-user Stoffel apps have four distinct roles:
 
 1. Build artifacts: `.stflb` bytecode, generated typed bindings, program manifest, and app release metadata.
-2. MPC service layer: coordinator plus long-running MPC parties/nodes with stable network addresses and identity material.
-3. Client/app layer: backend service, CLI, native app, or future browser/WASM client that loads deployment config, selects a client slot, submits inputs, and reads typed outputs.
+2. Application control plane: public metadata, authorization, session lifecycle, client-slot/capability assignment, network discovery, non-sensitive receipts, and explicitly authorized opened aggregates.
+3. Participant MPC clients: participant-owned processes that load deployment config and bindings, validate their owner's plaintext locally, select an assigned client slot, submit directly to the MPC service, and read authorized outputs.
+4. MPC service plane: a separately deployed coordinator plus long-running MPC parties/nodes with stable addresses and identity material.
 
-Do not use `.execute_local().await?` as the deployment model. It is the local development analogue that spawns several MPC nodes/processes on one machine.
+For client-owned private input, the application control plane must not receive or persist plaintext. If a backend gateway accepts raw input before secret sharing, name the weaker trust model and require explicit approval. Do not introduce a gateway merely because direct browser/client support is unavailable.
+
+Do not use `.execute_local().await?` as the deployment model. It is a trusted local development analogue that spawns several MPC nodes/processes on one machine and may expose every fixture input to one harness process.
 
 ## Portability and provenance preflight
 
@@ -67,6 +70,12 @@ Before editing deployment code, fill this table:
 | Party mesh addresses |  |
 | Node RPC addresses |  |
 | Client slots |  |
+| Participant client runtime(s) |  |
+| Direct client-protocol support status |  |
+| Application control-plane endpoint |  |
+| Control-plane persistence allowlist |  |
+| Non-sensitive receipt schema |  |
+| Components forbidden from plaintext |  |
 | Party identity files |  |
 | Client identity files |  |
 | Timestamp / deployment epoch |  |
@@ -204,9 +213,9 @@ Current SDK server builders capture program/config/health metadata; live process
 - Distinguish bind addresses from advertised/reachable addresses. `127.0.0.1` and `localhost` refer to the current network namespace and normally cannot identify a service across host/container boundaries.
 - Publish only required ports, and test coordinator, mesh, RPC, and client reachability from the actual source container/host. Record DNS resolution and the address used, not only a host-side health result.
 
-## Client/app integration
+## Participant-client integration
 
-Client software should load deployment config and submit typed inputs:
+Participant-owned client software should load deployment config and submit its owner's typed input directly to the separately deployed MPC service. A remote application backend is not the participant client. In a desktop application, the local Tauri/Rust process may be the participant client when it uses the supported SDK path locally on the participant's device.
 
 ```rust
 let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -242,7 +251,7 @@ let outputs = client
     .await?;
 ```
 
-If the app uses a backend gateway, state the security boundary: the gateway sees the user’s raw input before secret sharing. If raw input must stay out of the gateway, the app needs a client-side sharing package or another submission path; do not hide that gap.
+If the requested participant runtime cannot perform direct client-protocol submission, stop at that capability decision or use an explicitly participant-controlled sidecar. Do not silently route plaintext through the application backend. A backend gateway remains possible only as an explicitly approved degraded-trust architecture in which the gateway sees the user's raw input before secret sharing.
 
 ## Operational checklist
 
@@ -255,8 +264,11 @@ Before calling deployment done:
 - Party and client identity files are present, readable by the process, and not committed.
 - Client slots and output slots match the generated manifest.
 - Preprocessing capacity covers the expected workload shape.
-- Logs redact private inputs, identity material, tokens, and certificates.
-- Restart behavior is documented for coordinator, nodes, and client gateway.
+- Application-service schemas, persistence, logs, traces, caches, queues, analytics, crash reports, and receipts contain no participant plaintext.
+- A plaintext-canary test confirms the application control plane is outside the private-input path.
+- Participant clients submit directly to the MPC service using verified runtime support.
+- Logs redact identity material, tokens, certificates, shares, and private client values.
+- Restart behavior is documented for the control plane, participant clients, coordinator, and nodes.
 - Rollback means reverting bytecode, bindings, config, and app client code together.
 - Repository, CLI, SDK, lockfile, artifact, and image provenance is recorded for each labeled execution context.
 - The external clean-checkout/public dependency consumer proof passed.
@@ -316,6 +328,10 @@ When deployment fails, capture:
 ## Common pitfalls
 
 - Calling local MPC deployment because it returned the right answer on one machine.
+- Treating the application backend, participant client, CLI, and browser as one `client/app` role.
+- Accepting participant plaintext in control-plane APIs, persistence, queues, logs, or generic payload blobs.
+- Using `.with_client_input(...)` or `.execute_local()` in a production application-service path.
+- Replacing unsupported direct browser/client submission with an unapproved plaintext gateway.
 - Letting each node compile source independently instead of distributing pinned bytecode.
 - Running clients against bindings generated from stale bytecode.
 - Forgetting node RPC addresses when using off-chain ClientStore IO.

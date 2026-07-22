@@ -97,7 +97,7 @@ fn main() -> stoffel::Result<()> {
 
 ## Production-shaped client integration
 
-For application integration, design toward deployed services and packaged artifacts: build bytecode once, deploy MPC nodes separately, and have client software load deployment config plus typed bindings. Use local MPC as the development smoke path, not the production topology.
+For application integration, design toward deployed services and packaged artifacts: build bytecode once, deploy MPC nodes separately, and have each participant-owned client load deployment config plus typed bindings. For client-owned private input, that participant process submits directly to the MPC service; an application backend remains outside the plaintext path. Use local MPC as the development smoke path, not the production topology.
 
 **Client input ownership rule:** private `ClientStore` values originate in the SDK client. The client validates the generated input shape, encodes its own vector, and submits it through the client/coordinator protocol. Application servers and SDK server/node builders receive deployment configuration and value-blind protocol metadata; they must not receive participant values or proxy plaintext private inputs. Do not add per-client value payloads to `ServerBuilder` to model client slots or input ranges.
 
@@ -123,11 +123,11 @@ let offchain = runtime
     .build()?;
 ```
 
-Generated typed bindings should be compiled into the app client or gateway. Production clients should load pinned bytecode/metadata; they should not compile `.stfl` source dynamically for every request.
+Generated typed bindings should be compiled into the participant client. Production clients should load pinned bytecode/metadata; they should not compile `.stfl` source dynamically for every request. A backend gateway that accepts participant plaintext is a separate, degraded-trust architecture and requires explicit approval.
 
 ## Local MPC execution
 
-Use local MPC to verify the privacy-sensitive path before deploying. `.execute_local().await?` spawns a local MPC test network on the developer machine.
+Use local MPC to verify program semantics before deploying. `.execute_local().await?` spawns a local MPC test network on the developer machine, and one harness process may see every fixture input. It does not prove that a production application service is outside the plaintext path.
 
 ```rust
 use stoffel::prelude::*;

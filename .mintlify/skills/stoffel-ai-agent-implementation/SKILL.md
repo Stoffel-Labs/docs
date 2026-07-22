@@ -60,22 +60,32 @@ Before changing files or dependencies, the agent must:
 
 Keep the implementation prompt version-agnostic. Concrete versions belong in installation docs or the generated project manifest.
 
-## Start with the implementation boundary
+## Start with the application trust architecture
 
-Before asking an agent to write code, describe the boundary the Stoffel program must implement:
+For client-owned private input, the input owner's device or process is the Stoffel MPC client. It submits directly through the client protocol to the separately deployed MPC service. An application backend may manage public metadata, authorization, session configuration, non-sensitive receipts, lifecycle, and explicitly authorized opened aggregates, but it must not receive or persist participant plaintext.
 
-1. Which values are secret.
-2. Which values are public.
-3. Who supplies each input.
-4. Who receives each output.
-5. Whether each output is an opened value, client-output share, public commitment, curve-encoded value, or signature-related artifact.
-6. Which backend is selected and why.
-7. Which command proves the program is valid.
-8. Which command proves local MPC works.
-9. Which artifacts and configs are required before deployment.
-10. Which discovered project root the agent will modify.
-11. Which public dependency source satisfies the portability contract.
-12. Whether framework development was explicitly requested; otherwise local checkout use is forbidden.
+A backend gateway that receives raw input is a separate, weaker trust model. Do not introduce it implicitly or use it to work around missing browser/client support.
+
+Before asking an agent to write code, require it to answer:
+
+1. Which values are secret and public.
+2. Who owns each plaintext input and where that plaintext exists before protection.
+3. Which participant-owned process executes the Stoffel client protocol.
+4. Which components are forbidden from receiving, logging, queueing, caching, analyzing, or persisting plaintext.
+5. What the application control plane may receive and persist.
+6. Who receives each output.
+7. Whether each output is an opened value, client-output share, public commitment, curve-encoded value, or signature-related artifact.
+8. Whether the requested participant runtime supports direct client-protocol submission.
+9. Which backend is selected and why.
+10. Which command proves the program is valid.
+11. Which command proves local MPC works.
+12. Which command proves the production private-data path bypasses the application service.
+13. Which artifacts and configs are required before deployment.
+14. Which discovered project root the agent will modify.
+15. Which public dependency source satisfies the portability contract.
+16. Whether framework development was explicitly requested; otherwise local checkout use is forbidden.
+
+Do not begin implementation while the plaintext location, submission process, forbidden components, persistence allowlist, output recipients, participant runtime support, or dependency source is unresolved.
 
 For source snippets, the validation command is usually:
 
@@ -121,9 +131,24 @@ Secret values:
 Public values:
 - ...
 
-Input owners:
-- client 0 supplies ...
-- client 1 supplies ...
+Input owners and plaintext locations:
+- client 0 owns ...; plaintext exists in ...
+- client 1 owns ...; plaintext exists in ...
+
+Participant client path:
+- participant runtime: native Rust / participant-side Tauri Rust / supported browser client / other
+- process that loads bindings and submits each client slot: ...
+- separately deployed coordinator/MPC endpoints: ...
+
+Application control plane:
+- allowed public metadata/session fields: ...
+- persistence allowlist: ...
+- non-sensitive receipt shape: ...
+- components forbidden from plaintext: API, logs, traces, database, cache, queue, analytics, crash reports, ...
+
+Runtime capability gate:
+- direct client protocol support: verified / unsupported / unverified
+- if unsupported or unverified: stop or choose an explicitly participant-controlled sidecar; do not add a plaintext backend gateway
 
 Output boundary:
 - opened value / client-output share / public commitment / curve-encoded artifact / signature-related artifact
@@ -150,9 +175,12 @@ Cost and safety constraints:
 Validation:
 - run `stoffel check ...`
 - run `stoffel build --program-info`
-- run a local MPC smoke with documented inputs
+- run a local MPC smoke with documented inputs and label it as a trusted fixture harness
+- verify control-plane schemas and persistence contain no participant private fields or generic private payloads
+- run a plaintext-canary check across service requests, logs, traces, database, cache, queues, analytics, crash reports, and receipts
+- verify participant clients submit directly to the separately deployed MPC service
 - if deployment is requested, produce bytecode, bindings, topology, coordinator/client config, and operator handoff fields
-- if editing docs, run `npx mintlify validate` and `npx mintlify broken-links`
+- if editing docs, run `python scripts/sync_developer_skills.py`, `npx mintlify validate`, and `npx mintlify broken-links`
 ```
 
 ## HoneyBadgerMPC agent guidance
@@ -202,6 +230,10 @@ Useful APIs and concepts:
 
 ## Common corrections to give the agent
 
+- Do not treat `client`, `app`, `backend`, `gateway`, and participant-side Tauri Rust as interchangeable roles.
+- Do not send participant plaintext through an application endpoint in the default client-owned-input architecture; a gateway that does this is a separately approved degraded-trust design.
+- Do not use local `.with_client_input(...)` fixture injection as production private-data-plane evidence.
+- Do not compensate for unsupported browser/WASM submission by silently adding a plaintext backend gateway.
 - Do not use AVSS for generic private arithmetic unless the task needs commitments or curve-compatible artifacts.
 - Do not reveal intermediate secret values just to make the program easier to write.
 - Do not turn public transcript material into secret shares earlier than necessary.

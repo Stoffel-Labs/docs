@@ -83,9 +83,11 @@ A new app normally includes:
 
 ## Choose a development path
 
-- CLI-only path: mostly `.stfl` source and local smoke tests.
+For client-owned private input in a multi-user or networked application, first complete the trust architecture in [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path). Each participant-owned client should submit directly to the separately deployed MPC service; the application control plane must not receive or persist plaintext. Then use [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) for the direct client path and runtime capability gate.
+
+- CLI-only path: mostly `.stfl` source and trusted local smoke tests.
 - Rust SDK path: embedding compilation/execution, creating clients/servers, generating typed client IO bindings, or integrating with a Rust service.
-- Local MPC path: private workflows that need real local party execution before network/off-chain work.
+- Local MPC path: private workflows that need real local party execution before network/off-chain work; local fixture injection is not production private-data-plane evidence.
 - Network/off-chain path: advanced client/server/coordinator integration after the local smoke passes.
 
 ## Fast examples to inspect

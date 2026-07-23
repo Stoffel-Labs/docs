@@ -1,15 +1,15 @@
 ---
-title: "Docker Local Network"
-description: "Run a multi-party Stoffel network with Docker Compose to understand coordinator, party, client, and backend topology."
+title: "Docker Compose Network"
+description: "Run a multi-party Stoffel network with Docker Compose for local testing or deployment to your own backend environment."
 ---
 
-Use the Docker Compose stacks in the Stoffel repository when you need to inspect the networked runtime shape: coordinator, MPC parties, client input processes, node RPC addresses, identity material, backend selection, and persistent preprocessing or local stores.
+Use the Docker Compose stacks in the Stoffel repository when you need to run the networked runtime shape: coordinator, MPC parties, client input processes, node RPC addresses, identity material, backend selection, and persistent preprocessing or local stores.
 
-This is an operator/deployment-oriented workflow. For normal app development, start with local MPC through the `stoffel` CLI or Rust SDK.
+Compose is useful for local testing and for deploying a Stoffel MPC network to infrastructure you operate, including a developer-owned backend. For a first app loop, start with local MPC through the `stoffel` CLI or Rust SDK; move to Compose when you want explicit service topology, container boundaries, persistent stores, or backend integration.
 
-## What the Docker stacks show
+## What the Docker stacks provide
 
-The Compose files are useful because they make the runtime topology explicit:
+The Compose files make the runtime topology explicit and runnable:
 
 | Runtime piece | What to look for |
 | --- | --- |
@@ -131,9 +131,18 @@ STOFFEL_PROGRAM=/app/programs/threshold_ecdsa_secp256k1.stflb \
 | `STOFFEL_LOCAL_STORE` | Persistent local store path. |
 | `STOFFEL_MPC_BACKEND` / `STOFFEL_MPC_CURVE` | Backend and curve selection. |
 
-## How to read this as an app developer
+## Use with your own backend
 
-The Docker stacks do not replace the app-facing CLI or SDK workflow. They show what your local `.execute_local().await?` or `stoffel run` workflow is abstracting away:
+The Docker stacks are not only a local teaching aid. They can also be adapted for a backend you control: build your app's `.stflb` bytecode, mount or package it into the runtime image, configure coordinator and party addresses for your environment, and connect your app or client services to the exposed coordinator/node RPC endpoints.
+
+Use Compose when you want to own the deployment shape yourself:
+
+- local laptop or CI testing with the same service roles you plan to operate;
+- a developer-owned backend where the coordinator, parties, and clients run as containers;
+- staging environments that need persistent preprocessing or local stores;
+- operator runbooks that should start from concrete services rather than SDK-local execution.
+
+The app-facing CLI and SDK workflows remain the quickest first loop. Compose shows and runs the services those workflows abstract away:
 
 - several MPC node processes;
 - a coordinator or bootstrap path;
@@ -142,13 +151,13 @@ The Docker stacks do not replace the app-facing CLI or SDK workflow. They show w
 - bytecode execution;
 - explicit output reconstruction or delivery.
 
-Use the stacks to understand topology, test packaged bytecode, or prepare operator runbooks. Keep first-project docs focused on `stoffel` CLI and Rust SDK surfaces.
+For a deployed backend, replace local-only defaults with your own operational choices: real secrets, identity material, network addresses, TLS/routing, observability, storage, upgrade process, and access controls.
 
 ## Current caveats
 
-- These stacks are source-checkout workflows, not a managed production deployment product.
+- These stacks are self-managed Compose deployments. They are suitable for local testing and developer-owned backend deployments, but they are not a managed hosting product.
 - Some coordinator paths are HoneyBadger/BLS12-381-specific while AVSS is exercised by a separate local-store stack.
-- Compose networking uses fixed local subnets and checked-in local identity fixtures; production deployments need real identity, secret, network, and operations management.
+- The checked-in examples use fixed local subnets and local identity fixtures. Replace them with real identity, secret, network, and operations management when deploying outside a local test environment.
 - The runtime image packages selected example bytecode. For your app, build your own `.stflb` and point `STOFFEL_PROGRAM` at it.
 
 ## Next steps

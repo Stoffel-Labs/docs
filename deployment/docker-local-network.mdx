@@ -133,7 +133,7 @@ STOFFEL_PROGRAM=/app/programs/threshold_ecdsa_secp256k1.stflb \
 
 ## Use with your own backend
 
-The Docker stacks are not only a local teaching aid. They can also be adapted for a backend you control: build your app's `.stflb` bytecode, mount or package it into the runtime image, configure coordinator and party addresses for your environment, and connect your app or client services to the exposed coordinator/node RPC endpoints.
+The Docker stacks are not only a local teaching aid. They are starting points that you adapt for a backend you control. For your own application, update the Compose code and configuration rather than running the checked-in examples unchanged: build your app's `.stflb` bytecode, mount or package it into the runtime image, configure coordinator and party addresses for your environment, wire your own client input/output services, and connect your app or client services to the exposed coordinator/node RPC endpoints.
 
 Use Compose when you want to own the deployment shape yourself:
 
@@ -153,12 +153,14 @@ The app-facing CLI and SDK workflows remain the quickest first loop. Compose sho
 
 For a deployed backend, replace local-only defaults with your own operational choices: real secrets, identity material, network addresses, TLS/routing, observability, storage, upgrade process, and access controls.
 
+At minimum, review and update the Compose files, Docker image build, entrypoint environment, program bytecode path, client containers, identities, exposed ports, volumes, and backend-specific settings for your application. Treat the repository stacks as runnable templates, not drop-in production manifests for every app.
+
 ## Current caveats
 
 - These stacks are self-managed Compose deployments. They are suitable for local testing and developer-owned backend deployments, but they are not a managed hosting product.
 - Some coordinator paths are HoneyBadger/BLS12-381-specific while AVSS is exercised by a separate local-store stack.
 - The checked-in examples use fixed local subnets and local identity fixtures. Replace them with real identity, secret, network, and operations management when deploying outside a local test environment.
-- The runtime image packages selected example bytecode. For your app, build your own `.stflb` and point `STOFFEL_PROGRAM` at it.
+- The runtime image packages selected example bytecode and sample client behavior. For your app, build your own `.stflb`, point `STOFFEL_PROGRAM` at it, and update the client/container code that submits inputs or receives outputs.
 
 ## Next steps
 

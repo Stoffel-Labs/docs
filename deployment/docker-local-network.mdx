@@ -5,7 +5,7 @@ description: "Run a multi-party Stoffel network with Docker Compose for local te
 
 Use the Docker Compose stacks in the Stoffel repository when you need to run the networked runtime shape: coordinator, MPC parties, client input processes, node RPC addresses, identity material, backend selection, and persistent preprocessing or local stores.
 
-Compose is useful for local testing and for deploying a Stoffel MPC network to infrastructure you operate, including a developer-owned backend. For a first app loop, start with local MPC through the `stoffel` CLI or Rust SDK; move to Compose when you want explicit service topology, container boundaries, persistent stores, or backend integration.
+Compose is useful for local testing and for deploying a Stoffel MPC network to infrastructure you operate, including a developer-owned backend. The checked-in Compose files are examples, not app-ready deployment manifests: expect to read and heavily modify them for your application. For a first app loop, start with local MPC through the `stoffel` CLI or Rust SDK; move to Compose when you want explicit service topology, container boundaries, persistent stores, or backend integration.
 
 ## What the Docker stacks provide
 
@@ -133,7 +133,7 @@ STOFFEL_PROGRAM=/app/programs/threshold_ecdsa_secp256k1.stflb \
 
 ## Use with your own backend
 
-The Docker stacks are not only a local teaching aid. They are starting points that you adapt for a backend you control. For your own application, update the Compose code and configuration rather than running the checked-in examples unchanged: build your app's `.stflb` bytecode, mount or package it into the runtime image, configure coordinator and party addresses for your environment, wire your own client input/output services, and connect your app or client services to the exposed coordinator/node RPC endpoints.
+The Docker stacks are not only a local teaching aid. They are starting points that you adapt for a backend you control. For your own application, read the root Compose files and expect to heavily modify the Compose code and configuration rather than running the checked-in examples unchanged: build your app's `.stflb` bytecode, mount or package it into the runtime image, configure coordinator and party addresses for your environment, wire your own client input/output services, and connect your app or client services to the exposed coordinator/node RPC endpoints.
 
 Use Compose when you want to own the deployment shape yourself:
 
@@ -153,7 +153,7 @@ The app-facing CLI and SDK workflows remain the quickest first loop. Compose sho
 
 For a deployed backend, replace local-only defaults with your own operational choices: real secrets, identity material, network addresses, TLS/routing, observability, storage, upgrade process, and access controls.
 
-At minimum, review and update the Compose files, Docker image build, entrypoint environment, program bytecode path, client containers, identities, exposed ports, volumes, and backend-specific settings for your application. Treat the repository stacks as runnable templates, not drop-in production manifests for every app.
+At minimum, review and update the Compose files, Docker image build, entrypoint environment, program bytecode path, client containers, identities, exposed ports, volumes, and backend-specific settings for your application. Treat the repository stacks as runnable templates that show the service roles, not as drop-in production manifests for every app.
 
 ## Current caveats
 

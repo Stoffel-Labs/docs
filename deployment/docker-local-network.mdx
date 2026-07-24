@@ -35,6 +35,39 @@ From the Stoffel repository:
 | [`docker-compose.coordinator.reserve-index.preproc.yml`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker-compose.coordinator.reserve-index.preproc.yml) | Persistent preprocessing volumes layered on the reserve-index coordinator stack. |
 | [`docker-compose.avss.yml`](https://github.com/Stoffel-Labs/stoffel/blob/main/docker-compose.avss.yml) | Five-party AVSS/DKG-style local-store testbed and curve selection examples. |
 
+## Swap and adapt a Compose stack
+
+Start by choosing the closest root Compose file, then copy it into your application or infrastructure repository before editing it. Do not patch the example in place and assume it now represents your app. The root files are runnable templates for Stoffel service roles; your app decides the bytecode, images, client services, network names, ports, identity material, storage, and backend settings.
+
+Use this adaptation order:
+
+1. **Choose the baseline stack.** Use `docker-compose.yml` for a basic HoneyBadger coordinator/party run, `docker-compose.coordinator.reserve-index.yml` when your app has explicit client containers and client-slot assignment, add `docker-compose.coordinator.reserve-index.preproc.yml` when you need persistent preprocessing storage, or use `docker-compose.avss.yml` when you are exercising AVSS/local-store behavior.
+2. **Copy the Compose file and overlays.** Keep the original root files as references. Edit an app-owned copy such as `compose.stoffel.yml` so your changes can live with the application deployment code.
+3. **Replace the program artifact.** Build your application's `.stflb`, package or mount it into the runtime container, and update `STOFFEL_PROGRAM` to the in-container path. If the entrypoint changes, update `STOFFEL_ENTRY` too.
+4. **Replace the image build.** Swap the example image or build context for the image that contains your app's bytecode, runtime wrapper, entrypoint script, certificates, and any app-specific client binaries.
+5. **Rewrite client services.** Replace sample client containers and `STOFFEL_INPUTS` values with your own input/output client services. Match each service to the client slots and output recipients expected by your Stoffel program.
+6. **Update network addresses.** Rename the Compose network, service names, coordinator address, party addresses, and `STOFFEL_SERVERS` entries so they match the hostnames your containers will actually resolve. Inside Compose, service names become DNS names; outside Compose, you may need routed hostnames, load balancers, or explicit published ports.
+7. **Change ports deliberately.** Avoid copying host port mappings that collide with your backend or with multiple test networks on the same host. Keep container-internal ports aligned with service configuration, and change only the host-side published ports unless your runtime config also changes.
+8. **Replace identities and secrets.** Generate deployment-specific node/client identity material and use secret management or protected environment files for tokens. Do not reuse checked-in local fixtures outside local tests.
+9. **Update volumes and stores.** Replace example `ids/`, bytecode, preprocessing, and local-store mounts with app-owned directories or managed volumes. Decide which data must persist across restarts and which should be ephemeral.
+10. **Select backend settings.** Set `STOFFEL_MPC_BACKEND`, `STOFFEL_MPC_CURVE`, `STOFFEL_N_PARTIES`, and `STOFFEL_THRESHOLD` to match the bytecode manifest, security target, and number of parties you are operating.
+11. **Validate from the container network.** Run the adapted Compose stack, then check coordinator reachability, party-to-party reachability, client submission, output delivery, logs, and persistent store behavior from the same network namespaces the services use.
+
+The main swaps usually look like this:
+
+| Example field | Replace with |
+| --- | --- |
+| Example `image:` or `build:` | Your runtime/client image or app-owned build context. |
+| `STOFFEL_PROGRAM=/app/programs/...` | Your packaged `.stflb` path inside the runtime container. |
+| Sample client service blocks | App-specific participant/output client services. |
+| `STOFFEL_INPUTS` fixtures | Runtime input wiring owned by your client service. |
+| Example service names and networks | Hostnames and networks used by your backend. |
+| Checked-in `ids/` mounts | Deployment-specific identity material. |
+| Example host ports | Ports that fit your backend, firewall, and local test matrix. |
+| Example preprocessing/local-store volumes | App-owned persistent volumes or managed storage. |
+
+For example, a private matchmaking app should not keep the sample client containers unchanged. It should package the matchmaking `.stflb`, run participant clients that submit matchmaking payloads to the reserved client slots, expose only the coordinator/node endpoints those clients need, and mount identity and store paths owned by that deployment.
+
 ## Run a HoneyBadger Compose network
 
 From a Stoffel source checkout:

@@ -70,16 +70,25 @@ For example, a private matchmaking app should not keep the sample client contain
 
 ## Run a HoneyBadger Compose network
 
-From a Stoffel source checkout:
+Use `docker-compose.yml` when you want the HoneyBadger backend. The stack starts one coordinator and five MPC parties on the `stoffel-net` bridge. Each party receives `STOFFEL_MPC_BACKEND=honeybadger`, a party ID, coordinator address, node identity, RPC bind address, and the packaged program path.
+
+From a Stoffel source checkout, first render the Compose configuration you are about to run:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+  docker compose -f docker-compose.yml config
+```
+
+Then start the HoneyBadger network:
 
 ```bash
 STOFFEL_AUTH_TOKEN=replace-with-random-secret \
   docker compose -f docker-compose.yml up --build
 ```
 
-The default stack builds the runtime image, starts the coordinator, starts five party containers, and runs the packaged program named by `STOFFEL_PROGRAM`.
+The default stack builds the runtime image, starts the coordinator, starts five party containers, and runs the packaged HoneyBadger program named by `STOFFEL_PROGRAM`. If you do not set `STOFFEL_PROGRAM`, the stack uses `/app/programs/mpc_aes128_circuit.stflb`. If you do not set `STOFFEL_MPC_BACKEND`, the stack uses `honeybadger`.
 
-You can swap the packaged program and backend settings with environment variables:
+To run your own HoneyBadger-compatible program, build or package your `.stflb` into the runtime image and point `STOFFEL_PROGRAM` at the in-container path:
 
 ```bash
 STOFFEL_AUTH_TOKEN=replace-with-random-secret \
@@ -87,6 +96,37 @@ STOFFEL_PROGRAM=/app/programs/client_mul.stflb \
 STOFFEL_MPC_BACKEND=honeybadger \
 STOFFEL_MPC_CURVE=bls12-381 \
   docker compose -f docker-compose.yml up --build
+```
+
+For an app-owned copy, keep the same backend shape and update the app-specific fields:
+
+```yaml
+services:
+  party0:
+    environment:
+      STOFFEL_MPC_BACKEND: honeybadger
+      STOFFEL_MPC_CURVE: bls12-381
+      STOFFEL_PROGRAM: /app/programs/my_app.stflb
+      STOFFEL_ENTRY: main
+      STOFFEL_N_PARTIES: "5"
+      STOFFEL_THRESHOLD: "1"
+      STOFFEL_COORD_ADDR: coordinator:31415
+      STOFFEL_RPC_ADDR: party0:16180
+```
+
+Apply the corresponding changes to every party service: keep party IDs unique, update bind/RPC addresses consistently, and replace node identities with the identities for that deployment.
+
+Inspect the running HoneyBadger services:
+
+```bash
+docker compose -f docker-compose.yml ps
+docker compose -f docker-compose.yml logs -f coordinator party0
+```
+
+Stop and remove the local containers and network when you are done:
+
+```bash
+docker compose -f docker-compose.yml down
 ```
 
 ## Run the coordinator/client reserve-index stack
@@ -127,20 +167,64 @@ STOFFEL_AUTH_TOKEN=replace-with-random-secret \
 
 ## Run an AVSS local-store stack
 
-Use the AVSS stack to exercise AVSS backend and local-store behavior:
+Use `docker-compose.avss.yml` when you want the AVSS backend. This stack starts five party containers on the `stoffel-avss-net` bridge, sets `STOFFEL_MPC_BACKEND=avss` for every party, and mounts a separate persistent local store volume for each party at `/app/data`.
+
+From a Stoffel source checkout, first render the AVSS Compose configuration:
+
+```bash
+STOFFEL_AUTH_TOKEN=replace-with-random-secret \
+  docker compose -f docker-compose.avss.yml config
+```
+
+Then start the AVSS network:
 
 ```bash
 STOFFEL_AUTH_TOKEN=replace-with-random-secret \
   docker compose -f docker-compose.avss.yml up --build
 ```
 
-Select a curve or program with environment variables:
+The default AVSS stack runs `/app/programs/avss_keygen.stflb`. It leaves `STOFFEL_MPC_CURVE` empty unless you set it, so the runtime uses its default AVSS curve behavior.
+
+Select a curve or program with environment variables. For example, run the secp256k1 threshold-ECDSA fixture through AVSS:
 
 ```bash
 STOFFEL_AUTH_TOKEN=replace-with-random-secret \
 STOFFEL_MPC_CURVE=secp256k1 \
 STOFFEL_PROGRAM=/app/programs/threshold_ecdsa_secp256k1.stflb \
   docker compose -f docker-compose.avss.yml up --build
+```
+
+For an app-owned copy, keep the AVSS backend setting and update the program, curve, party addresses, and local-store mounts:
+
+```yaml
+services:
+  party0:
+    environment:
+      - STOFFEL_MPC_BACKEND=avss
+      - STOFFEL_MPC_CURVE=secp256k1
+      - STOFFEL_PROGRAM=/app/programs/my_avss_app.stflb
+      - STOFFEL_ENTRY=main
+      - STOFFEL_N_PARTIES=5
+      - STOFFEL_THRESHOLD=1
+      - STOFFEL_LOCAL_STORE=/app/data/local.redb
+    volumes:
+      - my-avss-party0-local:/app/data
+```
+
+Apply the same backend, curve, party count, and threshold to every AVSS party. Keep each party's `STOFFEL_PARTY_ID`, bind address, bootstrap address, and local-store volume distinct.
+
+Inspect the running AVSS parties and logs:
+
+```bash
+docker compose -f docker-compose.avss.yml ps
+docker compose -f docker-compose.avss.yml logs -f party0
+```
+
+Stop the AVSS stack when you are done. Add `-v` only when you also want to remove the persistent local-store volumes:
+
+```bash
+docker compose -f docker-compose.avss.yml down
+docker compose -f docker-compose.avss.yml down -v
 ```
 
 ## Environment variables to understand

@@ -68,6 +68,63 @@ The main swaps usually look like this:
 
 For example, a private matchmaking app should not keep the sample client containers unchanged. It should package the matchmaking `.stflb`, run participant clients that submit matchmaking payloads to the reserved client slots, expose only the coordinator/node endpoints those clients need, and mount identity and store paths owned by that deployment.
 
+## Switch from default programs to your program
+
+The root Docker image ships with example bytecode under `/app/programs/`. The Compose files select one of those defaults with `STOFFEL_PROGRAM`, such as `/app/programs/mpc_aes128_circuit.stflb` for the HoneyBadger stack or `/app/programs/avss_keygen.stflb` for the AVSS stack. To run your own app, the path in `STOFFEL_PROGRAM` must point to a `.stflb` file that exists inside every party container.
+
+Use one of these two patterns.
+
+### Package the bytecode into an app image
+
+Use this for repeatable local testing, staging, or a developer-owned backend.
+
+1. Build your app's bytecode with the same backend family you plan to run:
+
+```bash
+# From your Stoffel app project
+stoffel build --backend honeybadger --parties 5 --threshold 1
+
+# Or, for an AVSS app, choose the AVSS backend and curve you need
+stoffel build --backend avss --field secp256k1 --parties 5 --threshold 1
+```
+
+2. Add an app-owned Dockerfile that starts from your Stoffel runtime base image or repeats the runtime stage from the root `Dockerfile`, then copies your bytecode into `/app/programs/`:
+
+```dockerfile
+FROM my-stoffel-runtime-base:latest
+COPY target/debug/my_app.stflb /app/programs/my_app.stflb
+```
+
+3. Update your app-owned Compose file so every party uses that image and program path:
+
+```yaml
+x-party-common: &party-common
+  image: my-stoffel-app-runtime:latest
+  environment: &party-env
+    STOFFEL_PROGRAM: /app/programs/my_app.stflb
+    STOFFEL_ENTRY: main
+```
+
+4. Keep the backend settings aligned with the bytecode. A HoneyBadger-built program should run with `STOFFEL_MPC_BACKEND=honeybadger`; an AVSS-built program should run with `STOFFEL_MPC_BACKEND=avss` and the same curve selection you built for.
+
+### Mount the bytecode while iterating locally
+
+Use this only for local development loops where you want to rebuild bytecode without rebuilding the runtime image.
+
+```yaml
+x-party-common: &party-common
+  volumes:
+    - ./target/debug/my_app.stflb:/app/programs/my_app.stflb:ro
+    - stoffel-local-store:/app/local-store
+  environment: &party-env
+    STOFFEL_PROGRAM: /app/programs/my_app.stflb
+    STOFFEL_ENTRY: main
+```
+
+The left side of the mount is a host path; the right side is the in-container path. `STOFFEL_PROGRAM` must use the right-side path. If you run the stack from a different directory, update the host path or use an absolute path.
+
+Program switching is not only a filename change. If your program uses client inputs or sends outputs to clients, also update the client containers, `STOFFEL_INPUTS`, `STOFFEL_CLIENT_INDEX`, `STOFFEL_SERVERS`, output decoding, and any coordinator settings such as expected input/output clients. If the entry function is not `main`, set `STOFFEL_ENTRY` to the function you want every party to execute.
+
 ## Run a HoneyBadger Compose network
 
 Use `docker-compose.yml` when you want the HoneyBadger backend. The stack starts one coordinator and five MPC parties on the `stoffel-net` bridge. Each party receives `STOFFEL_MPC_BACKEND=honeybadger`, a party ID, coordinator address, node identity, RPC bind address, and the packaged program path.

@@ -1,0 +1,135 @@
+---
+title: "Build a Private Matchmaking Service"
+description: "Use Stoffel from a Rust service to compute matches from private preference vectors without exposing raw vectors, scores, rankings, or rejection paths."
+---
+
+This is the flagship app-shaped tutorial. Use it after the [Rust SDK quickstart](./rust-sdk-quickstart) when you want to see the same service boundary in a richer application.
+
+The tutorial builds a dating-style matcher. Public app logic owns profiles, accounts, cohort selection, and notifications. Stoffel owns the sensitive computation over private feature and preference vectors. The app opens only the match result it is allowed to route.
+
+Runnable source:
+
+- [Private matchmaking tutorial](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/02-private-matchmaking)
+- [Full tutorial repository](https://github.com/Stoffel-Labs/Stoffel-tutorials)
+
+## What this teaches
+
+A dating app does not only store sensitive data. It computes over it.
+
+The platform may show public profiles, photos, prompts, and basic account metadata. Matching often depends on more sensitive context: what someone is looking for, how candidates score, how rankings are derived, and which conflicts or rejections happen along the way.
+
+The tutorial teaches the app boundary:
+
+```text
+Public app state: profiles, cohort, client slots, notification flow
+Private computation: feature vectors, preference vectors, scores, rankings, proposal trace
+Authorized output: final match routed to named recipients
+```
+
+## Privacy boundary
+
+| Fact | Boundary decision |
+| --- | --- |
+| Public profiles and participant set | Ordinary app data. The app can use it for discovery, cohort selection, and routing. |
+| Feature vector per dater | Private input owned by that dater. Do not turn it into a platform label, analytics segment, or support-visible field. |
+| Preference vector per dater | Private input owned by that dater. Do not expose it to the operator, other users, support tools, analytics jobs, or logs. |
+| Compatibility scores | Private intermediate state. Do not reveal a score table or desirability ranking. |
+| Derived rankings | Private intermediate state. Do not reveal rejection reasons or non-match ordering. |
+| Proposal/rejection path | Private intermediate state. Do not expose which conflicts occurred or why a match changed. |
+| Final match | Authorized output. Route only to the recipients named by the product policy. |
+
+The final match still leaks something. If Alice learns she matched with Emery, Alice learns a fact about the joint process. The point is to keep that necessary output from expanding into raw vectors, score tables, rankings, and rejection traces.
+
+## Code map
+
+```text
+tutorials/02-private-matchmaking/
+  normal/                         clear Rust feature-derived matcher
+  private/                        authorized-output model
+  src/private_matching_helpers.stfl
+  src/feature_stable_matching.stfl
+  src/client.rs                   dater client payloads
+  src/bin/dater_client.rs
+  src/app.rs                      Rust SDK app service
+  src/main.rs                     runnable sample app
+  src/main.stfl                   checked-in CLI walkthrough
+  tests/
+  mental-model.md
+```
+
+Read the files in this order:
+
+1. `normal/`: see what the trusted backend can compute because it sees every vector and ranking.
+2. `private/`: see the authorized output model the app should expose.
+3. `src/client.rs`: see how each dater owns a client slot and private payload.
+4. `src/app.rs`: see the Rust SDK boundary that validates the cohort, attaches client inputs, runs local MPC, and decodes the output.
+5. `src/main.stfl`: see the private computation and explicit reveal point.
+6. `tests/`: see what the tutorial treats as app behavior versus private intermediate state.
+
+## Run it
+
+From the tutorial repository root:
+
+```bash
+cargo test -p private-matchmaking-tutorial
+cargo run -p private-matchmaking-tutorial --bin dater_client -- alice 0 proposer 1,0 1,0
+cargo run -p private-matchmaking-tutorial
+```
+
+Then run the Stoffel project directly:
+
+```bash
+cd tutorials/02-private-matchmaking
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run src/main.stfl \
+  --client-input 0=1,0,1,0 \
+  --client-input 1=0,1,1,0 \
+  --client-input 2=1,0,0,1 \
+  --client-input 3=1,0,0,1 \
+  --client-input 4=0,1,1,0 \
+  --client-input 5=1,0,1,0 \
+  --timeout-secs 600
+```
+
+Expected output:
+
+```text
+19
+```
+
+In the sample, `19` encodes:
+
+```text
+Alice -> Emery
+Bob -> Casey
+River -> Devon
+```
+
+## Mental model links
+
+Use the concept tutorials when you hit a specific privacy question:
+
+- If you want a smaller example focused only on “open one result, not the whole decision board,” read [Private lottery reveal boundary](./private-lottery).
+- If you want a focused example of private state transitions and recipient-specific views, read [N-party Battleship hidden state](./n-party-battleship).
+- If you are adapting this to your own product, use [Design the privacy boundary](./privacy-boundary).
+
+## Adapt the pattern
+
+When you adapt the tutorial, keep these invariants:
+
+1. Public profile and discovery data can stay in normal Rust code.
+2. Each user owns their private feature or preference payload.
+3. The app service validates public shape before running MPC.
+4. The StoffelLang program computes only the sensitive matching boundary.
+5. Scores, rankings, and rejection paths stay private unless the product explicitly names them as outputs.
+6. The final match is routed to named recipients, not treated as a global transcript.
+
+You can change the feature model, cohort construction, output routing, and app UI without changing the core design habit: private intermediate facts are not ordinary backend data.
+
+## Next steps
+
+- [Design the privacy boundary](./privacy-boundary)
+- [Embed Stoffel in a Rust service](../rust-sdk/app-integration)
+- [Run a local Docker MPC network](../deployment/docker-local-network)

@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use current public crates.io releases by default, then the official GitHub repository at a full immutable revision when the needed change is not published. A local checkout is a separate, explicitly requested, nonportable framework-development workflow.
 
 ## Use when
 

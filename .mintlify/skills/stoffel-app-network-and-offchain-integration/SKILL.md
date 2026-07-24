@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use current public crates.io releases by default, then the official GitHub repository at a full immutable revision when the needed change is not published. A local checkout is a separate, explicitly requested, nonportable framework-development workflow.
 
 ## Use when
 
@@ -23,6 +23,21 @@ Use this playbook when an app moves beyond local runs and needs client/server bu
 ## Goal
 
 Guide advanced app developers from local bytecode to app-level network/off-chain integration using public SDK builders, while labeling lower-layer behavior with the current component status.
+
+For client-owned private input, the participant-owned process is the Stoffel MPC client. It submits directly to the separately deployed MPC service. The application control plane may issue public session configuration and receive non-sensitive receipts or explicitly authorized opened aggregates, but it must not receive or persist participant plaintext.
+
+## Separate the application roles
+
+Do not combine these roles into one `client/app` layer:
+
+| Role | Responsibility | Plaintext boundary |
+| --- | --- | --- |
+| Application control plane | Public metadata, authentication, session lifecycle, client-slot/capability assignment, network discovery, non-sensitive receipts, authorized aggregates | Must not receive participant private input |
+| Participant MPC client | Loads pinned bindings/config, validates its owner's input, submits its assigned slot, decodes authorized output | May see only its owner's plaintext |
+| MPC service plane | Separately deployed coordinator and long-running parties | Receives client-protocol material according to the deployment, not application-service plaintext |
+| Output recipient | Participant client or application service named by the privacy worksheet | Receives only explicitly authorized output |
+
+A backend gateway that accepts raw input is a distinct, weaker trust model. Name it and require explicit approval; do not introduce it to work around missing participant-runtime support.
 
 ## Current source of truth
 
@@ -37,7 +52,9 @@ Guide advanced app developers from local bytecode to app-level network/off-chain
 
 ## Preconditions
 
-Before network integration, verify local behavior:
+Before network integration, complete the trust-boundary worksheet in [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path). Identify the participant runtime, the process that executes client submission, components forbidden from plaintext, the control-plane persistence allowlist, and output recipients.
+
+Then verify local program behavior:
 
 ```sh
 stoffel status --verbose
@@ -48,12 +65,47 @@ stoffel run --timeout-secs 180 <inputs or documented run-args>
 
 If the app uses typed client IO, generate bindings from the exact bytecode first. See [Stoffel Typed Client IO Bindings](/developer-skills/stoffel-typed-client-io-bindings).
 
+## Portability and provenance preflight
+
+Before interpreting a network result, label where every command ran. Keep these contexts distinct in notes and logs:
+
+- **app checkout**: the consumer application repository;
+- **framework checkout**: a Stoffel source tree, only when intentionally used;
+- **deployment host**: the machine that runs a coordinator, party, or client service;
+- **container**: the image plus the mounts and network namespace visible inside it;
+- **CI**: the runner image and job that reproduce the consumer workflow.
+
+Record a provenance manifest before building or connecting:
+
+| Evidence | Record |
+| --- | --- |
+| App repository | canonical repository URL, commit, branch/tag if relevant, and clean/dirty state |
+| Framework repository, if used | canonical repository URL, commit, and clean/dirty state |
+| CLI source | how `stoffel` was installed and the resolved executable path; record its reported version/build identity when available |
+| SDK source | registry/package version or git URL plus revision; if a path dependency is intentional, record its canonical path |
+| Dependency resolution | committed lockfile and its hash, or an explicit reason no lockfile applies |
+| Program artifacts | bytecode hash and generated binding/manifest hashes from the same build |
+| Container, if used | immutable image digest, not only a mutable tag |
+
+Do not treat a framework-checkout example as consumer proof. The portability gate is a **clean external checkout** of the app, outside the framework repository, using only documented public CLI and SDK dependencies. It must build and run without uncommitted files, undeclared path dependencies, workspace inheritance from the framework repository, or framework source mounted into a container. Record the external checkout path, repository URL, commit, clean status, dependency source, commands, and result. If this gate was not run, classify the result as **not clean-room tested** rather than portable.
+
+For a public dependency consumer proof, create or use the smallest app that imports the publicly documented SDK/CLI source, resolves from its committed lockfile, builds bytecode and bindings, and exercises the same client-facing path. A successful framework workspace test is useful framework validation, but is not this proof.
+
+### Containers and addresses
+
+- Mount only declared app inputs, generated deployment bundles, state, and identity files. Do not mount a framework checkout, a developer package cache containing unpublished builds, or a host `target/` directory into the proof run.
+- Record host-to-container mount mappings and verify the bytecode/binding hashes inside the container after mounting. Use read-only mounts for release artifacts and config where practical.
+- Do not copy `127.0.0.1` or `localhost` across host/container boundaries: loopback names the current network namespace. Record bind addresses separately from advertised/reachable coordinator, mesh, and RPC addresses.
+- Bind services deliberately, publish only required ports, and test reachability from the actual peer/client context rather than only from the host.
+- Pin images by digest and include that digest in the result.
+
 ## Runtime builders
 
 The SDK runtime exposes app-level builders:
 
 ```rust
-let runtime = stoffel::Stoffel::load_file("program.stflb")?.build()?;
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = stoffel::Stoffel::load_file(app_root.join("program.stflb"))?.build()?;
 
 let client = runtime.client();
 let server0 = runtime.server(0);
@@ -116,10 +168,63 @@ config.validate_server_addresses()?;
 5. Derive off-chain client config for a client slot.
 6. Attach coordinator address, node endpoints/RPC addresses, timestamp, and client identity material.
 7. Configure the separately deployed MPC service layer with the same bytecode, topology, backend, and client/output slots.
-8. Run or submit typed client inputs.
-9. Validate typed outputs and consensus/order evidence where applicable.
+8. Have each participant-owned client submit its own typed input directly to that deployment.
+9. Reconcile only non-sensitive submission status with the application control plane.
+10. Deliver typed outputs only to recipients authorized by the privacy worksheet.
+11. Validate typed outputs and consensus/order evidence where applicable.
 
 The SDK can validate and carry the app-level config, but live network deployment also needs operator-owned process supervision, identity files, node RPC reachability, and persistence/state decisions. Use [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook) for that handoff.
+
+### Client input ownership boundary
+
+- Each SDK client owns its private `ClientStore` values and submits its complete typed input vector through the client protocol.
+- The generated manifest plus client configuration bind a client slot to that vector's ordered input shape.
+- An application server may manage public lifecycle, authorization, and bootstrap metadata, but it must not receive or proxy plaintext private inputs.
+- Coordinator and party services may validate value-blind session, identity, slot, range, and topology metadata and process protocol messages. That does not make them application-level input owners.
+- Do not invent server-builder APIs for participant values. If a client transport is missing, implement or fix the SDK client transport instead of moving input ownership to the server.
+
+## Control-plane bootstrap and receipts
+
+A control plane may return public session configuration such as:
+
+```json
+{
+  "sessionId": "session_123",
+  "clientSlot": 1,
+  "programHash": "sha256:...",
+  "inputSchemaId": "prediction-v1",
+  "coordinatorEndpoint": "https://coordinator.example.com",
+  "nodeRpcEndpoints": ["https://node-0.example.com"],
+  "deploymentEpoch": 42,
+  "submissionCapability": "short-lived-signed-token"
+}
+```
+
+A non-sensitive receipt may contain:
+
+```json
+{
+  "sessionId": "session_123",
+  "clientSlot": 1,
+  "submissionId": "sub_456",
+  "status": "accepted",
+  "receivedAt": "..."
+}
+```
+
+Do not place participant predictions, typed private inputs, reversible encodings, generic private payload blobs, secret-sharing randomness, or participant shares in control-plane APIs, persistence, logs, queues, analytics, or receipts.
+
+## Participant runtime capability gate
+
+Resolve this before implementation:
+
+| Participant runtime | Required decision |
+| --- | --- |
+| Native or Rust client, including participant-side Tauri Rust | Use direct participant-to-MPC submission when supported by the current SDK |
+| Browser/WASM with a supported Stoffel client package | Submit directly from the participant client |
+| Browser/WASM without direct support | Stop at the capability gap or use an explicitly participant-controlled sidecar; do not proxy plaintext through the backend |
+| Backend gateway | Degraded trust: the gateway sees raw input and requires explicit approval |
+| Local CLI or fixture harness | Development evidence only; not production private-data-plane evidence |
 
 ## CLI network execution
 
@@ -138,23 +243,48 @@ Important: `--config` is network/off-chain client config, not app `Stoffel.toml`
 - Coordinator address, node mesh addresses, node RPC addresses, identity material, and expected client certificates are explicitly configured or listed as operator handoff fields.
 - Network config validates before starting servers/clients.
 - Client IO metadata matches generated bindings.
-- Real client/server run returns expected output or a concrete error with logs.
+- Real participant-client/network run returns expected output or a concrete error with logs.
+- Control-plane schemas, persistence, logs, and receipts contain no participant plaintext.
+- A plaintext canary test confirms private input bypasses application-service requests, storage, queues, caches, traces, analytics, and crash reports.
+- The participant runtime has verified direct client-protocol support or an explicit capability blocker/participant-controlled sidecar decision.
+- Every output recipient matches the privacy worksheet.
 - Any coordinator/network assumptions are labeled with current component status and paired with deployment validation guidance.
+- The clean external checkout/public dependency consumer proof passes, or the result is explicitly labeled **not clean-room tested**.
+- The provenance manifest identifies every execution context, dependency source, lockfile, artifact hash, and applicable image digest.
+- Services and the client consume the recorded bytecode/binding bundle unchanged; hashes are checked at build, service startup, and client execution boundaries.
 
 Framework validation:
 
 ```sh
-cargo test -p stoffel-rust-sdk
-cargo run -p stoffel-rust-sdk --example network_config
-cargo run -p stoffel-rust-sdk --example client_server
+cargo test --locked -p stoffel-rust-sdk
+cargo run --locked -p stoffel-rust-sdk --example network_config
+cargo run --locked -p stoffel-rust-sdk --example client_server
 ```
+
+These framework-checkout commands do not replace the external consumer proof. In CI, use separate jobs or clearly labeled steps for:
+
+1. app-checkout check/build/local smoke;
+2. clean external public-dependency consumer build;
+3. bytecode/binding hash and lockfile verification;
+4. container build and digest capture when containers are used;
+5. config validation and a real service/client smoke test in the relevant network namespaces.
+
+Fail CI on a dirty checkout, an unexpected path or patched dependency, a changed lockfile, artifact hash drift, a tag-only container reference where a digest is required, or a service/client smoke failure. Do not silently skip a gate. The job summary must list every check as `passed`, `failed`, or `skipped`, and every skipped check must include the exact reason, affected context, and consequence (for example, **not clean-room tested** or **network deployment unverified**).
+
+When reporting a failure, include the labeled execution context, exact command and working directory, exit status, first actionable error plus the unabridged log location, repository and dependency provenance, artifact/image hashes, and all skipped checks. Do not replace a failed service run with builder construction or a local-only success.
 
 ## Common pitfalls
 
 - `stoffel run --config` is network/off-chain config, not project `Stoffel.toml`.
 - Do not duplicate lower-level networking/protocol logic in app code.
+- Do not treat participant clients and the application control plane as one trust role.
+- Do not add plaintext private fields to control-plane endpoints or persistence.
+- Do not put `.with_client_input(...)` or `.execute_local()` in a production application-service path.
+- Do not silently replace missing browser/client support with a plaintext backend gateway.
 - Do not bypass typed IO validation for ClientStore apps.
+- Do not send participant values through an application server or SDK server/node builder; private input submission belongs to each SDK client.
 - Keep on-chain coordinator paths marked advanced until public docs and stable APIs exist.
 - Present coordinator/network assumptions with explicit current status and deployment validation guidance.
 - Do not move to network debugging until the local loop has produced a real passing or failing run.
 - Do not hide missing production process startup behind local SDK examples; record the lower-layer service command or mark it as an operator handoff.
+- Do not let an undeclared host mount, path dependency, `[patch]`, package cache, or loopback address make a container/CI run appear portable.

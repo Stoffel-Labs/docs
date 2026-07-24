@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building complete Stoffel applications. Use this as the orchestrating path, then switch to the narrower skills for implementation details.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use portable public dependencies by default. A local checkout is a separate, nonportable framework-development workflow and is allowed only when explicitly requested.
 
 ## Use when
 
@@ -24,20 +24,39 @@ Use this playbook when the task is larger than one `.stfl` snippet: an app idea 
 
 Make an AI agent build the smallest complete app first, verify every layer, then expand. Do not let the agent stop at plausible code, skip local MPC, or treat `execute_local()` as deployment.
 
+## Milestone 0: establish portability
+
+Complete this milestone before privacy design or implementation:
+
+1. Discover and confirm the project root from the current working directory and repository markers such as `Stoffel.toml`, `Cargo.toml`, or `.git`. Do not invent or require a machine-specific path such as `/workspace/...`.
+2. Select Stoffel and related project dependencies from public, reproducible sources in this order: the current crates.io release, then the official GitHub repository pinned to a full immutable commit SHA when the needed change is not published.
+3. Reject floating branches and any default workflow that requires a local path, sibling checkout, or external filesystem checkout.
+4. Use a local Stoffel checkout only if the user explicitly requests framework development. Label that route **nonportable**, document it separately, and keep the app's default build on public dependencies.
+5. If no suitable public dependency is available, stop and report the missing dependency and attempted public sources instead of substituting a local checkout.
+
+Record the discovered root and selected public source in the task evidence. Keep this skill version-agnostic; concrete versions belong in installation docs and the app's dependency manifest.
+
 ## End-to-end sequence
 
-1. Define the privacy boundary.
-2. Choose backend and topology.
-3. Implement the minimal StoffelLang program.
-4. Validate with the CLI.
-5. Run local MPC with representative inputs.
-6. Build Rust SDK integration around the compiled program.
-7. Generate typed client IO bindings from the exact bytecode.
-8. Add app tests and a smoke command.
-9. Prepare deployment artifacts and network/client config.
-10. Hand off with real command output and remaining production assumptions.
+0. Establish the dependency and filesystem portability contract.
+1. Resolve the application trust architecture and participant runtime.
+2. Define the privacy and output boundary.
+3. Choose backend and topology.
+4. Implement the minimal StoffelLang program.
+5. Validate with the CLI.
+6. Run local MPC with representative inputs.
+7. Build participant-client SDK integration around the compiled program.
+8. Generate typed client IO bindings from the exact bytecode.
+9. Add app, privacy-boundary, and network smoke tests.
+10. Prepare deployment artifacts and control-plane/client/network config.
+11. Prove the app in a clean-room environment.
+12. Hand off with real command output and remaining production assumptions.
 
-## 1. Privacy boundary worksheet
+## 1. Trust architecture and privacy boundary
+
+For client-owned private input, the input owner's device or process is the Stoffel MPC client. It submits the input through the Stoffel client protocol directly to the separately deployed MPC service. An application backend may provide public session configuration and receive non-sensitive lifecycle receipts or explicitly authorized opened aggregates, but it must not receive, deserialize, log, queue, cache, analyze, or persist participant plaintext.
+
+A backend gateway that accepts plaintext is a distinct, weaker trust model. Do not introduce it implicitly. Name it, document who can see the raw value, and require explicit approval before implementing it.
 
 Write this before coding:
 
@@ -49,7 +68,27 @@ Secret values:
 - client 0: ...
 - client 1: ...
 
+Plaintext owner and location:
+- client 0 plaintext exists in: ...
+- client 1 plaintext exists in: ...
+
+Stoffel submission process:
+- participant runtime: native Rust / Tauri Rust / supported browser client / other
+- process that loads typed bindings and submits client slot inputs: ...
+
+Components forbidden from plaintext:
+- application service: ...
+- logs, traces, queues, caches, analytics, crash reports: ...
+
 Public values:
+- ...
+
+Application control-plane data:
+- room/session metadata: ...
+- client-slot/capability assignment: ...
+- non-sensitive submission receipt: ...
+
+Application-service persistence allowlist:
 - ...
 
 Authorized outputs:
@@ -69,10 +108,19 @@ Topology:
 - threshold:
 - input client slots:
 - output client slots:
+- application control plane:
+- participant MPC clients:
+- separately deployed coordinator and MPC parties:
+
+Runtime support:
+- direct client protocol supported in the participant runtime: yes / no / unverified
+- if no or unverified, stop or choose an explicitly participant-controlled sidecar; do not silently route plaintext through a backend
 ```
 
 Rules:
 
+- Do not begin implementation while the plaintext location, submission process, forbidden components, persistence allowlist, or participant runtime support is unresolved.
+- Treat `client`, `app`, `backend`, `gateway`, and a local Tauri/Rust process as different roles. In a desktop app, the local Tauri/Rust process may be the participant client; a remote HTTP service is still an application backend.
 - Use HoneyBadgerMPC for ordinary private arithmetic over application values.
 - Use AVSS only when commitments, curve-compatible artifacts, or threshold-cryptography outputs are part of the app boundary.
 - Keep constants, thresholds, weights, encodings, and transcript bytes public unless they are genuinely private inputs.
@@ -85,16 +133,24 @@ For a complete app, prefer this shape:
 ```text
 stoffel-app/
   Stoffel.toml
-  src/main.stfl
-  src/<helpers>.stfl
-  src/main.rs              # small local/demo entrypoint or app gateway
-  src/app.rs               # Rust service boundary around Stoffel
-  tests/                   # Rust integration tests and fixture inputs
-  dist/                    # generated bytecode/bindings for deployment artifacts
-  deploy/                  # network/client config templates and runbook notes
+  mpc/
+    src/main.stfl
+    src/<helpers>.stfl
+    dist/                  # bytecode, manifest, and generated bindings
+  clients/
+    participant/           # participant-owned Stoffel client and output handling
+  services/
+    control-plane/         # public metadata, auth, session config, receipts, aggregates
+  tests/
+    local-mpc/             # trusted local fixture injection
+    no-private-ingress/    # service schemas/logs/storage reject participant plaintext
+  deploy/
+    mpc-network/           # coordinator and party configuration
+    control-plane/         # application-service configuration
+    client-public-config/  # pinned program/network discovery fields
 ```
 
-Keep reusable MPC logic in `.stfl` modules. Keep ordinary app validation, IO parsing, authorization checks, and domain mapping in Rust host code.
+Keep reusable MPC logic in `.stfl` modules. Validate private input shape in the participant client before submission. Keep public metadata validation, authorization, session lifecycle, non-sensitive receipts, and public result mapping in the application control plane. Do not define participant private fields in control-plane request or persistence schemas.
 
 ## 3. Build the smallest StoffelLang program
 
@@ -120,21 +176,27 @@ stoffel run --client-input 0=40 --client-input 1=2 --expected-output-clients 2 -
 
 If the app uses named clear inputs instead of ClientStore, use `--input name=value`. Do not combine named inputs and ClientStore inputs in one local run unless that exact CLI/runtime version has been verified to support the combination.
 
-## 4. Rust SDK app boundary
+## 4. Rust SDK boundaries
 
-The Rust host should look like an app service, not a wrapper that shells out to the CLI. A typical service should:
+Separate the participant client from the application control plane.
 
-- load or compile the Stoffel program;
-- attach parties, threshold, backend, and expected output clients;
-- validate input shape before submission;
-- call local MPC only for development smoke tests;
-- decode outputs into domain types;
-- use generated bindings for ClientStore programs when available.
+The participant-owned Rust client should:
 
-Local smoke path:
+- load pinned Stoffel bytecode, generated bindings, and public deployment config;
+- use its assigned client slot and identity material;
+- validate its owner's private input shape locally;
+- submit directly to the separately deployed coordinator/MPC parties;
+- decode only outputs authorized for that client.
+
+The application control plane may authenticate members, issue public session configuration and client-slot capabilities, record non-sensitive submission status, coordinate public lifecycle transitions, and persist explicitly authorized opened aggregates. It must not accept private input fields or call `.with_client_input(...)` with participant values.
+
+A trusted local smoke harness may load or compile the program, inject representative fixture inputs, spawn local MPC only for development testing, and decode outputs for program-semantic assertions.
+
+Local trusted-harness path:
 
 ```rust
-let result = Stoffel::compile_file("src/main.stfl")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let result = Stoffel::compile_file(app_root.join("src/main.stfl"))?
     .parties(5)
     .threshold(1)
     .expected_output_clients(2)
@@ -144,10 +206,13 @@ let result = Stoffel::compile_file("src/main.stfl")?
     .await?;
 ```
 
+This local harness sees every fixture input. It proves program semantics, not that a production application service is outside the plaintext path.
+
 Deployment-shaped path:
 
 ```rust
-let runtime = Stoffel::load_file("dist/program.stflb")?
+let app_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+let runtime = Stoffel::load_file(app_root.join("dist/program.stflb"))?
     .parties(5)
     .threshold(1)
     .honeybadger()
@@ -168,7 +233,7 @@ let offchain = runtime
     .build()?;
 ```
 
-Treat the deployment-shaped path as the production integration target. Treat `.execute_local().await?` as local testing where several MPC nodes/processes are spawned locally on the developer machine.
+Treat the deployment-shaped path as participant-client configuration. The participant-owned process selects its own slot, connects to the separately deployed MPC service, and submits its input without using the application control plane as a plaintext proxy. Treat `.execute_local().await?` as local testing where several MPC nodes/processes are spawned locally on the developer machine.
 
 ## 5. Typed client IO bindings
 
@@ -189,9 +254,9 @@ stoffel status --verbose
 stoffel check
 stoffel build --program-info
 stoffel run --timeout-secs 180 <documented inputs>
-cargo check
-cargo test
-cargo run
+cargo check --locked
+cargo test --locked
+cargo run --locked
 ```
 
 For docs or skill changes, also run:
@@ -203,6 +268,25 @@ git diff --check
 ```
 
 Do not report success unless at least one command exercised each changed layer.
+
+For multi-user applications, also verify:
+
+- control-plane request and persistence schemas contain no participant private fields or generic private payload blobs;
+- a unique plaintext canary is absent from application-service requests, logs, traces, databases, caches, queues, analytics, crash reports, and receipts;
+- production application-service code does not call `.with_client_input(...)`, spawn local MPC nodes, or use `.execute_local()`;
+- participant clients can submit to the MPC network after public session bootstrap without proxying the input through the control plane;
+- each output is delivered only to its authorized recipient.
+
+### Clean-room completion evidence
+
+Before declaring the app complete, test it from a fresh temporary directory or clean environment that has no Stoffel source checkout, sibling repository, or undeclared path dependency available. Starting from only the delivered app files, documented prerequisites, and network access to the selected public source:
+
+1. install or resolve dependencies using the recorded public source;
+2. run `cargo metadata --locked --format-version 1` and verify every external Stoffel package resolves from a registry or pinned official Git revision;
+3. run the verification ladder for every delivered layer; and
+4. capture the clean environment description, dependency-resolution output, commands, exit status, and relevant test or smoke output.
+
+A warm build in the implementation worktree is not clean-room evidence. If the clean build reaches for an external local path, a floating branch, an undeclared file, or an unavailable public dependency, the milestone fails; fix it or stop and report the blocker.
 
 ## 7. Deployment handoff
 
@@ -223,11 +307,17 @@ Then switch to [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment
 ## Common pitfalls
 
 - Starting from Rust host code before the `.stfl` boundary is clear.
+- Treating a backend service, participant client, CLI, and Tauri Rust process as the same trust role.
+- Sending participant plaintext to an application endpoint in the default client-owned-input architecture; a gateway that does this is a separately approved degraded-trust design.
+- Using local fixture injection as evidence for the production private-input path.
+- Silently replacing unsupported browser/client functionality with a plaintext backend gateway.
 - Revealing intermediate secrets to make examples easier.
 - Treating local MPC as production deployment.
 - Compiling `.stfl` at runtime in production clients instead of loading pinned bytecode.
 - Forgetting to regenerate typed bindings after changing ClientStore shape.
 - Reporting generated code without running `stoffel check`, `stoffel build`, and a local MPC smoke.
+- Building only in a worktree that hides a required local or sibling Stoffel checkout.
+- Claiming completion without clean-room dependency resolution and execution evidence.
 
 ## Next playbooks
 

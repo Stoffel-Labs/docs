@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: use current public crates.io releases by default, then the official GitHub repository at a full immutable revision when the needed change is not published. A local checkout is a separate, explicitly requested, nonportable framework-development workflow.
 
 ## Use when
 
@@ -23,6 +23,8 @@ Use this playbook when an app handles private values, secret shares, client-prov
 ## Goal
 
 Help developers write MPC-oriented Stoffel apps using `secret` types, `Share.*`, `ClientStore.*`, `Mpc.*`, `MpcOutput.*`, and related builtins, while preserving runnable local examples.
+
+For client-owned private input in a multi-user or networked application, the participant-owned process is the Stoffel MPC client and submits directly to the separately deployed MPC service. The application control plane must not receive or persist participant plaintext. Complete the trust-boundary worksheet in [Stoffel Full App Golden Path](/developer-skills/stoffel-full-app-golden-path), then use [Stoffel App Network and Off-Chain Integration](/developer-skills/stoffel-app-network-and-offchain-integration) for the production client path.
 
 ## Current source of truth
 
@@ -45,7 +47,7 @@ def main(a: secret int64, b: secret int64) -> secret int64:
 
 When run locally through the CLI/SDK, source/file programs returning a secret value may be wrapped/opened by the local execution path so app tests can assert clear outputs.
 
-For client-owned private inputs, prefer `ClientStore`:
+For client-owned private inputs, use `ClientStore` in the Stoffel program. The CLI flags below inject plaintext into one trusted local harness process for program testing; they do not define the production application-service path:
 
 ```stfl
 # run-args: --client-input 0=40 --client-input 1=2 --expected-output-clients 2
@@ -110,7 +112,7 @@ def gate_xor(a: secret bool, b: secret bool) -> secret bool:
 
 ## Client input shares
 
-Use `ClientStore` when the app receives private client inputs through the coordinator/client path:
+Use `ClientStore` when participant-owned SDK clients provide private inputs through the coordinator/client path. Each client owns and submits its complete ordered input vector directly; do not place `.with_client_input(...)`, plaintext client fields, or private payload proxies in an application backend:
 
 ```stfl
 var value = ClientStore.take_share(0, 0)
@@ -129,7 +131,7 @@ stoffel run src/main.stfl \
   --expected-output-clients 2
 ```
 
-Input-file equivalents are documented in [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow).
+Input-file equivalents are documented in [Stoffel CLI App Workflow](/developer-skills/stoffel-cli-app-workflow). Treat CLI flags and input files as trusted local fixtures. They prove program semantics, not that a production control plane is outside the plaintext path.
 
 ## Client outputs
 
@@ -224,6 +226,7 @@ cd /path/to/stoffel/crates/stoffel-lang
 ## Common pitfalls
 
 - Do not use clear function arguments when the program expects `ClientStore` inputs.
+- Do not move client-owned `ClientStore` values into an application server or SDK server/node builder. Keep private input encoding and submission in each SDK client.
 - Do not reorder repeated `--client-input` values for the same slot; order is the per-client input index.
 - Do not omit `--expected-output-clients` for programs that call `MpcOutput.send_to_client` or `Share.send_to_client`.
 - Do not reveal intermediate private values in examples unless the algorithm intentionally opens that result.

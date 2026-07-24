@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: generated applications use current public crates.io releases by default. A pinned official GitHub revision is the fallback; a local path is explicit, nonportable framework-development mode only.
 
 ## Use when
 
@@ -109,6 +109,67 @@ stoffel init my-hardhat-app --template solidity-hardhat
 ```
 
 Treat non-Rust wrapper templates as integration scaffolds; use the Rust SDK for executable application flows.
+
+## Audit generated Rust apps
+
+Immediately inspect every generated `Cargo.toml`; do not assume the CLI binary that generated it came from the same release as these docs. The portable default follows the versions on the current Rust SDK installation page:
+
+```toml
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", version = "<current-docs-version>" }
+
+[build-dependencies]
+stoffel-bindgen = "<current-docs-version>"
+```
+
+If a required fix is not published, pin both Stoffel crates to the official repository and a full 40-character revision. Keep them on the same revision:
+
+```toml
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel.git", rev = "<full-40-character-commit-sha>" }
+
+[build-dependencies]
+stoffel-bindgen = { git = "https://github.com/Stoffel-Labs/stoffel.git", rev = "<full-40-character-commit-sha>" }
+```
+
+An adjacent path such as `path = "../stoffel/crates/stoffel-rust-sdk"` is allowed only when a framework contributor explicitly selects nonportable local-checkout mode. It must not appear in a generated app intended for another user or repository.
+
+Generated binary applications must include and commit `Cargo.lock`. After auditing `Cargo.toml`, regenerate the lockfile and use it for every check:
+
+```sh
+APP_MANIFEST="/absolute/path/to/generated-app/Cargo.toml"
+cargo generate-lockfile --manifest-path "$APP_MANIFEST"
+cargo check --locked --manifest-path "$APP_MANIFEST"
+cargo test --locked --manifest-path "$APP_MANIFEST"
+cargo metadata --locked --format-version 1 --manifest-path "$APP_MANIFEST" \
+  > "${APP_MANIFEST%/*}/cargo-metadata.json"
+```
+
+Audit `cargo-metadata.json`, not only manifest text. Each Stoffel package's `source` must be `registry+...` or the pinned official `git+https://github.com/Stoffel-Labs/stoffel.git?...#<full-sha>`. A `null` source identifies a path/workspace package and fails the portable-app check.
+
+Prove portability from a clean external checkout with no sibling Stoffel repository:
+
+```sh
+PROOF_DIR="$(mktemp -d)"
+APP_COMMIT="<reviewed-app-commit-sha>"
+git clone "<generated-app-repository-url>" "$PROOF_DIR/app"
+git -C "$PROOF_DIR/app" checkout --detach "$APP_COMMIT"
+cargo check --locked --manifest-path "$PROOF_DIR/app/Cargo.toml"
+```
+
+Repository scripts must derive their root from the script file; callers may invoke them from any directory:
+
+```sh
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+APP_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+STOFFEL_ROOT="$APP_ROOT"
+if [ ! -f "$STOFFEL_ROOT/Stoffel.toml" ] && [ -f "$APP_ROOT/stoffel/Stoffel.toml" ]; then
+  STOFFEL_ROOT="$APP_ROOT/stoffel"
+fi
+test -f "$STOFFEL_ROOT/Stoffel.toml"
+stoffel check "$STOFFEL_ROOT"
+cargo check --locked --manifest-path "$APP_ROOT/Cargo.toml"
+```
 
 ## Inputs
 
@@ -221,6 +282,10 @@ For secret examples copied from the repository, use the exact first-line `# run-
 
 - `stoffel run --config` expects network/off-chain config, not project `Stoffel.toml`.
 - `stoffel init` creates a project directory, not a single file.
+- Do not accept generated `path = "../stoffel/..."` dependencies as a portable default.
+- Do not use `branch = "main"`, a tag, or an abbreviated Git SHA as the fallback; pin a full official revision.
+- Do not validate only from inside the Stoffel framework checkout, where workspace state can conceal dependency leaks.
+- Do not rely on `cd app && ...` in automation; pass explicit paths derived from the script or manifest.
 - If a path already contains `Stoffel.toml`, use `stoffel status` or `stoffel run`; do not re-init unless intentionally refreshing template files with `--force`.
 - Do not pass named inputs to ClientStore programs or ClientStore inputs to normal function-argument programs.
 - Do not claim a command works unless it was actually run.

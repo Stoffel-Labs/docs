@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the current public install snippets from these docs. When developing against a local checkout, make that source-based workflow explicit.
+> Dependency assumption: app dependencies come from current public crates.io releases by default. Use a full pinned revision of the official GitHub repository only as fallback; reserve local paths for explicit nonportable framework development.
 
 ## Use when
 
@@ -98,6 +98,15 @@ For repeated client slots, order matters: `--client-input 0=50 --client-input 0=
 
 ## SDK local run
 
+For a Rust app, use the version from the current SDK installation docs and commit `Cargo.lock`:
+
+```toml
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", version = "<current-docs-version>" }
+```
+
+If a needed change is not released, use `git = "https://github.com/Stoffel-Labs/stoffel.git"` with `rev = "<full-40-character-commit-sha>"`. Do not substitute `branch = "main"`. A `path = "../stoffel/crates/stoffel-rust-sdk"` dependency is nonportable and is valid only when deliberately testing framework source.
+
 ```rust
 let result = runtime
     .local_network()
@@ -110,7 +119,9 @@ let result = runtime
 Builder shortcut:
 
 ```rust
-let result = Stoffel::compile_file("src/main.stfl")?
+let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+    .join("src/main.stfl");
+let result = Stoffel::compile_file(source)?
     .parties(5)
     .threshold(1)
     .with_client_input(0, &[42_i64])
@@ -121,36 +132,65 @@ let result = Stoffel::compile_file("src/main.stfl")?
 
 ## Recommended local loop
 
-1. Run `stoffel status --verbose` from the app root.
-2. Run `stoffel check` to catch syntax/config/type errors.
-3. Run `stoffel build --program-info` to inspect bytecode and client IO metadata.
-4. Run `stoffel run --timeout-secs 180` with named inputs or documented `# run-args:` flags.
-5. If using Rust, run `cargo check` and `cargo run` against the same bytecode/source.
-6. Record the exact command/output in the app handoff.
-7. Only then move to network/off-chain config with [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook).
+1. Resolve the app root from an explicit argument, manifest, or the script's own location; do not assume the caller's CWD.
+2. Run `stoffel status --verbose "$APP_ROOT"`.
+3. Run `stoffel check "$APP_ROOT"` to catch syntax/config/type errors.
+4. Run `stoffel build "$APP_ROOT" --program-info` to inspect bytecode and client IO metadata.
+5. Run `stoffel run "$APP_ROOT" --timeout-secs 180` with named inputs or documented `# run-args:` flags.
+6. If using Rust, run `cargo check --locked` and `cargo run --locked` with an explicit `--manifest-path` against the same bytecode/source.
+7. Inspect `cargo metadata --locked` and prove the app in a clean external checkout.
+8. Record the exact command/output in the app handoff.
+9. Only then move to network/off-chain config with [Stoffel Deployment Runbook](/developer-skills/stoffel-deployment-runbook).
+
+For a repository script, derive a stable root from the script path:
+
+```sh
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+APP_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+APP_MANIFEST="$APP_ROOT/Cargo.toml"
+STOFFEL_ROOT="$APP_ROOT"
+if [ ! -f "$STOFFEL_ROOT/Stoffel.toml" ] && [ -f "$APP_ROOT/stoffel/Stoffel.toml" ]; then
+  STOFFEL_ROOT="$APP_ROOT/stoffel"
+fi
+test -f "$STOFFEL_ROOT/Stoffel.toml"
+
+stoffel check "$STOFFEL_ROOT"
+cargo check --locked --manifest-path "$APP_MANIFEST"
+cargo metadata --locked --format-version 1 --manifest-path "$APP_MANIFEST" \
+  > "$APP_ROOT/cargo-metadata.json"
+```
+
+The Stoffel package in metadata must have a `registry+...` source or a pinned official `git+...#<full-sha>` source. `source: null` exposes a local path/workspace dependency.
 
 ## Validation / done criteria
 
 For app local-MPC work:
 
 ```sh
-stoffel status --verbose
-stoffel check
-stoffel build --program-info
-stoffel run --timeout-secs 180 <inputs or documented run-args>
+stoffel status --verbose "$STOFFEL_ROOT"
+stoffel check "$STOFFEL_ROOT"
+stoffel build "$STOFFEL_ROOT" --program-info
+stoffel run "$STOFFEL_ROOT" --timeout-secs 180 <inputs or documented run-args>
+cargo check --locked --manifest-path "$APP_ROOT/Cargo.toml"
 ```
+
+Commit `Cargo.lock`, then clone the app into a temporary directory outside the framework checkout (with no sibling `../stoffel`) and rerun the locked check and local smoke. A pass inside the framework repository alone is insufficient portability proof.
 
 For framework example validation:
 
 ```sh
-cd /path/to/stoffel/crates/stoffel-lang
-./examples/validate_examples.sh
-STOFFEL_PROGRAM_NAME=mpc_runtime_info.stflb ./examples/validate_examples.sh --host-mpc
+FRAMEWORK_ROOT="/absolute/path/to/stoffel"
+"$FRAMEWORK_ROOT/crates/stoffel-lang/examples/validate_examples.sh"
+STOFFEL_PROGRAM_NAME=mpc_runtime_info.stflb \
+  "$FRAMEWORK_ROOT/crates/stoffel-lang/examples/validate_examples.sh" --host-mpc
 ```
 
 ## Common pitfalls
 
 - Compile-only success is not a local MPC smoke test.
+- A local MPC pass backed by an adjacent path dependency is not a portable app proof.
+- Do not let `cargo run` update the graph implicitly; commit the lockfile and use `--locked`.
+- Do not encode framework checkout locations or assume commands start at the repository root.
 - Local MPC success is not production deployment; it only proves the program and app boundary work on the local test network.
 - Increase `--timeout-secs` before assuming protocol failure.
 - Avoid port/process collisions by serializing tests that spawn local party meshes.

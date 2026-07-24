@@ -14,7 +14,7 @@ metadata:
 
 > Scope: AI-agent-agnostic playbook for building applications with the Stoffel framework. This is not a maintainer guide for compiler, VM, protocol, or release engineering work.
 >
-> Dependency assumption: use the public install snippets from these docs. When developing against a local checkout, make that workflow explicit.
+> Dependency assumption: application examples use public crates.io releases by default. A pinned official GitHub revision is the fallback when the required public release is unavailable. A local path is an explicit, nonportable framework-development mode only.
 
 ## Use when
 
@@ -32,22 +32,51 @@ Use this playbook when a Rust application embeds Stoffel compilation, bytecode l
 
 ## Dependencies
 
-Use the released SDK dependency from the current Rust SDK installation docs when your app does not need a local checkout:
+Use the released SDK dependency from the current Rust SDK installation docs. Keep the placeholder below synchronized with that page rather than copying a release number into this skill:
 
 ```sh
 cargo add stoffel-rust-sdk --rename stoffel
 cargo add tokio --features macros,rt-multi-thread
 ```
 
-Use a local checkout when your app needs SDK source or unreleased workspace changes:
+Equivalent manifest shape:
 
 ```toml
 [dependencies]
-stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust-sdk" }
+stoffel = { package = "stoffel-rust-sdk", version = "<current-docs-version>" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
+If that release does not contain a required fix, pin the official repository to a full 40-character commit SHA (not a branch, tag, or abbreviated SHA):
+
+```toml
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", git = "https://github.com/Stoffel-Labs/stoffel.git", rev = "<full-40-character-commit-sha>" }
+```
+
+Only framework contributors intentionally testing an adjacent checkout should use a path dependency:
+
+```toml
+# NONPORTABLE framework-development mode; never emit this in a distributable app template.
+[dependencies]
+stoffel = { package = "stoffel-rust-sdk", path = "../stoffel/crates/stoffel-rust-sdk" }
+```
+
+Do not use `path = "../stoffel/..."` as an application default, and do not combine `path` with `version` or `git` to make a locally dependent manifest appear portable.
+
 Use `use stoffel::prelude::*;` for app code.
+
+## Path discipline
+
+Rust file APIs resolve relative paths from the process current directory, which may differ under tests, services, IDEs, and CI. Root app-owned paths at the Cargo manifest instead:
+
+```rust
+fn app_path(relative: impl AsRef<std::path::Path>) -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(relative)
+}
+```
+
+Use `app_path("src/main.stfl")`, `app_path("artifacts/program.stflb")`, and similar values with `compile_file`, `load_file`, and bytecode save/load calls. Accept deployment paths as explicit configuration when artifacts live outside the app; never depend on `cd` having been run first.
 
 ## Clear local execution
 
@@ -68,10 +97,12 @@ fn main() -> stoffel::Result<()> {
 
 ## Production-shaped client integration
 
-For application integration, design toward deployed services and packaged artifacts: build bytecode once, deploy MPC nodes separately, and have client software load deployment config plus typed bindings. Use local MPC as the development smoke path, not the production topology.
+For application integration, design toward deployed services and packaged artifacts: build bytecode once, deploy MPC nodes separately, and have each participant-owned client load deployment config plus typed bindings. For client-owned private input, that participant process submits directly to the MPC service; an application backend remains outside the plaintext path. Use local MPC as the development smoke path, not the production topology.
+
+**Client input ownership rule:** private `ClientStore` values originate in the SDK client. The client validates the generated input shape, encodes its own vector, and submits it through the client/coordinator protocol. Application servers and SDK server/node builders receive deployment configuration and value-blind protocol metadata; they must not receive participant values or proxy plaintext private inputs. Do not add per-client value payloads to `ServerBuilder` to model client slots or input ranges.
 
 ```rust
-let runtime = Stoffel::load_file("dist/program.stflb")?
+let runtime = Stoffel::load_file(app_path("dist/program.stflb"))?
     .parties(5)
     .threshold(1)
     .honeybadger()
@@ -92,11 +123,11 @@ let offchain = runtime
     .build()?;
 ```
 
-Generated typed bindings should be compiled into the app client or gateway. Production clients should load pinned bytecode/metadata; they should not compile `.stfl` source dynamically for every request.
+Generated typed bindings should be compiled into the participant client. Production clients should load pinned bytecode/metadata; they should not compile `.stfl` source dynamically for every request. A backend gateway that accepts participant plaintext is a separate, degraded-trust architecture and requires explicit approval.
 
 ## Local MPC execution
 
-Use local MPC to verify the privacy-sensitive path before deploying. `.execute_local().await?` spawns a local MPC test network on the developer machine.
+Use local MPC to verify program semantics before deploying. `.execute_local().await?` spawns a local MPC test network on the developer machine, and one harness process may see every fixture input. It does not prove that a production application service is outside the plaintext path.
 
 ```rust
 use stoffel::prelude::*;
@@ -120,7 +151,7 @@ async fn main() -> stoffel::Result<()> {
 If the program sends outputs to client slots, configure the expected output clients before executing:
 
 ```rust
-let result = Stoffel::compile_file("src/main.stfl")?
+let result = Stoffel::compile_file(app_path("src/main.stfl"))?
     .expected_output_clients(2)
     .with_client_input(0, &[40_i64])
     .with_client_input(1, &[2_i64])
@@ -131,11 +162,12 @@ let result = Stoffel::compile_file("src/main.stfl")?
 ## Loading and saving bytecode
 
 ```rust
-let runtime = Stoffel::compile_file("src/main.stfl")?.build()?;
-runtime.save_bytecode("target/debug/app.stflb")?;
+let bytecode = app_path("target/debug/app.stflb");
+let runtime = Stoffel::compile_file(app_path("src/main.stfl"))?.build()?;
+runtime.save_bytecode(&bytecode)?;
 let summary = runtime.bytecode_summary()?;
 
-let loaded = Stoffel::load_file("target/debug/app.stflb")?.build()?;
+let loaded = Stoffel::load_file(&bytecode)?.build()?;
 println!("functions: {:?}", summary.program.function_names);
 ```
 
@@ -231,37 +263,73 @@ For full deployment handoff, also capture coordinator address, node RPC addresse
 
 ## Validation / done criteria
 
-For Rust app setup:
+For a generated or handed-off Rust app, commit `Cargo.lock` and use the locked graph in verification and CI:
 
 ```sh
-cargo check
-cargo test
-cargo run
+cargo generate-lockfile
+cargo check --locked
+cargo test --locked
+cargo run --locked
+```
+
+Audit both the manifest text and Cargo's resolved provenance. Run these from the app manifest explicitly, so the result does not depend on the caller's current directory:
+
+```sh
+APP_MANIFEST="/absolute/path/to/my-app/Cargo.toml"
+test -f "${APP_MANIFEST%/*}/Cargo.lock"
+grep -nE 'stoffel-rust-sdk|stoffel-bindgen|path[[:space:]]*=' "$APP_MANIFEST"
+cargo metadata --locked --format-version 1 --manifest-path "$APP_MANIFEST" > "${APP_MANIFEST%/*}/cargo-metadata.json"
+```
+
+Inspect the Stoffel packages in `cargo-metadata.json`: crates.io packages have a `registry+...` source; the fallback has a `git+https://github.com/Stoffel-Labs/stoffel.git?...#<full-sha>` source. A `null` source means a path/workspace package and fails the portable-app audit.
+
+The final portability proof must run from a clean checkout outside the Stoffel framework repository and without an adjacent `../stoffel` directory:
+
+```sh
+APP_REPO_URL="<app-repository-url>"
+APP_COMMIT="<reviewed-app-commit-sha>"
+PROOF_DIR="$(mktemp -d)"
+git clone "$APP_REPO_URL" "$PROOF_DIR/app"
+git -C "$PROOF_DIR/app" checkout --detach "$APP_COMMIT"
+cargo check --locked --manifest-path "$PROOF_DIR/app/Cargo.toml"
+cargo test --locked --manifest-path "$PROOF_DIR/app/Cargo.toml"
+```
+
+For repository scripts, derive paths from the script location instead of assuming the current directory:
+
+```sh
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+cargo check --locked --manifest-path "$REPO_ROOT/apps/my-app/Cargo.toml"
 ```
 
 For local MPC app paths:
 
 ```sh
-cargo run
+cargo run --locked
 ```
 
 Framework validation:
 
 ```sh
-cargo test -p stoffel-rust-sdk
-cargo run -p stoffel-rust-sdk --example quickstart
-cargo run -p stoffel-rust-sdk --example local_mpc_client_input
+cargo test --locked -p stoffel-rust-sdk
+cargo run --locked -p stoffel-rust-sdk --example quickstart
+cargo run --locked -p stoffel-rust-sdk --example local_mpc_client_input
 ```
 
 ## Common pitfalls
 
 - Do not use path dependencies as the default after crates.io publication.
+- Do not accept `git = "...", branch = "main"`; use the official URL and a full `rev`.
+- Do not omit a generated app's `Cargo.lock` or silently drop `--locked` in CI.
+- Do not treat a successful build inside the framework checkout as portability proof; workspace inheritance and nearby paths can hide leaks.
 - Do not simulate protocol behavior in app code; use SDK/runtime execution paths.
+- Do not route `ClientStore` values through an application server or add participant input payloads to SDK server/node builders. Input ownership and submission belong to the SDK client.
 - Do not present `.execute_local().await?` as a production deployment path.
 - Do not compile `.stfl` source dynamically inside production clients; load pinned bytecode and generated metadata.
 - Do not set an explicit backend that conflicts with bytecode metadata. Prefer generated manifests for ClientStore programs.
 - For `ClientStore` apps, validate client input shapes before network submission.
-- Using `stoffel-rust-sdk` as both an app dependency and a build-dependency can trigger Cargo duplicate-crate/output-collision errors with path or git dependencies. Prefer runtime SDK metadata validation for sample apps, or pre-generate bindings outside the app build.
+- Do not use `stoffel-rust-sdk` as the binding generator build-dependency. Use the matching public `stoffel-bindgen` crate under `[build-dependencies]` as shown in the typed-bindings playbook.
 
 ## Next playbooks
 

@@ -73,6 +73,17 @@
             ]
           },
           {
+            "group": "Tutorials",
+            "pages": [
+              "tutorials/overview",
+              "tutorials/rust-sdk-quickstart",
+              "tutorials/private-matchmaking",
+              "tutorials/private-lottery",
+              "tutorials/n-party-battleship",
+              "tutorials/privacy-boundary"
+            ]
+          },
+          {
             "group": "The Stoffel CLI",
             "pages": [
               "cli/overview"
@@ -86,6 +97,12 @@
               "mpc-protocols/honeybadger-mpc",
               "mpc-protocols/avss",
               "mpc-protocols/implementation"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/docker-local-network"
             ]
           },
           {
@@ -129,6 +146,7 @@
             "pages": [
               "rust-sdk/overview",
               "rust-sdk/installation",
+              "rust-sdk/app-integration",
               "rust-sdk/api",
               "rust-sdk/examples"
             ]

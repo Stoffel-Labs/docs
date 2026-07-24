@@ -1,0 +1,107 @@
+---
+title: "Rust SDK Quickstart"
+description: "Build the smallest app-shaped Rust SDK project: a private approval tally that opens only an aggregate yes-vote count."
+---
+
+Use this quickstart when you want the smallest runnable Rust app before the larger tutorial apps. It is shaped like a `stoffel init` project with normal Rust application code around the Stoffel program.
+
+The example is a private approval tally for a feature launch. The app owns the proposal, requester, public voter roster, approval threshold, and persistence. Each voter contributes one private yes/no bit through `ClientStore`. Stoffel opens only the aggregate yes-vote count, and the Rust app maps that opened count into a launch decision.
+
+Runnable source:
+
+- [Rust SDK quickstart](https://github.com/Stoffel-Labs/Stoffel-tutorials/tree/main/tutorials/00-rust-sdk-quickstart)
+- [Full tutorial repository](https://github.com/Stoffel-Labs/Stoffel-tutorials)
+
+## What this teaches
+
+This is the minimal app-shaped SDK path:
+
+```text
+public proposal + public voter roster
++ private voter bits
+-> opened yes-vote count
+-> Rust launch decision
+```
+
+Use it to see the SDK handoff without the extra domain logic in matchmaking, lottery, or Battleship.
+
+## Privacy boundary
+
+| Fact | Boundary decision |
+| --- | --- |
+| Proposal, requester, voter roster, approval threshold | Public app data. The app can store and display it. |
+| One approval bit per voter | Private input owned by that voter. Do not store it as ordinary backend data. |
+| Aggregate yes-vote count | Authorized output. Open it so the app can apply the public approval threshold. |
+| Final launch decision | Ordinary app result derived from the opened count and public threshold. |
+
+The app learns the count it needs to decide whether the threshold passed. It does not need every voter's ballot in the repository, logs, support tools, or analytics jobs.
+
+## Code map
+
+```text
+tutorials/00-rust-sdk-quickstart/
+  Stoffel.toml
+  Cargo.toml
+  build.rs                         generated binding setup
+  src/main.stfl                    private approval tally
+  src/domain.rs                    public product types
+  src/client.rs                    voter-owned private payload
+  src/repository.rs                public round metadata and opened decisions
+  src/app.rs                       Rust SDK service boundary
+  src/main.rs                      runnable sample app
+  src/bin/voter_client.rs
+  src/plaintext.rs                 trusted-server baseline for tests
+  tests/quickstart.rs
+```
+
+Read the files in this order:
+
+1. `src/domain.rs`: see the ordinary proposal, round, voter roster, and decision types.
+2. `src/client.rs`: see how each voter owns a client slot and private approval bit.
+3. `src/main.stfl`: see the private tally and single reveal point.
+4. `src/app.rs`: see the Rust SDK boundary that validates input shape, attaches client inputs, runs local MPC, and persists the opened decision.
+5. `tests/quickstart.rs`: see app-layer behavior and the trusted-server baseline.
+
+## Run it
+
+From the tutorial repository root:
+
+```bash
+cargo test -p rust-sdk-quickstart
+cargo run -p rust-sdk-quickstart --bin voter_client -- alice product 0 yes
+cargo run -p rust-sdk-quickstart
+cargo run -p rust-sdk-quickstart -- alice:product:0:yes bob:security:1:no cara:infra:2:yes
+```
+
+Expected app output:
+
+```text
+proposal feature-flag-private-beta (Enable private beta launch for three design partners) requested by devrel: 2/2 approvals across 3 private voter clients => passed
+```
+
+Then run the Stoffel project directly:
+
+```bash
+cd tutorials/00-rust-sdk-quickstart
+stoffel status --verbose
+stoffel check
+stoffel build
+stoffel run --client-input 0=1 --client-input 1=0 --client-input 2=1 --timeout-secs 180
+```
+
+Expected CLI output: `2` or a result list containing `2`, depending on the installed CLI display format.
+
+## Try a different cohort
+
+The Stoffel program uses `ClientStore.get_number_input_clients()`, so the local run can use any contiguous client slots starting at `0`:
+
+```bash
+cargo run -p rust-sdk-quickstart -- alice:product:0:yes bob:security:1:no cara:infra:2:no dan:eng:3:yes
+stoffel run --client-input 0=1 --client-input 1=0 --client-input 2=0 --client-input 3=1 --timeout-secs 180
+```
+
+Keep the slots contiguous. The tutorial source loads slots `0..n`; a missing slot means the app cannot know which private input belongs to which public voter.
+
+## Next steps
+
+After this quickstart, use [Build a private matchmaking service](./private-matchmaking) to see the same SDK boundary inside a richer app-shaped tutorial. Use [Rust SDK App Integration](../rust-sdk/app-integration) when you want the reusable pattern without a tutorial domain.

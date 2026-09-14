@@ -5,14 +5,14 @@ description: "Choose the Stoffel MPC backend that matches your program's secret 
 
 Stoffel separates application code from the MPC protocol used to run it. The selected backend determines how secret values are shared, computed over, and reconstructed across MPC parties.
 
-Stoffel currently supports two asynchronous, robust MPC backend families:
+Stoffel currently supports two MPC backend families:
 
 | Backend | Selector | Use when | Main design lens |
 | --- | --- | --- | --- |
 | HoneyBadgerMPC | `honeybadger` | Your program is mostly private field arithmetic over application values. | Circuit shape: multiplication count, multiplication depth, type choices, reveals, and preprocessing capacity. |
 | AVSS | `avss` or `avss:<curve>` | Your program needs committed scalar shares, public commitments, curve-compatible outputs, or threshold-cryptography building blocks. | Protocol transcript: curve selection, commitments, transcript-to-field boundaries, openings, and verifier-facing artifacts. |
 
-Both backends are designed for asynchronous/robust settings: parties do not rely on a fixed network round clock, and the run can tolerate Byzantine parties up to the configured threshold. The backend choice determines which share representation, curve/field, preprocessing, and client I/O path Stoffel records in the bytecode manifest.
+The backend choice determines which share representation, curve/field, preprocessing, and client I/O path Stoffel records in the bytecode manifest. Security and completion guarantees differ between preprocessing and online execution. See [Security and fault model](./security-model) before treating the configured threshold as an end-to-end Byzantine-security guarantee.
 
 <Note>
 `mpc-protocols` has received an external audit from Zellic. Audit scope matters: validate the specific protocol version, integration code, deployment configuration, and threat model you rely on. Other Stoffel components have also had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped when evaluating a deployment.
@@ -28,30 +28,9 @@ Select AVSS with the default curve:
 
 ![Campaign-style networked privacy backend diagram showing how clients, the coordinator, preprocessing, and VM parties fit together for MPC execution.](/images/campaign/stoffel-networked-privacy-backend.png)
 
-### Overview
+### Security and cost reference
 
-HoneyBadger is an asynchronous Byzantine fault-tolerant (BFT) MPC protocol that:
-
-- **Tolerates malicious parties**: Up to `t` parties can be actively malicious
-- **Works asynchronously**: No timing assumptions required
-- **Provides guaranteed output delivery**: Honest parties always get results
-
-### Security Guarantees
-
-| Property | Description |
-|----------|-------------|
-| **Privacy** | No coalition of ≤t parties learns anything about honest inputs |
-| **Correctness** | Output is always the correct result of the computation |
-| **Guaranteed Output** | Honest parties always receive their outputs |
-| **Fairness** | Either all honest parties get output, or none do |
-
-### Configuration Constraints
-
-The number of parties `n` and threshold `t` must satisfy:
-
-```
-n >= 3t + 1
-```
+Stoffel configuration requires `n >= 4t+1` and at least five computing parties. This does not guarantee preprocessing availability, fairness or output delivery under arbitrary delays. Use the [phase-specific security matrix](./security-model), [protocol costs](./protocol-costs) and [paper map](./protocol-papers) to evaluate your deployment.
 
 Select AVSS with a specific curve:
 

@@ -5,6 +5,8 @@ description: "How Stoffel carries MPC backend selection through config, bytecode
 
 Use this page after choosing a backend to see how that choice flows through `Stoffel.toml`, CLI flags, Rust SDK builders, bytecode metadata, local execution, and network/client configuration. If you need the app-level input, execution, and output flow, use [MPC Integration](../architecture/mpc). For backend selection guidance, start with [MPC Backends](./overview).
 
+For advanced evaluation of the implementation selected by this configuration, use the [phase-specific security model](./security-model), [protocol cost reference](./protocol-costs), and [protocol-to-paper map](./protocol-papers) in the MPC Protocols tab.
+
 Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers.
 
 ## End-to-end path
@@ -182,5 +184,8 @@ AVSS share data can carry Feldman commitment material. StoffelLang exposes `Avss
 - [MPC Protocols](./overview)
 - [HoneyBadgerMPC](./honeybadger-mpc)
 - [AVSS](./avss)
+- [Security and fault model](./security-model)
+- [Protocol costs](./protocol-costs)
+- [Protocol papers](./protocol-papers)
 - [Stoffel VM builtins](../stoffel-vm/builtins)
 - [Rust SDK API](../rust-sdk/api)

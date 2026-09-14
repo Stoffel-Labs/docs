@@ -1,22 +1,29 @@
 ---
 title: "Security and fault model"
-description: "Evaluate Stoffel MPC thresholds, adversary assumptions, and preprocessing and online guarantees."
+description: "Compare the preprocessing and online threat models of Stoffel's MPC backends."
 ---
 
-Use this page when your application has concrete fault-tolerance, availability, or adversary requirements. Stoffel provides a field-arithmetic HoneyBadgerMPC backend and a Feldman-committed AVSS backend. They serve different workloads and expose different privacy boundaries.
+Use this page when your application has concrete privacy, Byzantine-fault, or availability requirements. Do not treat a backend's configured threshold as one end-to-end guarantee: **preprocessing and online execution protect different assets, depend on different participants, and fail differently.**
+
+## Read the phase boundary first
+
+Preprocessing creates correlated secret material before application values are computed. Online execution consumes that material for input, arithmetic, and output.
+
+| Phase | What is at risk? | What a failure means |
+| --- | --- | --- |
+| Preprocessing | Random shares, multiplication triples, random bits, and fixed-point masks | The run can stall, produce unusable material, or—if invalid material is accepted—undermine later correctness or privacy. |
+| Online | Application inputs, intermediate values, and authorized outputs | The computation can stall, reveal more than intended, or return an incorrect result. |
+
+An online phase cannot repair bad preprocessing. Conversely, unavailable preprocessing does not immediately stop an online run that already holds enough valid, unused material. It stops the run when that reserve is exhausted.
 
 ## Backend-specific parameters
 
 `n` is the number of computing parties. `t` is the maximum number of corrupted computing parties. Input and output clients are not included in `n`.
 
-The protocol-level topology depends on the selected backend:
-
-| Backend | Party constraint | Maximum Byzantine fraction | Reconstruction shape | Practical tradeoff |
-| --- | --- | --- | --- | --- |
-| HoneyBadgerMPC | `n >= 4t+1`, with at least five parties | Strictly less than one quarter | Online degree-`t` openings normally require at least `2t+1` matching shares and may require up to `3t+1` received shares to correct `t` errors. Degree-`2t` preprocessing can require `4t+1`. | More parties for the same `t`, but optimized for general private field and fixed-point arithmetic with robust online reconstruction. |
-| AVSS | `n >= 3t+1`, with at least four parties | Strictly less than one third | A value can be interpolated from `t+1` verified shares that agree on the same Feldman commitments. Byzantine agreement and progress still rely on the `3t+1` topology. | Better corruption ratio and fewer parties, but each share carries curve commitments and the commitment is public and non-hiding. |
-
-For common thresholds:
+| Backend | Protocol topology | Reconstruction model | Main tradeoff |
+| --- | --- | --- | --- |
+| HoneyBadgerMPC | `n >= 4t+1`, with at least five parties | Online degree-`t` openings normally need `2t+1` matching shares and may need up to `3t+1` received shares to correct `t` errors. Degree-`2t` preprocessing can require `4t+1`. | More parties for the same `t`, but robust private field and fixed-point arithmetic. |
+| AVSS | `n >= 3t+1`, with at least four parties | A value can be interpolated from `t+1` verified shares that agree on the same Feldman commitments. Protocol progress still relies on the `3t+1` topology. | Fewer parties and curve-compatible commitments, but group-operation costs and public, non-hiding commitments. |
 
 | Fault threshold | HoneyBadgerMPC parties | AVSS parties |
 | --- | --- | --- |
@@ -24,65 +31,105 @@ For common thresholds:
 | `t=2` | 9 | 7 |
 | `t=3` | 13 | 10 |
 
-A degree-`t` Shamir sharing can be interpolated from `t+1` correct shares. That number alone is not a Byzantine-fault threshold: unverified shares can be wrong, and robust reconstruction needs additional distinct, authenticated evaluations.[9]
-
-The difference comes from the protocol paths, not from AVSS being “more secure” in every dimension. HoneyBadgerMPC preprocessing handles degree-`2t` values, which drives the stronger `4t+1` topology in Stoffel even though the HoneyBadgerMPC literature's core Byzantine threshold is commonly stated as `3t+1`. AVSS verifies degree-`t` scalar shares with public group commitments and operates at `3t+1`, but pays group-operation costs and exposes those commitments.
+A degree-`t` sharing being reconstructible from `t+1` correct shares is not by itself a Byzantine-fault guarantee. Unverified shares can be wrong, while robust reconstruction needs additional distinct, authenticated evaluations.[9]
 
 <Note>
-Some Stoffel SDK and off-chain client releases apply a conservative shared `4t+1` validation rule to both backends. If that layer rejects an AVSS `3t+1` topology, the SDK is imposing a stricter deployment constraint than the AVSS protocol itself. Check the configuration surface used by your release when planning the actual node count.
+Some Stoffel SDK and off-chain client releases apply a conservative shared `4t+1` validator to both backends. If that layer rejects an AVSS `3t+1` topology, the SDK is imposing a stricter deployment constraint than the AVSS protocol. Check the configuration surface used by your release when planning the actual node count.
 </Note>
 
-## Preprocessing and online execution
+## HoneyBadgerMPC threat models
 
-Preprocessing generates random shares, multiplication triples, random bits, and fixed-point masks before application values are computed. Online execution consumes that material for input, arithmetic, and output.
+HoneyBadgerMPC deliberately uses **optimistic preprocessing** followed by a more robust online phase.[1] The two phases therefore have different availability guarantees even with the same parties and corruption threshold.
 
-The distinction matters operationally. HoneyBadgerMPC deliberately combines optimistic preprocessing with a robust online phase. Preprocessing may stop when a required party is unavailable; an existing material reserve can keep online computation running only until that reserve is exhausted.[1]
+### Preprocessing threat model
 
-## Phase-specific properties
+| Dimension | Guarantee and assumption |
+| --- | --- |
+| Protected assets | Random and double shares, multiplication triples, random bits, zero shares, and fixed-point masks. No application input is present yet. |
+| Threshold | `n >= 4t+1`. Preprocessing handles both degree-`t` and degree-`2t` sharings, with operation-specific reconstruction quorums. |
+| Adversary | Analyze a **static, active** adversary controlling at most `t` parties. Adaptive, mobile, and proactive corruption security are not provided. |
+| Safety and privacy | Completed material is intended to remain private and suitable for Byzantine-robust online arithmetic, provided all checks complete, randomness is cryptographic, channels are authenticated and confidential where required, and material is never reused. Delays do not justify weaker quorums or unchecked material. |
+| Liveness | **Not asynchronously live against all allowed faults.** A required party can withhold a message and prevent a preprocessing batch from completing. Async APIs and timeouts do not turn this into guaranteed termination. |
+| Interaction and cost | Several dealing, checking, reconstruction, and broadcast stages. Local work includes polynomial generation, matrix transforms, degree-`t` and degree-`2t` reconstruction, and fixed-point mask generation. |
+| Operational consequence | Generate and monitor a reserve before accepting work. A stalled replenishment job need not invalidate material already completed, but the online phase must stop safely when valid material runs out. |
 
-| Property | HoneyBadgerMPC preprocessing | HoneyBadgerMPC online | AVSS preprocessing | AVSS online |
-| --- | --- | --- | --- | --- |
-| Threshold | `n >= 4t+1`. Material includes degree-`t` and degree-`2t` shares, with operation-specific reconstruction quorums. | `n >= 4t+1`. Arithmetic uses degree-`t` shares and robust openings. | `n >= 3t+1`. Feldman shares use degree `t`; triple generation uses `2t+1` product dealers. | `n >= 3t+1`. A consistent value can be interpolated from `t+1` verified scalar shares. |
-| Round complexity | Several dealing, checking, reconstruction, and broadcast stages. Batches repeat these stages. Required-party withholding can prevent completion. | Linear operations are local. Multiplication opens masked differences in parallel. Input, output, truncation, and multiplication add their own dependency stages. | Random-share generation uses concurrent encrypted dealings followed by local mixing. Triple generation adds a product-resharing stage. | Linear operations are local. Multiplication opens two masked differences in one broadcast stage; input broadcasts a masked correction; output sends shares directly to its client. |
-| Computational complexity | Polynomial generation, matrix transforms, degree-`t` and degree-`2t` reconstruction, and fixed-point mask generation. | Field arithmetic plus robust decoding. Fixed-point operations add bit/mask work and truncation. | Polynomial evaluation, encryption, group commitments and verification, matrix mixing, and product resharing. | Field arithmetic, group commitment operations, verification, grouping, and interpolation. |
-| Security | Designed to create private correlated randomness for Byzantine-robust online arithmetic. Security depends on correct checks, cryptographic randomness, authenticated channels, and single-use material. | Inputs remain private up to the configured threshold when preprocessing is correct and fresh. Openings reveal masked values or authorized outputs. | Encrypted share delivery is computationally confidential. Feldman commitments are public and non-hiding. Current triple preprocessing does not prove that a committed output is the product of the committed inputs. | Online arithmetic is secure only with correct, fresh shares and triples. Public commitments reveal relations to their scalar values. |
-| Asynchronously live | No. A required party can withhold messages, so preprocessing is not guaranteed to finish under all allowed faults. | Conditional. With a sufficient material reserve and eventual delivery among honest parties, robust online operations can progress. Finite operation limits and material exhaustion can still stop a run. | No. Random-share generation waits for all dealers, and triple generation waits for its selected dealers. | Conditional on valid preprocessed material, sufficient honest responses, and eventual delivery. Automatic material replenishment reintroduces preprocessing availability requirements. |
-| Asynchronously safe | Delays alone do not justify accepting weaker quorums or reusing material. Security is conditional on completing the specified checks. | Core field arithmetic uses robust openings, but fixed-point protocols also require their stated range and statistical-mask assumptions. | Share consistency does not prove the multiplication relation. A malicious product dealer can provide a consistent sharing of the wrong product. | Correctness against active faults is conditional on the validity of upstream triples. |
-| Static or adaptive corruptions | Static corruption model. Adaptive, mobile, and proactive corruption security are not provided. | Static corruption model. Adaptive state exposure and secure-erasure guarantees are not provided. | Static corruption model. Long-lived keys and retained shares are not covered by an adaptive-security theorem. | Static corruption model. No proactive refresh or adaptive-security guarantee. |
-| Passive or active adversaries | The protocol family targets active faults, but deployments must preserve all validation and material-generation assumptions. | Robust openings defend against malformed or inconsistent shares. Fixed-point adaptations have additional assumptions inherited from their semi-honest source construction.[8] | Feldman verification detects inconsistent shares, but it does not supply an active-secure multiplication proof. Passive confidentiality is also limited for low-entropy committed values. | Verification protects share consistency. Active multiplication correctness still depends on valid triples. |
+### Online threat model
 
-For the concrete operation counts and communication stages behind this table, see [Protocol costs](./protocol-costs). For construction lineage, see [Protocol papers](./protocol-papers).
+| Dimension | Guarantee and assumption |
+| --- | --- |
+| Protected assets | Client inputs and secret intermediate values; only explicitly authorized outputs should be reconstructed. |
+| Threshold | `n >= 4t+1`. Arithmetic uses degree-`t` shares and robust openings; multiplication consumes one valid, unused triple per product. |
+| Adversary | Analyze a **static, active** adversary controlling at most `t` parties. Robust opening addresses malformed or inconsistent shares. Adaptive state exposure and secure-erasure guarantees are not provided. |
+| Safety and privacy | Conditional on correct, fresh preprocessing, the online field-arithmetic path keeps inputs private up to the threshold and checks robust openings. Fixed-point operations additionally depend on their range and statistical-mask assumptions; their source construction uses a semi-honest model.[8] |
+| Liveness | **Conditionally asynchronously live.** With enough valid preprocessed material, sufficient honest participation, and eventual honest-to-honest delivery, robust online operations can progress. Material exhaustion, finite operation limits, absent clients, or a permanent partition can still stop the run. |
+| Interaction and cost | Linear operations are local. Multiplication opens masked differences in parallel. Input, output, multiplication, and fixed-point truncation create separate dependency stages. |
+| Failure boundary | A robust online opening cannot detect every defect in material accepted during preprocessing. Preprocessing validity is an explicit precondition, not something the online threshold re-establishes. |
 
-## Asynchronous safety and liveness
+## AVSS threat models
 
-Asynchronous safety means message delay alone cannot make honest parties accept incompatible or incorrect results or cross the stated privacy boundary. A safe protocol may still stop.
+The AVSS backend uses encrypted share delivery and Feldman commitments. Feldman verification checks that a received scalar share matches a public commitment polynomial; it does not make the commitment hiding and does not prove every higher-level relation a protocol needs.[10]
 
-Asynchronous liveness means honest parties eventually complete despite up to `t` faulty parties, assuming eventual delivery between honest parties and fair scheduling. It does not cover a permanent partition, missing required client input, or an exhausted preprocessing reserve.
+### Preprocessing threat model
+
+| Dimension | Guarantee and assumption |
+| --- | --- |
+| Protected assets | Random Feldman shares and multiplication triples intended for later scalar arithmetic. |
+| Threshold | `n >= 3t+1`. Shares have degree `t`; random-share generation uses all dealers, while triple generation selects `2t+1` product dealers. |
+| Adversary | A **static, passive** adversary is the strongest model under which the integrated triple-generation arithmetic can currently be treated as correct without another product-relation check. Active share-consistency checks exist, but they do not establish end-to-end active security. Adaptive corruption security is not provided. |
+| Safety and privacy | Encrypted delivery provides computational confidentiality in transit. Feldman commitments are binding but public and non-hiding. More importantly, commitment consistency does not prove that a triple's committed output equals the product of its committed inputs. A malicious selected dealer can consistently share the wrong product. |
+| Liveness | **Not asynchronously live against all allowed faults.** Random-share generation waits for all dealers, and triple generation waits for every dealer in a fixed `2t+1` set. One required dealer can withhold and stall preprocessing. |
+| Interaction and cost | Concurrent encrypted dealings are followed by local mixing. Triple generation adds product resharing. Work includes polynomial evaluation, encryption, group commitments and verification, matrix mixing, and scalar multiplication. |
+| Operational consequence | Do not treat generated triples as malicious-secure without an additional validated product-relation mechanism. Pre-generating more material addresses capacity, not this correctness limitation. |
+
+### Online threat model
+
+| Dimension | Guarantee and assumption |
+| --- | --- |
+| Protected assets | Scalar inputs, intermediate shares, commitment-bearing arithmetic state, and output shares. Public commitments are part of the transcript, not protected data. |
+| Threshold | `n >= 3t+1`. Reconstruction needs `t+1` verified shares with the same commitments; multiplication opens two masked differences and consumes one triple. |
+| Adversary | Online opening rejects shares that do not match expected commitments, providing a useful defense against **active** malformed-share behavior. End-to-end multiplication correctness nevertheless falls back to the preprocessing model because online execution assumes a valid triple. Adaptive and proactive corruption security are not provided. |
+| Safety and privacy | Linear arithmetic and openings are conditionally consistent when parties share the same expected commitments. Multiplication is correct only if the consumed triple satisfies its product relation. Public commitments permit offline guessing of low-entropy values, so AVSS is not a hiding boundary for ordinary application data. |
+| Liveness | **Conditionally asynchronously live.** It requires valid preloaded material, enough honest responses, eventual delivery, and required client participation. Automatic replenishment crosses back into the weaker preprocessing liveness model. |
+| Interaction and cost | Linear operations are local. Batched multiplication opens two masked differences in one broadcast stage, followed by local field and group work. Input broadcasts a masked correction; output sends verified shares to its client. |
+| Failure boundary | Online commitment checks can reject malformed openings, but cannot certify that preprocessing produced `c=ab`. A consistent online transcript can therefore still compute the wrong result from a bad triple. |
+
+## Compare the phase transitions
+
+| Question | HoneyBadgerMPC | AVSS |
+| --- | --- | --- |
+| Can one faulty required party stall preprocessing? | Yes | Yes |
+| Can preloaded material let online work continue during a preprocessing outage? | Yes, until the reserve is exhausted | Yes, until the reserve is exhausted |
+| Does online execution actively validate received openings? | Yes, through robust reconstruction | Yes, against expected Feldman commitments |
+| Does that online validation establish the validity of preprocessing? | No; correct and fresh material remains an assumption | No; in particular, it does not establish the triple product relation |
+| Is low-entropy application data hidden from the protocol transcript? | Yes, subject to the stated threshold and deployment assumptions | No general claim: public Feldman commitments permit candidate testing |
+| Is adaptive corruption covered? | No | No |
+
+## Asynchronous safety is not liveness
+
+**Asynchronous safety** means message delay alone cannot make honest parties accept incompatible or incorrect results or cross the stated privacy boundary. A safe protocol may still stop.
+
+**Asynchronous liveness** means honest parties eventually complete despite up to `t` faulty parties, assuming eventual delivery between honest parties and fair scheduling. It does not cover a permanent partition, missing required client input, or exhausted preprocessing.
 
 Randomized asynchronous agreement can have an expected-round bound without a fixed completion deadline. FLP explains why asynchronous consensus cannot promise deterministic termination in every execution with even one fault.[14]
 
-## Privacy and deployment assumptions
+## Shared deployment assumptions
 
 - Party-to-party and client-to-party traffic needs authenticated identities and confidential channels. Reliable broadcast provides agreement, not encryption.
 - Random generators must be cryptographically secure.
 - Masks, random shares, and triples must be consumed once, including across cancellation, retries, crashes, and restored state.
 - `t` is the total corrupted-party budget, not one allowance for Byzantine parties plus another for crashed parties.
-- The backends do not add differential privacy. Authorized outputs and repeated queries can still disclose application information.
+- Neither backend supplies differential privacy. Authorized outputs and repeated queries can still disclose application information.
 - Constant-time execution, side-channel resistance, forward secrecy, and formal universal composability are separate deployment requirements.
 
-## AVSS commitment boundary
+## Choosing between the backends
 
-Feldman commitments include `C_0 = sG` for secret scalar `s`. Anyone who can enumerate plausible values can test guesses against that public point. AVSS is therefore appropriate when a public commitment to a high-entropy cryptographic scalar is intentional. It is not a generic hiding representation for salaries, ages, binary choices, or other small-domain application data.[10]
+Choose **HoneyBadgerMPC** for private arithmetic over application values when you can provision and monitor preprocessing reserves. Its online path is the stronger fit for active Byzantine behavior, but its topology uses more parties and its fixed-point protocols carry additional range and masking assumptions.
 
-AVSS share generation also does not by itself provide a complete distributed key-generation or threshold-signature protocol. Those protocols need their own key setup, nonce, transcript, verification, recovery, and output rules.
+Choose **AVSS** when the application deliberately needs public commitments or curve-compatible scalar shares. It supports a better protocol-level fault ratio, but those commitments are not hiding and the current triple path does not establish malicious multiplication correctness.
 
-## Which backend fits stricter requirements?
+If you require adaptive corruption security, guaranteed completion of preprocessing under every allowed fault, or a formally verified malicious-security composition across both phases, neither backend alone establishes that requirement.
 
-Choose HoneyBadgerMPC for private arithmetic over application values when you can provision preprocessing and operate within its static-corruption model.
-
-Choose AVSS when your application deliberately needs public commitments or curve-compatible scalar shares, and its commitment leakage is acceptable. Do not rely on its generated triples for malicious-secure multiplication without an additional validated product-relation mechanism.
-
-If your requirement includes adaptive corruptions, guaranteed completion in both phases under all allowed faults, or a formally verified malicious-security composition, neither backend alone establishes that requirement.
+For communication stages and operation costs, see [Protocol costs](./protocol-costs). For construction lineage, see [Protocol papers](./protocol-papers).
 
 ## Sources
 

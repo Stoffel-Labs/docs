@@ -3,7 +3,7 @@ title: "Security and fault model"
 description: "Compare the preprocessing and online threat models of Stoffel's MPC backends."
 ---
 
-Use this page when your application has concrete privacy, Byzantine-fault, or availability requirements. Do not treat a backend's configured threshold as one end-to-end guarantee: **preprocessing and online execution protect different assets, depend on different participants, and fail differently.**
+Use this page when your application has concrete privacy, Byzantine-fault, or availability requirements. Do not treat a backend's configured threshold as one end-to-end guarantee: **preprocessing and online execution protect different assets, impose different participation requirements, and fail differently.**
 
 ## Read the phase boundary first
 
@@ -15,6 +15,23 @@ Preprocessing creates correlated secret material before application values are c
 | Online | Application inputs, intermediate values, and authorized outputs | The computation can stall, reveal more than intended, or return an incorrect result. |
 
 An online phase cannot repair bad preprocessing. Conversely, unavailable preprocessing does not immediately stop an online run that already holds enough valid, unused material. It stops the run when that reserve is exhausted.
+
+## Participants across both phases
+
+The phase split is a **protocol and threat-model boundary**, not a requirement to operate two committees. The same `n` computing parties can run preprocessing and online execution for either backend.
+
+Reusing the same party set is operationally simpler, but it couples the phases:
+
+| Caveat | What it means when the same parties run both phases |
+| --- | --- |
+| Corruption budget | The guarantee assumes one static corrupted set of at most `t` parties across the lifecycle of the material and the online computation. Corrupting one set during preprocessing and a different set during online execution is an adaptive or mobile-corruption scenario; the union is not covered merely because each phase separately observed at most `t` corruptions. |
+| Preprocessing integrity | The online phase inherits every property of the material those parties produced. Robust online openings do not revalidate HoneyBadgerMPC material or prove the AVSS triple product relation. |
+| Compromise impact | A party host may hold long-lived keys, unused preprocessing, consumed-material metadata, and live online shares. One compromise can therefore affect both phases. Neither backend provides a secure-erasure or adaptive-corruption theorem for this lifecycle. |
+| Availability coupling | A faulty or offline party can block replenishment even while online work continues from reserves. If preprocessing and online work share hosts and network capacity, resource exhaustion or an outage can affect both at once. |
+| Material lifecycle | Bind material to its backend, `n`, `t`, party identities and indices, and execution context. Do not import it into a differently configured committee, renumber parties, or restore consumed material from backup. Consumption must remain atomic and one-time across retries and crashes. |
+| Operator independence | Running both phases on the same organizations does not add a second trust boundary. Correlated credentials, administrators, infrastructure, or cloud failures should be counted as common-mode risk rather than independent protection. |
+
+Separating operators or infrastructure can reduce common-mode operational risk, but it does not automatically strengthen the cryptographic model. A handoff to a different committee requires a protocol that securely transfers or reshapes the secret material; copying shares or triples between differently indexed party sets is not such a protocol.
 
 ## Backend-specific parameters
 
@@ -52,6 +69,7 @@ HoneyBadgerMPC deliberately uses **optimistic preprocessing** followed by a more
 | Liveness | **Not asynchronously live against all allowed faults.** A required party can withhold a message and prevent a preprocessing batch from completing. Async APIs and timeouts do not turn this into guaranteed termination. |
 | Interaction and cost | Several dealing, checking, reconstruction, and broadcast stages. Local work includes polynomial generation, matrix transforms, degree-`t` and degree-`2t` reconstruction, and fixed-point mask generation. |
 | Operational consequence | Generate and monitor a reserve before accepting work. A stalled replenishment job need not invalidate material already completed, but the online phase must stop safely when valid material runs out. |
+| Same-party deployment | Supported. Treat the static `t`-party corruption budget as spanning preprocessing, storage, and later online use; do not reset the budget at the phase boundary. |
 
 ### Online threat model
 
@@ -64,6 +82,7 @@ HoneyBadgerMPC deliberately uses **optimistic preprocessing** followed by a more
 | Liveness | **Conditionally asynchronously live.** With enough valid preprocessed material, sufficient honest participation, and eventual honest-to-honest delivery, robust online operations can progress. Material exhaustion, finite operation limits, absent clients, or a permanent partition can still stop the run. |
 | Interaction and cost | Linear operations are local. Multiplication opens masked differences in parallel. Input, output, multiplication, and fixed-point truncation create separate dependency stages. |
 | Failure boundary | A robust online opening cannot detect every defect in material accepted during preprocessing. Preprocessing validity is an explicit precondition, not something the online threshold re-establishes. |
+| Same-party deployment | The parties that generated material can consume it directly. Protect stored reserves and consumption state because compromising those hosts can expose both preprocessing state and live application shares. |
 
 ## AVSS threat models
 
@@ -80,6 +99,7 @@ The AVSS backend uses encrypted share delivery and Feldman commitments. Feldman 
 | Liveness | **Not asynchronously live against all allowed faults.** Random-share generation waits for all dealers, and triple generation waits for every dealer in a fixed `2t+1` set. One required dealer can withhold and stall preprocessing. |
 | Interaction and cost | Concurrent encrypted dealings are followed by local mixing. Triple generation adds product resharing. Work includes polynomial evaluation, encryption, group commitments and verification, matrix mixing, and scalar multiplication. |
 | Operational consequence | Do not treat generated triples as malicious-secure without an additional validated product-relation mechanism. Pre-generating more material addresses capacity, not this correctness limitation. |
+| Same-party deployment | Supported, but it does not close the product-relation gap. The same malicious selected dealer can influence preprocessing and then participate in an online computation that accepts the resulting consistent but incorrect triple. |
 
 ### Online threat model
 
@@ -92,6 +112,7 @@ The AVSS backend uses encrypted share delivery and Feldman commitments. Feldman 
 | Liveness | **Conditionally asynchronously live.** It requires valid preloaded material, enough honest responses, eventual delivery, and required client participation. Automatic replenishment crosses back into the weaker preprocessing liveness model. |
 | Interaction and cost | Linear operations are local. Batched multiplication opens two masked differences in one broadcast stage, followed by local field and group work. Input broadcasts a masked correction; output sends verified shares to its client. |
 | Failure boundary | Online commitment checks can reject malformed openings, but cannot certify that preprocessing produced `c=ab`. A consistent online transcript can therefore still compute the wrong result from a bad triple. |
+| Same-party deployment | Reuse of the party set and AVSS key material concentrates encrypted-dealing keys, unused triples, commitment state, and online shares on the same hosts. Model compromise across the full lifecycle, not as two independent `t`-party events. |
 
 ## Compare the phase transitions
 
@@ -103,6 +124,7 @@ The AVSS backend uses encrypted share delivery and Feldman commitments. Feldman 
 | Does that online validation establish the validity of preprocessing? | No; correct and fresh material remains an assumption | No; in particular, it does not establish the triple product relation |
 | Is low-entropy application data hidden from the protocol transcript? | Yes, subject to the stated threshold and deployment assumptions | No general claim: public Feldman commitments permit candidate testing |
 | Is adaptive corruption covered? | No | No |
+| May the same parties run both phases? | Yes; use one lifecycle-wide corruption budget | Yes; use one lifecycle-wide corruption budget |
 
 ## Asynchronous safety is not liveness
 

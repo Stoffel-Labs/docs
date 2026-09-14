@@ -1,0 +1,77 @@
+---
+title: "Security and fault model"
+description: "Thresholds, preprocessing and online security, corruption models, and asynchronous safety and liveness."
+---
+
+Stoffel exposes HoneyBadgerMPC field arithmetic and a Feldman-based AVSS backend. Choosing a backend requires more than a party threshold: preprocessing correctness, network identity, completion behavior and the values exposed by commitments all matter.
+
+This page describes `mpc-protocols` revision `5e2624fa96f15bdd2f53c2142e4bce0ae4bd45c2` and framework configuration at Stoffel revision `439264f1f319de3e76019990a5892c96db90136e`. Check the protocol dependency in your application's lockfile before applying these properties to another release.
+
+## Threshold is not reconstruction count
+
+`n` is the number of computing parties. `t` is the maximum number of corrupted computing parties. Input/output clients do not increase `n`.
+
+Stoffel's local/network configuration requires `n >= 4t + 1` and at least five parties. A degree-`t` Shamir sharing can be reconstructed from `t+1` correct shares, but this does not mean an unverified set of `t+1` received shares is safe to accept. Error correction needs additional distinct, authenticated evaluations.[9]
+
+The lower-level Bracha/AVID broadcasts accept `n >= 3t+1`. That primitive threshold does not override the framework rule, and a valid configuration does not by itself guarantee that every preprocessing or recovery path completes.
+
+## Preprocessing versus online execution
+
+Preprocessing generates random shares, multiplication triples and fixed-point masks. Online execution consumes them to accept inputs, compute and deliver results. A reserve can allow online execution to continue temporarily after preprocessing stops; it cannot provide indefinite service once that reserve is exhausted.
+
+The HoneyBadgerMPC paper deliberately uses optimistic, non-robust preprocessing with a robust online phase. Its offline generation can stop if a party crashes. The two phases must not be assigned the same liveness guarantee.[1]
+
+| Property | HoneyBadgerMPC preprocessing | HoneyBadgerMPC online | AVSS preprocessing | AVSS online |
+| --- | --- | --- | --- | --- |
+| Threshold | Framework `n >= 4t+1`; degree-`t` and degree-`2t` material; individual checks have additional quorum requirements. | Framework `n >= 4t+1`; degree-`t` arithmetic and robust openings. | Framework `n >= 4t+1`; Feldman shares use degree `t`; triple generation selects `2t+1` dealers. | Framework `n >= 4t+1`; interpolation requires `t+1` consistent, verified scalar shares. |
+| Round complexity | Multiple share/check/broadcast stages, repeated for requested batches. No finite successful-completion bound under faulty withholding. | Local linear operations; parallel masked reconstructions per multiplication batch; additional stages for input, output and truncation. | One encrypted dealing RBC layer, then local mixing; triple generation adds product-resharing RBCs. No complaint/recovery stage is implemented. | Local linear operations; the two masked differences share one RBC-based opening stage per multiplication batch. Input adds masked-correction RBC; output is direct to its client. |
+| Computational complexity | Polynomial generation, matrix transforms, validation and degree-`2t` reconstruction; depends on batch size and field. | Linear local share arithmetic plus batch reconstruction/decoding; fixed-point operations add mask work. | Polynomial evaluation, group commitments/verification, encryption and resharing. | Group verification/commitment arithmetic plus scalar interpolation; more expensive than uncommitted field arithmetic. |
+| Security | Statistical/information-theoretic arithmetic design, plus computational channel/hash assumptions. Full active-security equivalence of the adapted generator is not established. | Privacy and correctness are conditional on fresh, correct preprocessing and authenticated robust reconstruction. | Computational confidentiality for encrypted delivery; Feldman commitments are not hiding. Product consistency is not established by merely sharing a committed product. | Conditional on correct triples/shares and consistent commitments. Public commitments expose relations to secret scalars. |
+| Asynchronously live | No unconditional guarantee. Withholding, check failures, finite waits and capacity limits can stop generation. | No unconditional implementation-level guarantee under arbitrary delay; finite waits and material exhaustion can stop a run. The paper's online robustness assumes its required material and model. | No for the complete triple generator: it waits for all selected dealers, one of whom may withhold. | No unconditional implementation-level guarantee under arbitrary delay; finite waits and upstream generation limits apply. |
+| Asynchronously safe | Not established for the complete adapted active-adversary pipeline. A timeout must fail closed rather than lower a quorum. | Conditional for core field arithmetic; no blanket end-to-end active-safety claim, especially for adapted fixed-point protocols. | No for active computation correctness with current product resharing: valid commitments can encode a wrong product. AVSS consistency alone does not prove `c=a*b`. | No end-to-end active correctness with invalid upstream triples. With independently validated material, review each opening and output boundary. |
+| Static or adaptive corruptions | Static baseline; adaptive security not established. | Static baseline; adaptive security not established. | Static baseline; adaptive security not established. | Static baseline; adaptive security not established. |
+| Passive or active adversaries | Designed to handle Byzantine messages, but this is not a certification of active security for the assembled implementation. | Active-error defenses in arithmetic/opening; fixed-point adaptations require separate review. Passive privacy still needs valid masks and channels. | Verifiable sharing defends against some active deviations; the full generator is not established as actively secure. | Correctness against active parties is conditional on the upstream triple relation and verification path. |
+
+For operation-by-operation cost definitions and paper associations, see [Protocol costs](./protocol-costs) and [Protocol papers](./protocol-papers). “Not established” is an explicit limit on the guarantee, not a statement that all executions are insecure.
+
+## Asynchronous safety and liveness are different
+
+Asynchronous safety means arbitrary message delays do not invalidate the claimed privacy, correctness or agreement. Asynchronous liveness means honest parties eventually finish despite faulty parties, assuming eventual delivery between honest participants and fair scheduling, without a known maximum delay.
+
+A finite timeout can stop a run without producing a wrong result. This loses liveness, not necessarily safety. Conversely, reducing a quorum or reusing old material to make progress can violate safety.
+
+The implementation uses finite operation waits, a finite ABA coin wait, bounded queues and age-based session eviction under capacity pressure. These are operational limits. Raising them does not create a proof of liveness for arbitrary finite delays. Permanent network partitions and absent required client input are outside an eventual-delivery guarantee. Standalone ABA is not integrated into the default preprocessing generators, so its coin timeout is not an additional stage of every arithmetic operation.
+
+Randomized asynchronous agreement has expected-round bounds under its assumptions, not a fixed completion deadline. The FLP impossibility result rules out a universal deterministic termination promise for asynchronous consensus with faults.[14]
+
+## Privacy assumptions
+
+- MPC party-to-party and client-to-party traffic must use authenticated identities and confidential channels. Reliable broadcast is not encryption.
+- Randomness must come from cryptographically secure generators. Masks and triples must never be reused, including after cancellation, a crash or restoring a backup.
+- The threshold is a bound on the total corrupted party set, not a separate allowance for Byzantine parties plus another allowance for crashed parties.
+- Adaptive or mobile corruption resistance, proactive share refresh and secure state erasure are not established by these backends.
+- This reference does not certify side-channel resistance, constant-time execution or a formal composability theorem for the deployment.
+- Your program still reveals its authorized outputs and public metadata. Repeated aggregates can disclose information; MPC does not supply differential privacy automatically.
+
+## AVSS and low-entropy values
+
+Feldman coefficient commitments include `C_0 = s*G`. Someone who can enumerate plausible values of `s` can test each candidate against that public point. This is unsuitable as a generic hiding commitment for salaries, ages, binary choices or other small-domain application data.[10]
+
+Use AVSS when public commitments to cryptographic scalars are intentional. Do not infer complete DKG or threshold-signature support from share generation alone. A signing protocol must additionally establish its exact transcript, nonce, key-generation, verification and recovery requirements.
+
+## Deployment decision
+
+If your deployment requires formally justified malicious security, adaptive corruption tolerance or guaranteed completion under arbitrary network delay in both phases, do not treat the backend name as satisfying those requirements. Obtain a review of the exact revision, resolve the preprocessing/composition limitations above and test the real transport and material lifecycle.
+
+For ordinary field-based application arithmetic, HoneyBadgerMPC remains the relevant backend to evaluate. For verifier-facing scalar commitments, evaluate AVSS with its commitment leakage and preprocessing constraints. Neither choice removes the need to specify who may learn each output and how retries consume fresh material.
+
+
+## Sources
+
+[1] Lu, Yurek, Kulshreshtha, Govind, Mahadev, Kate and Miller. HoneyBadgerMPC and AsynchroMix: Practical Asynchronous MPC and its Application to Anonymous Communication (2019). https://eprint.iacr.org/2019/883.pdf
+
+[9] Shamir. How to Share a Secret (1979). https://www.cs.tau.ac.il/~bchor/Shamir.html
+
+[10] Feldman. A Practical Scheme for Non-interactive Verifiable Secret Sharing (1987). https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
+
+[14] Fischer, Lynch and Paterson. Impossibility of Distributed Consensus with One Faulty Process (1985). https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf

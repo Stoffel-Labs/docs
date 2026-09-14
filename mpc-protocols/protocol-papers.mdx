@@ -1,0 +1,77 @@
+---
+title: "Protocol papers"
+description: "Implemented protocol families, original papers, inferred ancestry, and construction boundaries."
+---
+
+An associated paper identifies a construction, not an implementation certification. Explicit references occur in source comments or repository guidance. Inferred references identify recognizable algebra or state-machine ancestry. Background references explain a primitive or limitation. Read the [security matrix](./security-model) and [cost reference](./protocol-costs) alongside this map.
+
+## Explicit references in the checked-in code
+
+| Reference | Code location | Implemented portion and scope |
+| --- | --- | --- |
+| HoneyBadgerMPC and AsynchroMix [1] | `mpc/src/lib.rs:69-72`; `honeybadger/mod.rs:1-15`; RanDouSha, input and multiplication comments | Robust interpolation, batch reconstruction, random/double sharing, triple generation and masked online arithmetic. The AsynchroMix application is not implemented by these modules. |
+| hbACSS [2] | `common/mod.rs:12` | `common/acss` contains a Pedersen polynomial commitment helper. Do not describe it as an operational implementation of the full hbACSS protocol. |
+| Asynchronous Verifiable Information Dispersal [3] | `common/rbc/rbc.rs:500` | AVID-style erasure-coded RBC. The paper has several variants and a confidentiality extension; the RBC implementation does not inherit every variant's properties. |
+| The Honey Badger of BFT Protocols [4] | `common/rbc/rbc.rs:1996` | ACS composed from RBC and ABA, plus related common-coin structure. This is not a blockchain or a complete HoneyBadgerBFT deployment. |
+| FNT interpolation reference [5] | `honeybadger/robust_interpolate/robust_interpolate.rs:197` | Optimistic polynomial interpolation helper. The original link could not be retrieved. Soro–Lacan's FNT paper [17] supplies a related polynomial-interpolation construction; exact identity with the unavailable file is unconfirmed. Do not import its fast-transform bound into the current dense-polynomial loops. |
+| Gao decoding [6] | `honeybadger/robust_interpolate/robust_interpolate.rs:447` | Error-correcting polynomial decoder. Title, author and DOI verified through publication metadata; full text recovered from the original server's HTTP endpoint after HTTPS failed. |
+| Choudhury–Hirt–Patra [7] | `honeybadger/robust_interpolate/robust_interpolate.rs:567` | Online error correction ancestry, not a claim that the entire asynchronously live MPC construction is implemented. |
+| Catrina–Saxena fixed-point arithmetic [8] | README reference list; `common/types/mod.rs:7-8` | PRandBit/PRandInt-related machinery, probabilistic truncation, fixed-point multiplication and public-constant division. The paper states passive/semi-honest privacy; an active MPC substrate alone is not a proof for every adaptation. |
+
+Source paths refer to [mpc-protocols at the documented revision](https://github.com/Stoffel-Labs/mpc-protocols/tree/5e2624fa96f15bdd2f53c2142e4bce0ae4bd45c2/mpc/src).
+
+## Inferred and foundational associations
+
+| Implementation | Associated paper | Boundary |
+| --- | --- | --- |
+| Shamirshare, NonRobustShare and RobustShare polynomial representation | Shamir, *How to Share a Secret* [9] | Bare sharing is not VSS and does not authenticate a dealer. |
+| FeldmanShamirShare coefficient commitments and verification | Feldman, *A Practical Scheme for Non-interactive Verifiable Secret Sharing* [10] | Coefficient commitments are not hiding. The surrounding asynchronous protocol must independently supply agreement and recovery. |
+| PedersenPolyCommitment | Pedersen, *Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing* [11] | Only the commitment helper is present. Correct setup requires an unknown discrete-log relation between generators. |
+| Beaver multiplication in both backends | Beaver, *Efficient Multiparty Protocols Using Circuit Randomization* [12], with the exact masked identity in HoneyBadgerMPC section 2.2 [1] | Requires fresh, correct correlated triples. |
+| Bracha INIT/ECHO/READY | Bracha, *Asynchronous Byzantine Agreement Protocols* [13]; algorithms also described in [3][4] | Reliable broadcast is not agreement on an arbitrary input set and is not guaranteed to deliver when its dealer never starts. |
+| ABA EST/AUX/common-coin rounds | Mostefaoui, Moumen and Raynal [16], via the HoneyBadgerBFT appendix [4] | The concrete coin, message ordering, termination and session lifecycle must match the protocol assumptions. |
+| ACS | Ben-Or, Kelmer and Rabin, *Asynchronous Secure Computations with Optimal Resilience* (PODC 1994), identified as reference 9 in HoneyBadgerBFT [4] | RBC plus one ABA per proposer, not a union of locally received values. |
+| Threshold-signature common coin and trusted key Dealer helper | Boldyreva, *Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme* (PKC 2003), identified as reference 11 in [4] | Pairing-based threshold signature ancestry. `Dealer::distribute_keys` is trusted setup, not distributed key generation. |
+| Degree reduction by resharing local products in AVSS TripleGen | Ben-Or, Goldwasser and Wigderson [15] plus Beaver [12] | Algebraic ancestry only. VSS of a claimed product does not prove multiplication correctness. |
+| Reed–Solomon encoding/error correction | Reed and Solomon, *Polynomial Codes Over Certain Finite Fields* (1960); the code and decoding prerequisites are reviewed in AVID [3], with the concrete decoder mapped to Gao [6] | Byte erasure coding and field-polynomial error correction are distinct code paths. |
+| Delay-independent consensus limitations | Fischer, Lynch and Paterson [14] | Background impossibility theorem, not a protocol implementation. |
+
+
+The original FNT source URL is unavailable. The related Soro–Lacan paper [17] is linked separately rather than silently substituted. Full secret-divisor fixed-point division, complete hbACSS and unmerged protocol branches are outside this revision.
+
+
+## Sources
+
+[1] Lu, Yurek, Kulshreshtha, Govind, Mahadev, Kate and Miller. HoneyBadgerMPC and AsynchroMix: Practical Asynchronous MPC and its Application to Anonymous Communication (2019). https://eprint.iacr.org/2019/883.pdf
+
+[2] Yurek, Luo, Fairoze, Kate and Miller. hbACSS: How to Robustly Share Many Secrets (2021). https://eprint.iacr.org/2021/159.pdf
+
+[3] Cachin and Tessaro. Asynchronous Verifiable Information Dispersal (2004). https://homes.cs.washington.edu/~tessaro/papers/dds.pdf
+
+[4] Miller, Xia, Croman, Shi and Song. The Honey Badger of BFT Protocols (2016). https://eprint.iacr.org/2016/199.pdf
+
+[5] Source-cited FNT interpolation reference; original URL retained, title and authors unresolved. https://pagespro.isae-supaero.fr/IMG/pdf/FNT_submitted.pdf
+
+[6] Gao. A New Algorithm for Decoding Reed-Solomon Codes (2003); DOI 10.1007/978-1-4757-3789-9_5. https://www.math.clemson.edu/~sgao/papers/RS.pdf
+
+[7] Choudhury, Hirt and Patra. Unconditionally Secure Asynchronous Multiparty Computation with Linear Communication Complexity (ePrint 2012/517). https://eprint.iacr.org/2012/517.pdf
+
+[8] Catrina and Saxena. Secure Computation With Fixed-Point Numbers (2010). https://ifca.ai/pub/fc10/31_47.pdf
+
+[9] Shamir. How to Share a Secret (1979). https://www.cs.tau.ac.il/~bchor/Shamir.html
+
+[10] Feldman. A Practical Scheme for Non-interactive Verifiable Secret Sharing (1987). https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
+
+[11] Pedersen. Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing (CRYPTO 1991). https://www.cs.cornell.edu/courses/cs754/2001fa/129.PDF
+
+[12] Beaver. Efficient Multiparty Protocols Using Circuit Randomization (CRYPTO 1991). https://doi.org/10.1007/3-540-46766-1_34
+
+[13] Bracha. Asynchronous Byzantine Agreement Protocols (1987). https://doi.org/10.1016/0890-5401(87)90054-X
+
+[14] Fischer, Lynch and Paterson. Impossibility of Distributed Consensus with One Faulty Process (1985). https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf
+
+[15] Ben-Or, Goldwasser and Wigderson. Completeness Theorems for Non-Cryptographic Fault-Tolerant Distributed Computation (1988). https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf
+
+[16] Mostefaoui, Moumen and Raynal. Signature-Free Asynchronous Binary Byzantine Consensus with t < n/3, O(n^2) Messages, and O(1) Expected Time (2015). https://doi.org/10.1145/2785953
+
+[17] Soro and Lacan. FNT-based Reed-Solomon Erasure Codes (2009 preprint; CCNC 2010). https://arxiv.org/pdf/0907.1788

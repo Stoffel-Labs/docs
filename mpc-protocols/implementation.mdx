@@ -49,17 +49,20 @@ avss:p-256
 
 `--field` / `curve = "..."` sets the AVSS curve. HoneyBadgerMPC does not take a curve selector in the SDK config; it uses the field configuration expected by the HoneyBadger path.
 
-## Current config validation
+## Backend-specific protocol constraints
 
-Stoffel validates local and network MPC topology with:
+Choose topology according to the selected backend's protocol constraint:
 
-```text
-parties >= 4 * threshold + 1
-parties >= 5
-threshold > 0
-```
+| Backend | Configuration rule |
+| --- | --- |
+| HoneyBadgerMPC | `parties >= 4 * threshold + 1`, `parties >= 5`, and `threshold > 0` |
+| AVSS | `parties >= 3 * threshold + 1`, `parties >= 4`, and `threshold > 0` |
 
-This is the rule developers should use for project config, local runs, and network config. It is stricter than the baseline `3t + 1` threshold often used to introduce asynchronous Byzantine protocols because Stoffel's current end-to-end path includes preprocessing and robust execution requirements.
+HoneyBadgerMPC's stronger party requirement supports the degree-`2t` reconstruction used in preprocessing. AVSS uses degree-`t` Feldman shares and tolerates a Byzantine fraction below one third, but introduces public commitments and curve-group work.
+
+<Note>
+Some SDK and off-chain client releases use one conservative `4t+1` validation rule for both backends. In those releases, an AVSS deployment may need more parties than the AVSS protocol-level minimum. Treat the accepted SDK configuration and the protocol's fault threshold as separate facts.
+</Note>
 
 SDK summaries also expose the minimum reconstruction shares:
 
@@ -173,7 +176,7 @@ AVSS share data can carry Feldman commitment material. StoffelLang exposes `Avss
 
 | Symptom | Check |
 | --- | --- |
-| Config says the threshold is invalid | Confirm `parties >= 4 * threshold + 1` and `parties >= 5`. |
+| Config says the threshold is invalid | For HoneyBadgerMPC, confirm `parties >= 4 * threshold + 1` and at least five parties. For AVSS, the protocol minimum is `3 * threshold + 1` and four parties; your SDK release may enforce the stricter shared `4 * threshold + 1` rule. |
 | HoneyBadger rejects a curve selector | Use `backend = "honeybadger"` without a curve, or switch to AVSS for curve workflows. |
 | AVSS client I/O fails on a non-BLS curve | The current SDK off-chain client I/O path supports AVSS over `bls12_381`; test other curves through supported local/runtime paths. |
 | Runtime backend mismatch | Rebuild `.stflb` after changing `[mpc]` config or pass matching SDK/CLI backend overrides. |

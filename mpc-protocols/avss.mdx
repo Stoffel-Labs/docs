@@ -47,7 +47,7 @@ Keep these distinctions in mind:
 - Feldman-style commitments expose public group elements tied to the secret polynomial.
 - Low-entropy application values should not be treated like random cryptographic scalars.
 - Full threshold signing protocols may need additional logic beyond share generation and commitment access.
-- Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
+- AVSS topology requires `parties >= 3 * threshold + 1`, with at least four parties. Reconstruction uses `threshold + 1` verified shares that agree on the same commitments.
 
 ## Curves
 

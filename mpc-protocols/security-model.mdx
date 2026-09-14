@@ -5,7 +5,7 @@ description: "Thresholds, preprocessing and online security, corruption models, 
 
 Stoffel exposes HoneyBadgerMPC field arithmetic and a Feldman-based AVSS backend. Choosing a backend requires more than a party threshold: preprocessing correctness, network identity, completion behavior and the values exposed by commitments all matter.
 
-This page describes `mpc-protocols` revision `5e2624fa96f15bdd2f53c2142e4bce0ae4bd45c2` and framework configuration at Stoffel revision `439264f1f319de3e76019990a5892c96db90136e`. Check the protocol dependency in your application's lockfile before applying these properties to another release.
+This page describes the security properties and implementation boundaries of Stoffel's current MPC protocol families. The maintainers' protocol-security reference tracks implementation-level changes in more detail.
 
 ## Threshold is not reconstruction count
 

@@ -1,93 +1,105 @@
 ---
 title: "Protocol costs"
-description: "Preprocessing and online communication stages, local computation, and batching costs."
+description: "Compare preprocessing and online communication stages, computation, and batching costs."
 ---
 
-Use this reference with the [phase-specific security matrix](./security-model). A fast operation with invalid preprocessing is not a secure operation.
+Use this page to estimate whether a Stoffel backend fits your latency, throughput, and preprocessing budget. Read it with the [security and fault model](./security-model): a low operation count does not remove a protocol's security or availability assumptions.
 
-## What the bounds count
+## Cost notation
 
-`n` is computing-party count, `t` the corruption parameter, `B` the number of field values in a batch, `d` polynomial degree, and `L` broadcast payload bytes. Bounds describe local work unless labeled total communication. Field multiplication, group scalar multiplication, encoding and hashing are different costs.
+- `n`: computing-party count
+- `t`: corruption threshold
+- `B`: values processed in a batch
+- `d`: polynomial degree
+- `L`: broadcast payload bytes
+- `k`: AVID data-shard count
+- `h`: hash width
+- `q`: shares used in an interpolation attempt
 
-A protocol stage means a causal dependency, not a fixed latency. One reliable broadcast itself has several message stages. Parallel openings need not add circuit depth, while sequential chunks and on-demand preprocessing do. No finite successful-completion bound applies to a generator waiting on a silent required dealer.
+A communication stage is a causal dependency, not a wall-clock duration. One reliable broadcast contains several message exchanges. Independent openings can run in parallel, while dependent multiplications add circuit depth.
 
-Let `I(n,d,t)` be one robust polynomial reconstruction attempt, including fallback decoding. Let `R(L)` be one reliable broadcast, including local encoding/hash work. These names prevent decoder and network work from disappearing inside an advertised local-arithmetic bound.
+Field operations, group scalar multiplications, encryption, hashing, and Reed–Solomon decoding have different costs. Treat the asymptotic bounds below as planning tools and benchmark the actual field, curve, party topology, batch size, and network used by your application.
 
 ## HoneyBadgerMPC preprocessing
 
-| Component | Dependency stages | Local computation, excluding broadcast overhead | Paper |
+| Component | Communication stages | Computation and communication | Paper |
 | --- | --- | --- | --- |
-| Raw double sharing | All-party dealing, requiring every dealer | Two degree families; FFT evaluation costs `O(BN log N)` with actual domain size `N`; all-party delivery has `O(n²B)` total scalar volume | [1][9] |
-| RanSha | Deal, mix, verifier reconstruction, verdict RBC | `O(Bn²)` matrix field work; verifiers add reconstruction; `2t` verdict broadcasts | [1] |
-| RanDouSha | Double sharing, mix/check both degrees, verdict RBC | Two matrix transforms plus checking reconstruction at degrees `t` and `2t`; broadcast overhead separate | [1] |
-| Triple generation | Degree-`2t` BatchRecon after random shares/double shares exist | `O(B)` local products/corrections plus reconstruction; upstream generation adds cost when pools are empty | [1][12] |
-| Random bits / PRandBitD | Multiplication, opening and generation/checking stages as selected | Field square roots/inversions or cross-field checks plus bit-generation/decode work; depends on requested width | [8] |
-| PRandInt | Local weighted assembly after bits are available | Linear in supplied bit count; bit generation is additional | [8] |
+| Double sharing | All-party dealing for degree-`t` and degree-`2t` shares | FFT-based polynomial evaluation over the actual domain; `O(n²B)` total scalar delivery across all dealers | [1][9] |
+| RanSha | Deal, mix, verifier reconstruction, verdict broadcast | `O(Bn²)` matrix work plus robust reconstruction by verifier parties | [1] |
+| RanDouSha | Double-share generation, mixing, degree checks, verdict broadcast | Two matrix transforms plus reconstruction at degrees `t` and `2t` | [1] |
+| Triple generation | Degree-`2t` reconstruction after random and double shares are available | `O(B)` local products and corrections plus robust reconstruction | [1][12] |
+| Random bits | Secure square, opening, and normalization stages | Multiplication, reconstruction, field square roots or inversions, and candidate handling | [8] |
+| PRandBitD | Correlated generation, checks, and reconstruction | Work scales with requested bit width and batch size; includes cross-field operations | [8] |
+| PRandInt | Local weighted assembly after random bits exist | Linear in supplied bit count; generating the bits is additional work | [8] |
 
-These preprocessing paths are not uniformly asynchronous-live against faulty withholding. Fixed-point adaptations additionally need their own active-security and statistical-mask analysis; the cited fixed-point source is semi-honest.[8]
+These stages produce the material consumed online. They are throughput work rather than application-circuit depth when material is generated ahead of time. If material is generated on demand, the same stages move onto the application's critical path.
+
+Preprocessing can wait indefinitely for a required party. Capacity planning should therefore include a reserve sized for the largest expected burst and a policy for what happens when replenishment stops.
 
 ## HoneyBadgerMPC online
 
-| Operation | Dependency stages | Local computation | Paper |
+| Operation | Communication stages | Computation | Paper |
 | --- | --- | --- | --- |
-| Add/subtract/public scaling | Zero communication | `O(B)` field operations | [9] |
-| Secret multiplication | Both masked differences opened in parallel; full packs use BatchRecon, remainder uses RBC | `O(B)` field arithmetic plus both reconstruction paths | [1][12] |
-| Input | Private mask opening to client, then masked-correction RBC | Client robust reconstruction; party subtraction | [1] |
-| Output to client | One direct party-to-client delivery layer | Robust reconstruction for each output, possibly retried on arrivals | [1][9] |
-| Probabilistic truncation | One RBC-based masked opening, then local adjustment | Linear mask assembly plus decoding and integer/field work | [8] |
-| Fixed-point multiplication | Multiplication followed by truncation | Sum of those two operations | [8][12] |
-| Division by a public constant | Public reciprocal/scaling, then truncation | Public reciprocal and local scaling plus truncation | [8] |
+| Add, subtract, public scaling | None | `O(B)` field operations | [9] |
+| Secret multiplication | Parallel opening of two masked differences, then local Beaver arithmetic | `O(B)` field arithmetic plus robust reconstruction | [1][12] |
+| Input | Private mask delivery to the input client, then reliable broadcast of the masked correction | Client reconstruction plus local party subtraction | [1] |
+| Output | Direct shares to the output client | Robust reconstruction for each output | [1][9] |
+| Probabilistic truncation | One masked opening, then local adjustment | Mask assembly, decoding, and integer/field operations | [8] |
+| Fixed-point multiplication | Secret multiplication followed by truncation | Sum of multiplication and truncation work | [8][12] |
+| Division by a public constant | Local reciprocal scaling followed by truncation | Public reciprocal, local scaling, and truncation | [8] |
 
-BatchRecon packs `d+1` values and uses two causal exchange stages. Per pack, account for `O(n(d+1))` transform work and decoding in both stages. Multiple packs share a wire session, giving `O(n²)` message count per aggregated session while bytes still grow with data volume. Robust interpolation can make up to `t` Gao fallback attempts on successively larger subsets.[1][6][7]
+Multiplication depth usually matters more to latency than multiplication count. Independent products can share an interactive layer and consume more preprocessing without adding the same amount of sequential latency. Comparisons, bit decomposition, and nonlinear operations often expand into several multiplication and bit-oriented steps.
 
-Do not substitute the `O(n log n)` transform bound from a paper for the concrete dense-polynomial decoder. Cached setup, retries, arrival order and selected field change the implementation cost.[5][17]
+Batch reconstruction packs `d+1` values and uses two causal exchange stages. Batched wire sessions reduce message overhead, but transmitted bytes and polynomial work still grow with the number of values. Robust error correction may retry decoding as additional shares arrive.[1][6][7]
 
-## AVSS preprocessing and online
+## AVSS costs
 
-| Phase/component | Dependency stages | Local computation, excluding RBC | Paper |
+| Phase and operation | Communication stages | Computation | Paper |
 | --- | --- | --- | --- |
-| Preprocessing: encrypted dealing | One RBC layer per dealer batch | Dealer `O(Bnt)` field evaluation, `O(B(t+1))` group commitments, `O(n)` DH operations and `O(Bn)` encryptions; recipient `O(B(t+1))` group verification per dealer | [9][10], adapted wrapper |
-| Preprocessing: random shares | `n` concurrent dealings, wait for all, then mixing | `O(Bn²)` field and `O(Bn²(t+1))` group work, plus all dealings | [1][10], adapted mixing |
-| Preprocessing: triples | `2t+1` fixed dealers reshare products; wait for all | For `m=2t+1`, combining costs `O(Bm(t+1))` group work; recomputed weights add `O(Bm²)` field work and `O(Bm)` inversions | [12][15], algebraic ancestry only |
-| Online: add/subtract/public scaling | Zero communication | `O(t)` commitment operations per scalar; scaling uses group scalar multiplication | [10] |
-| Online: multiplication | Both masked differences share one all-party RBC layer | `O(Bt)` local commitment work; a readiness attempt verifies `O(Bqt)` group work for `q` responders; repeated arrivals can total `O(Bn²t)` verification | [12] |
-| Online: input | Mask shares to client, then masked-correction RBC | Group verification, same-commitment grouping and interpolation | [1][10] |
-| Online: output | Direct shares to client | Group verification, grouping and interpolation | [9][10] |
+| Preprocessing: encrypted dealing | One reliable-broadcast layer per dealer batch | Dealer: `O(Bnt)` field evaluation, `O(B(t+1))` group commitments, `O(n)` Diffie–Hellman operations, and `O(Bn)` encryption. Each recipient verifies `O(B(t+1))` group work per dealer. | [9][10] |
+| Preprocessing: random shares | `n` concurrent dealings, then local mixing | `O(Bn²)` field work and `O(Bn²(t+1))` group work, plus dealing costs | [1][10] |
+| Preprocessing: triples | `2t+1` selected dealers reshare products | With `m=2t+1`, combining uses `O(Bm(t+1))` group work plus `O(Bm²)` field work | [12][15] |
+| Online: add and subtract | None | `O(t)` commitment additions per scalar plus field arithmetic | [10] |
+| Online: public scaling | None | `O(t)` group scalar multiplications per scalar plus field arithmetic | [10] |
+| Online: multiplication | One all-party broadcast layer opens both masked differences | `O(Bt)` commitment work; verification grows with responders and can repeat as shares arrive | [12] |
+| Online: input | Mask shares to the client, followed by a masked-correction broadcast | Commitment verification, grouping, and interpolation | [1][10] |
+| Online: output | Direct shares to the output client | Commitment verification, grouping, and interpolation | [9][10] |
 
-AVSS reconstruction currently builds full interpolation polynomials. Straightforward dense arithmetic is `O(q³)` for `q` points, rather than a constant-term-only `O(q²)` algorithm. Grouping and verification may repeat as messages arrive. The orchestrator serializes chunks of up to 128 and may replenish preprocessing inside an online call.
+AVSS has higher per-value cryptographic cost than uncommitted field arithmetic because share operations also update or verify curve points. Use it where public commitments or curve compatibility are part of the required output boundary, not as a default replacement for ordinary private application arithmetic.
 
-The current AVSS triple generator does not check the product relation under malicious dealers. These costs describe the implemented work, not an actively secure replacement. AVSS does not supply this revision's HoneyBadger fixed-point subprotocols.
+AVSS multiplication additionally assumes correct triples. The supplied product-resharing step does not prove the multiplication relation against an active dealer, so its operation count should not be interpreted as the cost of a complete malicious-secure triple protocol.
 
 ## Shared distributed primitives
 
-| Component | Stages and communication | Local computation | Paper association |
+| Primitive | Communication | Local work | Paper |
 | --- | --- | --- | --- |
-| Bracha RBC | INIT/ECHO/READY; `O(n²)` messages and `O(n²L)` total payload bytes | Up to `O(nL)` local payload/hash processing under unique bounded traffic | [13] |
-| AVID-style RBC | Shard/ECHO/READY; `O(n²)` messages; `O(n²L/k+n² log(n) h)` total bytes for `k` data shards and hash width `h` | Reed–Solomon encode/decode/verification plus Merkle proofs; not free network latency | [3] |
-| ABA/common coin | Repeated EST/AUX/coin; nominal `O(n²)` control messages per iteration | Signature-share checks, threshold combination and state processing | [4][16] |
-| ACS | `n` RBCs plus `n` ABAs and selected-value completion | Sum of constituent costs plus set handling | [4] and its BKR reference |
-| Trusted coin-key dealer | Dealer-to-party setup, `O(n)` messages | Key polynomial generation/evaluation and distribution | [4] and its threshold-signature reference |
+| Bracha reliable broadcast | INIT, ECHO, READY; `O(n²)` messages and `O(n²L)` total payload bytes | Payload hashing, serialization, and sender tracking | [13] |
+| AVID-style reliable broadcast | Shard, ECHO, READY; `O(n²)` messages and approximately `O(n²L/k + n² log(n)h)` total bytes | Reed–Solomon encoding/decoding and Merkle proof generation/verification | [3] |
+| Asynchronous binary agreement | Repeated EST, AUX, and common-coin stages; `O(n²)` control messages per iteration | Signature-share checks, threshold combination, and agreement state | [4][16] |
+| Asynchronous common subset | `n` reliable broadcasts plus `n` binary agreements | Sum of its broadcast/agreement work plus selected-set handling | [4] |
+| Trusted common-coin setup | `O(n)` dealer-to-party messages | Threshold-key generation and share distribution | [4] |
 
-ABA/ACS are standalone components in this revision, not integrated into the default MPC preprocessing generators. Their implemented state and coin lifecycle do not establish the papers' expected termination bounds. The coin dealer is trusted centralized setup, not DKG.
+The standalone binary-agreement and common-subset components are not part of the default preprocessing path. Do not add their costs to every arithmetic operation.
 
-Shamir and Feldman local helpers have no network rounds. Pedersen commitment support costs linear group work in polynomial degree, but the `common/acss` module is not a complete hbACSS implementation. Its preprocessing/online network guarantees are not applicable.[2][9][10][11]
+## Capacity-planning checklist
 
-## Planning capacity
+1. Measure a run with a prefilled preprocessing pool.
+2. Measure a run that generates the same material on demand.
+3. Record `n`, `t`, field or curve, batch sizes, secret multiplication count and depth, and input widths.
+4. Record the reliable-broadcast variant, message bytes, retries, and network conditions.
+5. Test pool exhaustion and delayed-party behavior, not only the all-honest fast path.
+6. For AVSS, include group verification and commitment serialization in the budget.
+7. For fixed point, include truncation and random-bit generation rather than counting only the underlying multiplication.
 
-Measure both a prefilled-pool run and a run that generates its material. Record field/curve, `n,t`, input widths, multiplication depth, batch sizes, RBC variant, network conditions and retry/failure counts. Protocol dependency stages help compare circuit shapes; they do not replace end-to-end measurements or security review.
-
+These measurements determine deployment capacity. The protocol bounds explain how that capacity changes as party count, batch size, and circuit shape change.
 
 ## Sources
 
 [1] Lu, Yurek, Kulshreshtha, Govind, Mahadev, Kate and Miller. HoneyBadgerMPC and AsynchroMix: Practical Asynchronous MPC and its Application to Anonymous Communication (2019). https://eprint.iacr.org/2019/883.pdf
 
-[2] Yurek, Luo, Fairoze, Kate and Miller. hbACSS: How to Robustly Share Many Secrets (2021). https://eprint.iacr.org/2021/159.pdf
-
 [3] Cachin and Tessaro. Asynchronous Verifiable Information Dispersal (2004). https://homes.cs.washington.edu/~tessaro/papers/dds.pdf
 
 [4] Miller, Xia, Croman, Shi and Song. The Honey Badger of BFT Protocols (2016). https://eprint.iacr.org/2016/199.pdf
-
-[5] Source-cited FNT interpolation reference; original URL retained, title and authors unresolved. https://pagespro.isae-supaero.fr/IMG/pdf/FNT_submitted.pdf
 
 [6] Gao. A New Algorithm for Decoding Reed-Solomon Codes (2003); DOI 10.1007/978-1-4757-3789-9_5. https://www.math.clemson.edu/~sgao/papers/RS.pdf
 
@@ -99,8 +111,6 @@ Measure both a prefilled-pool run and a run that generates its material. Record 
 
 [10] Feldman. A Practical Scheme for Non-interactive Verifiable Secret Sharing (1987). https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
 
-[11] Pedersen. Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing (CRYPTO 1991). https://www.cs.cornell.edu/courses/cs754/2001fa/129.PDF
-
 [12] Beaver. Efficient Multiparty Protocols Using Circuit Randomization (CRYPTO 1991). https://doi.org/10.1007/3-540-46766-1_34
 
 [13] Bracha. Asynchronous Byzantine Agreement Protocols (1987). https://doi.org/10.1016/0890-5401(87)90054-X
@@ -108,5 +118,3 @@ Measure both a prefilled-pool run and a run that generates its material. Record 
 [15] Ben-Or, Goldwasser and Wigderson. Completeness Theorems for Non-Cryptographic Fault-Tolerant Distributed Computation (1988). https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf
 
 [16] Mostefaoui, Moumen and Raynal. Signature-Free Asynchronous Binary Byzantine Consensus with t < n/3, O(n^2) Messages, and O(1) Expected Time (2015). https://doi.org/10.1145/2785953
-
-[17] Soro and Lacan. FNT-based Reed-Solomon Erasure Codes (2009 preprint; CCNC 2010). https://arxiv.org/pdf/0907.1788

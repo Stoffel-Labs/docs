@@ -1,44 +1,54 @@
 ---
 title: "Protocol papers"
-description: "Implemented protocol families, original papers, inferred ancestry, and construction boundaries."
+description: "Research foundations for the MPC and distributed-systems protocols used by Stoffel."
 ---
 
-An associated paper identifies a construction, not an implementation certification. Explicit references occur in source comments or repository guidance. Inferred references identify recognizable algebra or state-machine ancestry. Background references explain a primitive or limitation. Read the [security matrix](./security-model) and [cost reference](./protocol-costs) alongside this map.
+Use this map to understand which research constructions underlie Stoffel's protocol families and which part of each construction is relevant to an application. A paper association identifies protocol lineage; it does not mean every theorem in that paper applies unchanged to the complete deployed system.
 
-## Explicit references in the checked-in code
+Read the [security and fault model](./security-model) for deployment assumptions and [protocol costs](./protocol-costs) for phase-specific costs.
 
-| Reference | Code location | Implemented portion and scope |
+## Core Stoffel protocol papers
+
+| Stoffel capability | Research foundation | What it contributes | Scope for advanced users |
+| --- | --- | --- | --- |
+| HoneyBadgerMPC preprocessing and online arithmetic | HoneyBadgerMPC and AsynchroMix [1] | Random and double sharing, batch reconstruction, triple generation, masked input, multiplication, and robust online computation | Primary reference for the field-arithmetic backend. Its optimistic preprocessing and robust online phases have different liveness properties. The AsynchroMix application is not part of the backend. |
+| Fixed-point multiplication, truncation, and public-constant division | Catrina and Saxena [8] | Secret fixed-point representation, random masks, probabilistic truncation, and arithmetic building blocks | The paper's protocols use a semi-honest model. Use Stoffel's active-fault protections only within the limits described in the security model. |
+| AVID-style reliable broadcast | Cachin and Tessaro [3] | Erasure-coded dispersal, Merkle commitment, and asynchronous reliable delivery | Relevant when Stoffel uses coded reliable broadcast. Erasure coding reduces payload replication but does not make the payload secret. |
+| Asynchronous binary agreement and common subset | HoneyBadgerBFT [4] and Mostefaoui, Moumen, and Raynal [16] | Randomized binary agreement, threshold-signature common coin, and common-subset composition | These are available distributed building blocks. They are not automatically part of every preprocessing or arithmetic operation. |
+| hbACSS | Yurek et al. [2] | Robust asynchronous sharing of many secrets | Stoffel includes Pedersen commitment support associated with this work, not the complete hbACSS protocol. Do not assume hbACSS throughput or liveness for the AVSS backend. |
+
+## Secret sharing and multiplication foundations
+
+| Stoffel primitive | Research foundation | Security boundary |
 | --- | --- | --- |
-| HoneyBadgerMPC and AsynchroMix [1] | `mpc/src/lib.rs:69-72`; `honeybadger/mod.rs:1-15`; RanDouSha, input and multiplication comments | Robust interpolation, batch reconstruction, random/double sharing, triple generation and masked online arithmetic. The AsynchroMix application is not implemented by these modules. |
-| hbACSS [2] | `common/mod.rs:12` | `common/acss` contains a Pedersen polynomial commitment helper. Do not describe it as an operational implementation of the full hbACSS protocol. |
-| Asynchronous Verifiable Information Dispersal [3] | `common/rbc/rbc.rs:500` | AVID-style erasure-coded RBC. The paper has several variants and a confidentiality extension; the RBC implementation does not inherit every variant's properties. |
-| The Honey Badger of BFT Protocols [4] | `common/rbc/rbc.rs:1996` | ACS composed from RBC and ABA, plus related common-coin structure. This is not a blockchain or a complete HoneyBadgerBFT deployment. |
-| FNT interpolation reference [5] | `honeybadger/robust_interpolate/robust_interpolate.rs:197` | Optimistic polynomial interpolation helper. The original link could not be retrieved. Soro–Lacan's FNT paper [17] supplies a related polynomial-interpolation construction; exact identity with the unavailable file is unconfirmed. Do not import its fast-transform bound into the current dense-polynomial loops. |
-| Gao decoding [6] | `honeybadger/robust_interpolate/robust_interpolate.rs:447` | Error-correcting polynomial decoder. Title, author and DOI verified through publication metadata; full text recovered from the original server's HTTP endpoint after HTTPS failed. |
-| Choudhury–Hirt–Patra [7] | `honeybadger/robust_interpolate/robust_interpolate.rs:567` | Online error correction ancestry, not a claim that the entire asynchronously live MPC construction is implemented. |
-| Catrina–Saxena fixed-point arithmetic [8] | README reference list; `common/types/mod.rs:7-8` | PRandBit/PRandInt-related machinery, probabilistic truncation, fixed-point multiplication and public-constant division. The paper states passive/semi-honest privacy; an active MPC substrate alone is not a proof for every adaptation. |
+| Degree-`t` polynomial shares | Shamir, *How to Share a Secret* [9] | Provides information-theoretic privacy against fewer than the reconstruction threshold when coefficients are random. Bare Shamir sharing does not verify a malicious dealer. |
+| Feldman coefficient commitments | Feldman, *A Practical Scheme for Non-interactive Verifiable Secret Sharing* [10] | Lets parties verify share consistency. Commitments are not hiding and allow guesses of low-entropy secrets to be tested. |
+| Pedersen polynomial commitments | Pedersen, *Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing* [11] | Adds hiding with random blindings when generators are correctly set up with an unknown discrete-log relation. Stoffel's primitive is a commitment helper, not a complete network VSS protocol. |
+| Beaver multiplication | Beaver, *Efficient Multiparty Protocols Using Circuit Randomization* [12] | Converts a fresh correlated triple into an online multiplication by opening masked differences. Security requires a correct triple used once. |
+| Product resharing and degree reduction | Ben-Or, Goldwasser, and Wigderson [15] | Explains the algebraic pattern of resharing local products and reducing polynomial degree | Algebraic ancestry does not by itself prove that a dealer's claimed product is correct. Active security needs a relation check or an appropriate triple-generation protocol. |
 
-Source paths refer to the [`mpc-protocols` source tree](https://github.com/Stoffel-Labs/mpc-protocols/tree/main/mpc/src).
+## Reconstruction and coding foundations
 
-## Inferred and foundational associations
-
-| Implementation | Associated paper | Boundary |
+| Stoffel primitive | Research foundation | Role |
 | --- | --- | --- |
-| Shamirshare, NonRobustShare and RobustShare polynomial representation | Shamir, *How to Share a Secret* [9] | Bare sharing is not VSS and does not authenticate a dealer. |
-| FeldmanShamirShare coefficient commitments and verification | Feldman, *A Practical Scheme for Non-interactive Verifiable Secret Sharing* [10] | Coefficient commitments are not hiding. The surrounding asynchronous protocol must independently supply agreement and recovery. |
-| PedersenPolyCommitment | Pedersen, *Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing* [11] | Only the commitment helper is present. Correct setup requires an unknown discrete-log relation between generators. |
-| Beaver multiplication in both backends | Beaver, *Efficient Multiparty Protocols Using Circuit Randomization* [12], with the exact masked identity in HoneyBadgerMPC section 2.2 [1] | Requires fresh, correct correlated triples. |
-| Bracha INIT/ECHO/READY | Bracha, *Asynchronous Byzantine Agreement Protocols* [13]; algorithms also described in [3][4] | Reliable broadcast is not agreement on an arbitrary input set and is not guaranteed to deliver when its dealer never starts. |
-| ABA EST/AUX/common-coin rounds | Mostefaoui, Moumen and Raynal [16], via the HoneyBadgerBFT appendix [4] | The concrete coin, message ordering, termination and session lifecycle must match the protocol assumptions. |
-| ACS | Ben-Or, Kelmer and Rabin, *Asynchronous Secure Computations with Optimal Resilience* (PODC 1994), identified as reference 9 in HoneyBadgerBFT [4] | RBC plus one ABA per proposer, not a union of locally received values. |
-| Threshold-signature common coin and trusted key Dealer helper | Boldyreva, *Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme* (PKC 2003), identified as reference 11 in [4] | Pairing-based threshold signature ancestry. `Dealer::distribute_keys` is trusted setup, not distributed key generation. |
-| Degree reduction by resharing local products in AVSS TripleGen | Ben-Or, Goldwasser and Wigderson [15] plus Beaver [12] | Algebraic ancestry only. VSS of a claimed product does not prove multiplication correctness. |
-| Reed–Solomon encoding/error correction | Reed and Solomon, *Polynomial Codes Over Certain Finite Fields* (1960); the code and decoding prerequisites are reviewed in AVID [3], with the concrete decoder mapped to Gao [6] | Byte erasure coding and field-polynomial error correction are distinct code paths. |
-| Delay-independent consensus limitations | Fischer, Lynch and Paterson [14] | Background impossibility theorem, not a protocol implementation. |
+| Reed–Solomon sharing and error correction | Reed and Solomon, *Polynomial Codes Over Certain Finite Fields*; Gao [6] | Polynomial evaluations encode shares; decoding recovers a polynomial in the presence of erasures or bounded errors. |
+| Online error correction | Choudhury, Hirt, and Patra [7] | Provides the asynchronous online-error-correction lineage used by robust reconstruction | Association with the decoder does not imply Stoffel implements that paper's complete MPC protocol. |
+| Fast-transform interpolation | Source-cited FNT reference [5] and Soro–Lacan [17] | Provides related fast polynomial/coding constructions | The original source URL is unavailable. Soro–Lacan is listed as related work rather than silently substituted. Concrete runtime depends on the decoder actually used. |
 
+## Distributed-systems foundations
 
-The original FNT source URL is unavailable. The related Soro–Lacan paper [17] is linked separately rather than silently substituted. Full secret-divisor fixed-point division, complete hbACSS and unmerged protocol branches are outside the currently documented protocol surface.
+| Stoffel primitive | Research foundation | Role and limit |
+| --- | --- | --- |
+| INIT/ECHO/READY reliable broadcast | Bracha, *Asynchronous Byzantine Agreement Protocols* [13] | Provides agreement and conditional totality for one dealer's value. It does not guarantee delivery when a malicious dealer never starts. |
+| Asynchronous common subset | Ben-Or, Kelmer, and Rabin, *Asynchronous Secure Computations with Optimal Resilience* (PODC 1994), as referenced by HoneyBadgerBFT [4] | Combines one reliable broadcast and one binary agreement per proposer to agree on an available subset. |
+| Threshold-signature common coin | Boldyreva, *Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme* (PKC 2003), as referenced by HoneyBadgerBFT [4] | Supplies the threshold-signature lineage for randomized agreement. A centralized trusted dealer is setup, not distributed key generation. |
+| Limits of deterministic asynchronous consensus | Fischer, Lynch, and Paterson [14] | Explains why asynchronous agreement uses randomized expected termination rather than a deterministic fixed deadline. |
 
+## Protocol coverage
+
+The field backend includes random sharing, random double sharing, Beaver triple generation, robust and batch reconstruction, client input/output, multiplication, random bits, probabilistic truncation, fixed-point multiplication, and division by a public constant. These components map to HoneyBadgerMPC, Shamir, Beaver, the reconstruction papers, and Catrina–Saxena as shown above.
+
+The AVSS backend includes Feldman shares, encrypted dealing, random-share mixing, product resharing, Beaver-style online multiplication, and client input/output. These map to Shamir, Feldman, Beaver, BGW-style degree reduction, and the reliable-broadcast papers. Complete hbACSS, distributed key generation, threshold signing, and secret-divisor fixed-point division are not part of this documented backend surface.
 
 ## Sources
 

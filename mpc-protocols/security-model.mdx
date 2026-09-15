@@ -5,7 +5,7 @@ description: "Compare the preprocessing and online threat models of Stoffel's MP
 
 Use this page when your application has concrete privacy, Byzantine-fault, or availability requirements. Do not treat a backend's configured threshold as one end-to-end guarantee: **preprocessing and online execution protect different assets, impose different participation requirements, and fail differently.**
 
-## Read the phase boundary first
+## Understand the two phases
 
 Preprocessing creates correlated secret material before application values are computed. Online execution consumes that material for input, arithmetic, and output.
 
@@ -18,7 +18,7 @@ An online phase cannot repair bad preprocessing. Conversely, unavailable preproc
 
 ## Participants across both phases
 
-The phase split is a **protocol and threat-model boundary**, not a requirement to operate two committees. The same `n` computing parties can run preprocessing and online execution for either backend.
+Preprocessing and online execution have separate threat models, but they do not require separate committees. The same `n` computing parties can run both phases for either backend.
 
 Reusing the same party set is operationally simpler, but it couples the phases:
 
@@ -69,7 +69,7 @@ HoneyBadgerMPC deliberately uses **optimistic preprocessing** followed by a more
 | Liveness | **Not asynchronously live against all allowed faults.** A required party can withhold a message and prevent a preprocessing batch from completing. Async APIs and timeouts do not turn this into guaranteed termination. |
 | Interaction and cost | Several dealing, checking, reconstruction, and broadcast stages. Local work includes polynomial generation, matrix transforms, degree-`t` and degree-`2t` reconstruction, and fixed-point mask generation. |
 | Operational consequence | Generate and monitor a reserve before accepting work. A stalled replenishment job need not invalidate material already completed, but the online phase must stop safely when valid material runs out. |
-| Same-party deployment | Supported. Treat the static `t`-party corruption budget as spanning preprocessing, storage, and later online use; do not reset the budget at the phase boundary. |
+| Same-party deployment | Supported. Treat the static `t`-party corruption budget as spanning preprocessing, storage, and later online use; do not reset the budget between phases. |
 
 ### Online threat model
 

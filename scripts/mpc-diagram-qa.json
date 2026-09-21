@@ -15,6 +15,21 @@
         "private_state_stays_inside_boundary": true,
         "authorized_output_only": true
       }
+    },
+    {
+      "path": "images/diagrams/mpc-backend-selection.svg",
+      "width": 1200,
+      "height": 675,
+      "dimension_ok": true,
+      "xml_ok": true,
+      "accessible_title": true,
+      "accessible_description": true,
+      "semantic_checks": {
+        "backend_roles_separated": true,
+        "backend_topologies_separated": true,
+        "preprocessing_distinguished": true,
+        "avss_commitment_visibility_stated": true
+      }
     }
   ]
 }

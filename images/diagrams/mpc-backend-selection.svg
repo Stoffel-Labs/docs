@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Choose the privacy backend by workload shape</title>
+<desc id="desc">HoneyBadgerMPC is the general field-compatible backend with random-share and Beaver-triple preprocessing and a full-deployment requirement of n at least 4t plus 1. AVSS is designed for scalar, curve, and commitment workflows with verifiable dealing, public non-hiding Feldman commitments, and n at least 3t plus 1.</desc>
+<defs>
+  <style>
+  .bg { fill: #f7f7fa; }
+  .header { fill: #2246d2; }
+  .zone { fill: #ffffff; stroke: #7f8bb3; stroke-width: 2; stroke-dasharray: 8 7; }
+  .card { fill: #ffffff; stroke: #b8bfd5; stroke-width: 2; }
+  .private { fill: #fff4d6; stroke: #d89a16; stroke-width: 2; }
+  .party { fill: #2246d2; stroke: #15319b; stroke-width: 2; }
+  .output { fill: #e9f7f2; stroke: #16836d; stroke-width: 2; }
+  .hb { fill: #eef1ff; stroke: #2246d2; stroke-width: 2; }
+  .avss { fill: #f3eefe; stroke: #7251b5; stroke-width: 2; }
+  .phase { fill: #ffffff; stroke: #c9cee0; stroke-width: 1.5; }
+  .label-chip { fill: #f7f7fa; }
+  .title { font: 700 28px Arial, sans-serif; fill: #ffffff; }
+  .subtitle { font: 400 15px Arial, sans-serif; fill: #e9edff; }
+  .zone-title { font: 700 17px Arial, sans-serif; fill: #111827; }
+  .body { font: 600 15px Arial, sans-serif; fill: #111827; }
+  .small { font: 400 13px Arial, sans-serif; fill: #4b5563; }
+  .party-title { font: 700 15px Arial, sans-serif; fill: #ffffff; }
+  .party-sub { font: 400 12px Arial, sans-serif; fill: #ffffff; }
+  .label { font: 700 12px Arial, sans-serif; fill: #31416f; }
+  .arrow { fill: none; stroke: #172554; stroke-width: 3; marker-end: url(#arrow); }
+  .share-arrow { fill: none; stroke: #2246d2; stroke-width: 2.5; marker-end: url(#blue-arrow); }
+</style>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#172554"/></marker>
+  <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#2246d2"/></marker>
+</defs>
+<rect x="0" y="0" width="1200" height="675" rx="0" class="bg"/>
+<rect x="0" y="0" width="1200" height="92" rx="0" class="header"/>
+<text x="52" y="42" class="title" text-anchor="start">Choose the privacy backend by workload shape</text>
+<text x="52" y="70" class="subtitle" text-anchor="start">The backends differ in data representation, preprocessing, public artifacts, and topology</text>
+<rect x="412" y="116" width="376" height="66" rx="14" class="card"/>
+<text x="600" y="143" class="body" text-anchor="middle">Stoffel program + protected inputs</text>
+<text x="600" y="166" class="small" text-anchor="middle">Choose the backend before deployment</text>
+<path d="M560 182 C470 205, 340 200, 316 230" class="arrow"/>
+<path d="M640 182 C730 205, 860 200, 884 230" class="arrow"/>
+<rect x="286" y="187" width="236" height="24" rx="4" class="label-chip"/>
+<rect x="674" y="187" width="244" height="24" rx="4" class="label-chip"/>
+<text x="404" y="205" class="label" text-anchor="middle">field-oriented application logic</text>
+<text x="796" y="205" class="label" text-anchor="middle">curve or commitment workflows</text>
+<rect x="52" y="230" width="516" height="384" rx="14" class="hb"/>
+<text x="84" y="266" class="zone-title" text-anchor="start">HoneyBadgerMPC</text>
+<text x="84" y="291" class="small" text-anchor="start">General field-compatible MPC</text>
+<rect x="84" y="316" width="452" height="64" rx="14" class="phase"/>
+<text x="102" y="343" class="label" text-anchor="start">Representation</text>
+<text x="102" y="365" class="small" text-anchor="start">Field-compatible application values and robust shares</text>
+<rect x="84" y="394" width="452" height="64" rx="14" class="phase"/>
+<text x="102" y="421" class="label" text-anchor="start">Offline / preprocessing</text>
+<text x="102" y="443" class="small" text-anchor="start">Random shares and Beaver triples</text>
+<rect x="84" y="472" width="452" height="64" rx="14" class="phase"/>
+<text x="102" y="499" class="label" text-anchor="start">Application boundary</text>
+<text x="102" y="521" class="small" text-anchor="start">Opened values or client-output shares</text>
+<rect x="84" y="550" width="452" height="42" rx="14" class="phase"/>
+<text x="102" y="577" class="body" text-anchor="start">Full deployment topology: n ≥ 4t + 1</text>
+<rect x="632" y="230" width="516" height="384" rx="14" class="avss"/>
+<text x="664" y="266" class="zone-title" text-anchor="start">AVSS</text>
+<text x="664" y="291" class="small" text-anchor="start">Cryptographic scalar and curve workflows</text>
+<rect x="664" y="316" width="452" height="64" rx="14" class="phase"/>
+<text x="682" y="343" class="label" text-anchor="start">Representation</text>
+<text x="682" y="365" class="small" text-anchor="start">Feldman shares over a selected scalar field and curve</text>
+<rect x="664" y="394" width="452" height="64" rx="14" class="phase"/>
+<text x="682" y="421" class="label" text-anchor="start">Offline / preprocessing</text>
+<text x="682" y="443" class="small" text-anchor="start">Verifiable dealing; commitments are public and non-hiding</text>
+<rect x="664" y="472" width="452" height="64" rx="14" class="phase"/>
+<text x="682" y="499" class="label" text-anchor="start">Application boundary</text>
+<text x="682" y="521" class="small" text-anchor="start">Commitments, curve encodings, or scalar responses</text>
+<rect x="664" y="550" width="452" height="42" rx="14" class="phase"/>
+<text x="682" y="577" class="body" text-anchor="start">Deployment topology: n ≥ 3t + 1</text>
+<text x="600" y="648" class="small" text-anchor="middle">Both backends keep private values shared; their interfaces and deployment requirements are not interchangeable.</text>
+</svg>

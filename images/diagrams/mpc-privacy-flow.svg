@@ -10,6 +10,10 @@
   .private { fill: #fff4d6; stroke: #d89a16; stroke-width: 2; }
   .party { fill: #2246d2; stroke: #15319b; stroke-width: 2; }
   .output { fill: #e9f7f2; stroke: #16836d; stroke-width: 2; }
+  .hb { fill: #eef1ff; stroke: #2246d2; stroke-width: 2; }
+  .avss { fill: #f3eefe; stroke: #7251b5; stroke-width: 2; }
+  .phase { fill: #ffffff; stroke: #c9cee0; stroke-width: 1.5; }
+  .label-chip { fill: #f7f7fa; }
   .title { font: 700 28px Arial, sans-serif; fill: #ffffff; }
   .subtitle { font: 400 15px Arial, sans-serif; fill: #e9edff; }
   .zone-title { font: 700 17px Arial, sans-serif; fill: #111827; }

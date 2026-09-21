@@ -30,6 +30,21 @@
         "preprocessing_distinguished": true,
         "avss_commitment_visibility_stated": true
       }
+    },
+    {
+      "path": "images/diagrams/networked-mpc-runtime.svg",
+      "width": 1200,
+      "height": 675,
+      "dimension_ok": true,
+      "xml_ok": true,
+      "accessible_title": true,
+      "accessible_description": true,
+      "semantic_checks": {
+        "party_count_is_symbolic": true,
+        "control_and_compute_roles_separated": true,
+        "preprocessing_is_party_local": true,
+        "client_reconstruction_shown": true
+      }
     }
   ]
 }

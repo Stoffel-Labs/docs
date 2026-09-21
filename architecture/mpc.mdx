@@ -5,9 +5,7 @@ description: "How Stoffel integrates with MPC backends, secret sharing, client i
 
 Use this page to understand how private client inputs move through Stoffel: input collection, secret sharing, VM execution, openings, and client-output delivery. If you are deciding which backend to use, start with [MPC Backends](../mpc-protocols/overview). If you already chose a backend and need config or runtime details, use [How Backend Selection Works](../mpc-protocols/implementation).
 
-![HoneyBadger MPC runtime diagram showing client input/output paths, coordinator-managed sessions, preprocessing, and protocol rounds among parties.](/images/diagrams/honeybadger-network.svg)
-
-![Campaign-style networked privacy backend diagram showing application clients, coordinator-managed sessions, preprocessing, party mesh communication, and authorized output delivery.](/images/campaign/stoffel-networked-privacy-backend.png)
+![Networked MPC runtime diagram separating the application boundary, coordinator control plane, and symbolic MPC party mesh, with party-local preprocessing and client-side output reconstruction.](/images/diagrams/networked-mpc-runtime.svg)
 
 ## Protocol Architecture
 

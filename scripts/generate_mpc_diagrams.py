@@ -35,6 +35,7 @@ CSS = """
   .label { font: 700 12px Arial, sans-serif; fill: #31416f; }
   .arrow { fill: none; stroke: #172554; stroke-width: 3; marker-end: url(#arrow); }
   .share-arrow { fill: none; stroke: #2246d2; stroke-width: 2.5; marker-end: url(#blue-arrow); }
+  .control-arrow { fill: none; stroke: #596784; stroke-width: 2.5; stroke-dasharray: 7 6; marker-end: url(#arrow); }
 """
 
 
@@ -174,6 +175,86 @@ def backend_selection() -> str:
     )
 
 
+def networked_runtime() -> str:
+    parts = [
+        rect(0, 0, W, H, "bg", 0),
+        rect(0, 0, W, 92, "header", 0),
+        text(52, 42, "Networked MPC runtime", "title"),
+        text(52, 70, "Control-plane coordination is separate from share computation and client-side reconstruction", "subtitle"),
+        rect(44, 122, 250, 496, "zone"),
+        text(68, 154, "Application boundary", "zone-title"),
+        rect(70, 178, 198, 96, "private"),
+        text(169, 213, "App / client", "body", "middle"),
+        text(169, 240, "prepares protected inputs", "small", "middle"),
+        text(169, 261, "and requests a session", "small", "middle"),
+        rect(70, 326, 198, 86, "card"),
+        text(169, 359, ".stflb + manifest", "body", "middle"),
+        text(169, 386, "same contract for every party", "small", "middle"),
+        rect(70, 472, 198, 102, "output"),
+        text(169, 506, "Authorized client", "body", "middle"),
+        text(169, 533, "receives output shares", "small", "middle"),
+        text(169, 554, "and reconstructs", "small", "middle"),
+        rect(330, 122, 250, 496, "zone"),
+        text(354, 154, "Control plane", "zone-title"),
+        rect(356, 178, 198, 124, "card"),
+        text(455, 211, "Coordinator", "body", "middle"),
+        text(455, 238, "session lifecycle", "small", "middle"),
+        text(455, 260, "reservations + routing", "small", "middle"),
+        text(455, 282, "deployment metadata", "small", "middle"),
+        rect(356, 336, 198, 92, "hb"),
+        text(455, 369, "Control metadata", "body", "middle"),
+        text(455, 396, "is not the secret", "small", "middle"),
+        text(455, 417, "computation", "small", "middle"),
+        text(455, 482, "Coordinator arranges delivery;", "small", "middle"),
+        text(455, 505, "parties compute on shares and", "small", "middle"),
+        text(455, 528, "the authorized client reconstructs.", "small", "middle"),
+        rect(620, 122, 536, 496, "zone"),
+        text(644, 154, "MPC party boundary", "zone-title"),
+        rect(650, 192, 142, 108, "party"),
+        text(721, 230, "Party 1", "party-title", "middle"),
+        text(721, 257, "Stoffel VM", "party-sub", "middle"),
+        text(721, 280, "holds shares", "party-sub", "middle"),
+        rect(816, 192, 142, 108, "party"),
+        text(887, 230, "Party 2", "party-title", "middle"),
+        text(887, 257, "Stoffel VM", "party-sub", "middle"),
+        text(887, 280, "holds shares", "party-sub", "middle"),
+        rect(982, 192, 142, 108, "party"),
+        text(1053, 230, "Party n", "party-title", "middle"),
+        text(1053, 257, "Stoffel VM", "party-sub", "middle"),
+        text(1053, 280, "holds shares", "party-sub", "middle"),
+        rect(735, 312, 304, 25, "label-chip", 4),
+        text(887, 331, "Authenticated party-to-party protocol messages", "label", "middle"),
+        '<path d="M720 352 C775 406, 832 406, 887 352" class="share-arrow"/>',
+        '<path d="M887 352 C942 406, 999 406, 1054 352" class="share-arrow"/>',
+        rect(650, 438, 474, 110, "card"),
+        text(887, 472, "Party-local preprocessing stores", "body", "middle"),
+        text(887, 499, "random shares / triples or verified material", "small", "middle"),
+        text(887, 525, "material is consumed by the selected backend", "small", "middle"),
+        '<path d="M721 438 L721 312" class="control-arrow"/>',
+        '<path d="M887 438 L887 312" class="control-arrow"/>',
+        '<path d="M1053 438 L1053 312" class="control-arrow"/>',
+        '<path d="M268 214 L344 214" class="control-arrow"/>',
+        text(306, 199, "session", "label", "middle"),
+        '<path d="M554 238 L638 238" class="control-arrow"/>',
+        text(596, 223, "control", "label", "middle"),
+        '<path d="M268 354 C300 390, 310 450, 344 450 L590 450 C620 420, 620 350, 638 320" class="arrow"/>',
+        rect(326, 437, 252, 25, "label-chip", 4),
+        text(452, 455, "same artifact + manifest to every party", "label", "middle"),
+        '<path d="M268 266 C285 290, 300 318, 344 318 L590 318 C610 318, 620 290, 638 272" class="share-arrow"/>',
+        rect(370, 306, 170, 25, "label-chip", 4),
+        text(455, 324, "protected input delivery", "label", "middle"),
+        '<path d="M638 574 C500 600, 400 600, 268 544" class="share-arrow"/>',
+        rect(372, 568, 160, 25, "label-chip", 4),
+        text(452, 587, "per-party output shares", "label", "middle"),
+        text(887, 590, "No individual party receives a complete private input.", "small", "middle"),
+    ]
+    return svg_document(
+        "\n".join(parts),
+        "Networked MPC runtime",
+        "The app and coordinator establish a session and distribute one compiled artifact. Protected inputs are delivered to MPC parties. Each party runs the Stoffel VM over shares, exchanges authenticated protocol messages, and consumes party-local preprocessing. Per-party output shares return to the authorized client for reconstruction.",
+    )
+
+
 def validate_svg(path: Path) -> dict[str, object]:
     root = ET.parse(path).getroot()
     source = path.read_text()
@@ -189,6 +270,13 @@ def validate_svg(path: Path) -> dict[str, object]:
             "authorized_output_only": "Only the declared" in source,
         }
         if path.name == "mpc-privacy-flow.svg"
+        else {
+            "party_count_is_symbolic": all(token in source for token in ["Party 1", "Party 2", "Party n"]),
+            "control_and_compute_roles_separated": all(token in source for token in ["Control plane", "MPC party boundary"]),
+            "preprocessing_is_party_local": "Party-local preprocessing stores" in source,
+            "client_reconstruction_shown": all(token in source for token in ["Authorized client", "and reconstructs"]),
+        }
+        if path.name == "networked-mpc-runtime.svg"
         else {
             "backend_roles_separated": all(token in source for token in ["HoneyBadgerMPC", "AVSS"]),
             "backend_topologies_separated": all(token in source for token in ["n ≥ 4t + 1", "n ≥ 3t + 1"]),
@@ -213,6 +301,7 @@ def main() -> None:
     outputs = {
         OUT / "mpc-privacy-flow.svg": privacy_flow(),
         OUT / "mpc-backend-selection.svg": backend_selection(),
+        OUT / "networked-mpc-runtime.svg": networked_runtime(),
     }
     for path, content in outputs.items():
         path.write_text(content)

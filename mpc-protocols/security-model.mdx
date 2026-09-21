@@ -55,10 +55,14 @@ AVSS uses degree-`t` shares and Feldman commitments. A recipient verifies each s
 
 AVSS does not reconstruct degree-`2t` values with HoneyBadgerMPC's error-correcting path. Its triple generation reshapes local products through `2t+1` selected dealers into new degree-`t` sharings. That produces the `3t+1` node minimum, although the separate product-relation limitation described below still applies. With `t=1`, the minimum fault-tolerant deployment is four computing parties.
 
-| Backend | Minimum topology | Why |
+The deployment node count is the strongest requirement across the two phases:
+
+| Phase | HoneyBadgerMPC | AVSS |
 | --- | --- | --- |
-| HoneyBadgerMPC | `n >= 4t+1`; minimum 5 when `t=1` | Degree-`2t` preprocessing plus correction of up to `t` erroneous evaluations. |
-| AVSS | `n >= 3t+1`; minimum 4 when `t=1` | Degree-`t` verified shares plus asynchronous Byzantine quorum intersection. |
+| Offline (preprocessing) | `n >= 4t+1` | `n >= 3t+1` |
+| Online | `n >= 3t+1` | `n >= 3t+1` |
+
+HoneyBadgerMPC's online phase can robustly open degree-`t` shares with `3t+1` parties, but the same deployment needs `4t+1` parties because its offline phase reconstructs degree-`2t` values. AVSS uses `3t+1` in both phases. The resulting deployment minimum is therefore `4t+1` for HoneyBadgerMPC and `3t+1` for AVSS.
 
 | Fault threshold | HoneyBadgerMPC parties | AVSS parties |
 | --- | --- | --- |

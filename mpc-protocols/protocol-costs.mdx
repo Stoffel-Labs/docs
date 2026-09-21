@@ -24,13 +24,13 @@ Field operations, group scalar multiplications, encryption, hashing, and Reed–
 
 | Component | Communication stages | Computation and communication | Paper |
 | --- | --- | --- | --- |
-| Double sharing | All-party dealing for degree-`t` and degree-`2t` shares | FFT-based polynomial evaluation over the actual domain; `O(n²B)` total scalar delivery across all dealers | [1][9] |
-| RanSha | Deal, mix, verifier reconstruction, verdict broadcast | `O(Bn²)` matrix work plus robust reconstruction by verifier parties | [1] |
-| RanDouSha | Double-share generation, mixing, degree checks, verdict broadcast | Two matrix transforms plus reconstruction at degrees `t` and `2t` | [1] |
-| Triple generation | Degree-`2t` reconstruction after random and double shares are available | `O(B)` local products and corrections plus robust reconstruction | [1][12] |
-| Random bits | Secure square, opening, and normalization stages | Multiplication, reconstruction, field square roots or inversions, and candidate handling | [8] |
-| PRandBitD | Correlated generation, checks, and reconstruction | Work scales with requested bit width and batch size; includes cross-field operations | [8] |
-| PRandInt | Local weighted assembly after random bits exist | Linear in supplied bit count; generating the bits is additional work | [8] |
+| Double sharing | All-party dealing for degree-`t` and degree-`2t` shares | FFT-based polynomial evaluation over the actual domain; `O(n²B)` total scalar delivery across all dealers | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup> |
+| RanSha | Deal, mix, verifier reconstruction, verdict broadcast | `O(Bn²)` matrix work plus robust reconstruction by verifier parties | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup> |
+| RanDouSha | Double-share generation, mixing, degree checks, verdict broadcast | Two matrix transforms plus reconstruction at degrees `t` and `2t` | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup> |
+| Triple generation | Degree-`2t` reconstruction after random and double shares are available | `O(B)` local products and corrections plus robust reconstruction | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://doi.org/10.1007/3-540-46766-1_34">[12]</a></sup> |
+| Random bits | Secure square, opening, and normalization stages | Multiplication, reconstruction, field square roots or inversions, and candidate handling | <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
+| PRandBitD | Correlated generation, checks, and reconstruction | Work scales with requested bit width and batch size; includes cross-field operations | <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
+| PRandInt | Local weighted assembly after random bits exist | Linear in supplied bit count; generating the bits is additional work | <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
 
 These stages produce the material consumed online. They are throughput work rather than application-circuit depth when material is generated ahead of time. If material is generated on demand, the same stages move onto the application's critical path.
 
@@ -40,30 +40,30 @@ Preprocessing can wait indefinitely for a required party. Capacity planning shou
 
 | Operation | Communication stages | Computation | Paper |
 | --- | --- | --- | --- |
-| Add, subtract, public scaling | None | `O(B)` field operations | [9] |
-| Secret multiplication | Parallel opening of two masked differences, then local Beaver arithmetic | `O(B)` field arithmetic plus robust reconstruction | [1][12] |
-| Input | Private mask delivery to the input client, then reliable broadcast of the masked correction | Client reconstruction plus local party subtraction | [1] |
-| Output | Direct shares to the output client | Robust reconstruction for each output | [1][9] |
-| Probabilistic truncation | One masked opening, then local adjustment | Mask assembly, decoding, and integer/field operations | [8] |
-| Fixed-point multiplication | Secret multiplication followed by truncation | Sum of multiplication and truncation work | [8][12] |
-| Division by a public constant | Local reciprocal scaling followed by truncation | Public reciprocal, local scaling, and truncation | [8] |
+| Add, subtract, public scaling | None | `O(B)` field operations | <sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup> |
+| Secret multiplication | Parallel opening of two masked differences, then local Beaver arithmetic | `O(B)` field arithmetic plus robust reconstruction | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://doi.org/10.1007/3-540-46766-1_34">[12]</a></sup> |
+| Input | Private mask delivery to the input client, then reliable broadcast of the masked correction | Client reconstruction plus local party subtraction | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup> |
+| Output | Direct shares to the output client | Robust reconstruction for each output | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup> |
+| Probabilistic truncation | One masked opening, then local adjustment | Mask assembly, decoding, and integer/field operations | <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
+| Fixed-point multiplication | Secret multiplication followed by truncation | Sum of multiplication and truncation work | <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup><sup><a href="https://doi.org/10.1007/3-540-46766-1_34">[12]</a></sup> |
+| Division by a public constant | Local reciprocal scaling followed by truncation | Public reciprocal, local scaling, and truncation | <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
 
 Multiplication depth usually matters more to latency than multiplication count. Independent products can share an interactive layer and consume more preprocessing without adding the same amount of sequential latency. Comparisons, bit decomposition, and nonlinear operations often expand into several multiplication and bit-oriented steps.
 
-Batch reconstruction packs `d+1` values and uses two causal exchange stages. Batched wire sessions reduce message overhead, but transmitted bytes and polynomial work still grow with the number of values. Robust error correction may retry decoding as additional shares arrive.[1][6][7]
+Batch reconstruction packs `d+1` values and uses two causal exchange stages. Batched wire sessions reduce message overhead, but transmitted bytes and polynomial work still grow with the number of values. Robust error correction may retry decoding as additional shares arrive.<sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://www.math.clemson.edu/~sgao/papers/RS.pdf">[6]</a></sup><sup><a href="https://eprint.iacr.org/2012/517.pdf">[7]</a></sup>
 
 ## AVSS costs
 
 | Phase and operation | Communication stages | Computation | Paper |
 | --- | --- | --- | --- |
-| Preprocessing: encrypted dealing | One reliable-broadcast layer per dealer batch | Dealer: `O(Bnt)` field evaluation, `O(B(t+1))` group commitments, `O(n)` Diffie–Hellman operations, and `O(Bn)` encryption. Each recipient verifies `O(B(t+1))` group work per dealer. | [9][10] |
-| Preprocessing: random shares | `n` concurrent dealings, then local mixing | `O(Bn²)` field work and `O(Bn²(t+1))` group work, plus dealing costs | [1][10] |
-| Preprocessing: triples | `2t+1` selected dealers reshare products | With `m=2t+1`, combining uses `O(Bm(t+1))` group work plus `O(Bm²)` field work | [12][15] |
-| Online: add and subtract | None | `O(t)` commitment additions per scalar plus field arithmetic | [10] |
-| Online: public scaling | None | `O(t)` group scalar multiplications per scalar plus field arithmetic | [10] |
-| Online: multiplication | One all-party broadcast layer opens both masked differences | `O(Bt)` commitment work; verification grows with responders and can repeat as shares arrive | [12] |
-| Online: input | Mask shares to the client, followed by a masked-correction broadcast | Commitment verification, grouping, and interpolation | [1][10] |
-| Online: output | Direct shares to the output client | Commitment verification, grouping, and interpolation | [9][10] |
+| Preprocessing: encrypted dealing | One reliable-broadcast layer per dealer batch | Dealer: `O(Bnt)` field evaluation, `O(B(t+1))` group commitments, `O(n)` Diffie–Hellman operations, and `O(Bn)` encryption. Each recipient verifies `O(B(t+1))` group work per dealer. | <sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup><sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> |
+| Preprocessing: random shares | `n` concurrent dealings, then local mixing | `O(Bn²)` field work and `O(Bn²(t+1))` group work, plus dealing costs | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> |
+| Preprocessing: triples | `2t+1` selected dealers reshare products | With `m=2t+1`, combining uses `O(Bm(t+1))` group work plus `O(Bm²)` field work | <sup><a href="https://doi.org/10.1007/3-540-46766-1_34">[12]</a></sup><sup><a href="https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf">[15]</a></sup> |
+| Online: add and subtract | None | `O(t)` commitment additions per scalar plus field arithmetic | <sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> |
+| Online: public scaling | None | `O(t)` group scalar multiplications per scalar plus field arithmetic | <sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> |
+| Online: multiplication | One all-party broadcast layer opens both masked differences | `O(Bt)` commitment work; verification grows with responders and can repeat as shares arrive | <sup><a href="https://doi.org/10.1007/3-540-46766-1_34">[12]</a></sup> |
+| Online: input | Mask shares to the client, followed by a masked-correction broadcast | Commitment verification, grouping, and interpolation | <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup><sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> |
+| Online: output | Direct shares to the output client | Commitment verification, grouping, and interpolation | <sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup><sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> |
 
 AVSS has higher per-value cryptographic cost than uncommitted field arithmetic because share operations also update or verify curve points. Use it where public commitments or curve compatibility are part of the required output boundary, not as a default replacement for ordinary private application arithmetic.
 
@@ -73,11 +73,11 @@ AVSS multiplication additionally assumes correct triples. The supplied product-r
 
 | Primitive | Communication | Local work | Paper |
 | --- | --- | --- | --- |
-| Bracha reliable broadcast | INIT, ECHO, READY; `O(n²)` messages and `O(n²L)` total payload bytes | Payload hashing, serialization, and sender tracking | [13] |
-| AVID-style reliable broadcast | Shard, ECHO, READY; `O(n²)` messages and approximately `O(n²L/k + n² log(n)h)` total bytes | Reed–Solomon encoding/decoding and Merkle proof generation/verification | [3] |
-| Asynchronous binary agreement | Repeated EST, AUX, and common-coin stages; `O(n²)` control messages per iteration | Signature-share checks, threshold combination, and agreement state | [4][16] |
-| Asynchronous common subset | `n` reliable broadcasts plus `n` binary agreements | Sum of its broadcast/agreement work plus selected-set handling | [4] |
-| Trusted common-coin setup | `O(n)` dealer-to-party messages | Threshold-key generation and share distribution | [4] |
+| Bracha reliable broadcast | INIT, ECHO, READY; `O(n²)` messages and `O(n²L)` total payload bytes | Payload hashing, serialization, and sender tracking | <sup><a href="https://doi.org/10.1016/0890-5401(87)90054-X">[13]</a></sup> |
+| AVID-style reliable broadcast | Shard, ECHO, READY; `O(n²)` messages and approximately `O(n²L/k + n² log(n)h)` total bytes | Reed–Solomon encoding/decoding and Merkle proof generation/verification | <sup><a href="https://homes.cs.washington.edu/~tessaro/papers/dds.pdf">[3]</a></sup> |
+| Asynchronous binary agreement | Repeated EST, AUX, and common-coin stages; `O(n²)` control messages per iteration | Signature-share checks, threshold combination, and agreement state | <sup><a href="https://eprint.iacr.org/2016/199.pdf">[4]</a></sup><sup><a href="https://doi.org/10.1145/2785953">[16]</a></sup> |
+| Asynchronous common subset | `n` reliable broadcasts plus `n` binary agreements | Sum of its broadcast/agreement work plus selected-set handling | <sup><a href="https://eprint.iacr.org/2016/199.pdf">[4]</a></sup> |
+| Trusted common-coin setup | `O(n)` dealer-to-party messages | Threshold-key generation and share distribution | <sup><a href="https://eprint.iacr.org/2016/199.pdf">[4]</a></sup> |
 
 The standalone binary-agreement and common-subset components are not part of the default preprocessing path. Do not add their costs to every arithmetic operation.
 
@@ -118,16 +118,3 @@ These measurements determine deployment capacity. The protocol bounds explain ho
 [15] Ben-Or, Goldwasser and Wigderson. Completeness Theorems for Non-Cryptographic Fault-Tolerant Distributed Computation (1988). https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf
 
 [16] Mostefaoui, Moumen and Raynal. Signature-Free Asynchronous Binary Byzantine Consensus with t < n/3, O(n^2) Messages, and O(1) Expected Time (2015). https://doi.org/10.1145/2785953
-
-[1]: https://eprint.iacr.org/2019/883.pdf
-[3]: https://homes.cs.washington.edu/~tessaro/papers/dds.pdf
-[4]: https://eprint.iacr.org/2016/199.pdf
-[6]: https://www.math.clemson.edu/~sgao/papers/RS.pdf
-[7]: https://eprint.iacr.org/2012/517.pdf
-[8]: https://ifca.ai/pub/fc10/31_47.pdf
-[9]: https://www.cs.tau.ac.il/~bchor/Shamir.html
-[10]: https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
-[12]: https://doi.org/10.1007/3-540-46766-1_34
-[13]: https://doi.org/10.1016/0890-5401(87)90054-X
-[15]: https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf
-[16]: https://doi.org/10.1145/2785953

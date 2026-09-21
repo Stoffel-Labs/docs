@@ -11,38 +11,38 @@ Read the [security and fault model](./security-model) for deployment assumptions
 
 | Stoffel capability | Research foundation | What it contributes | Scope for advanced users |
 | --- | --- | --- | --- |
-| HoneyBadgerMPC preprocessing and online arithmetic | HoneyBadgerMPC and AsynchroMix [1] | Random and double sharing, batch reconstruction, triple generation, masked input, multiplication, and robust online computation | Primary reference for the field-arithmetic backend. Its optimistic preprocessing and robust online phases have different liveness properties. The AsynchroMix application is not part of the backend. |
-| Fixed-point multiplication, truncation, and public-constant division | Catrina and Saxena [8] | Secret fixed-point representation, random masks, probabilistic truncation, and arithmetic building blocks | The paper's protocols use a semi-honest model. Use Stoffel's active-fault protections only within the limits described in the security model. |
-| AVID-style reliable broadcast | Cachin and Tessaro [3] | Erasure-coded dispersal, Merkle commitment, and asynchronous reliable delivery | Relevant when Stoffel uses coded reliable broadcast. Erasure coding reduces payload replication but does not make the payload secret. |
-| Asynchronous binary agreement and common subset | HoneyBadgerBFT [4] and Mostefaoui, Moumen, and Raynal [16] | Randomized binary agreement, threshold-signature common coin, and common-subset composition | These are available distributed building blocks. They are not automatically part of every preprocessing or arithmetic operation. |
-| hbACSS | Yurek et al. [2] | Robust asynchronous sharing of many secrets | Stoffel includes Pedersen commitment support associated with this work, not the complete hbACSS protocol. Do not assume hbACSS throughput or liveness for the AVSS backend. |
+| HoneyBadgerMPC preprocessing and online arithmetic | HoneyBadgerMPC and AsynchroMix <sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup> | Random and double sharing, batch reconstruction, triple generation, masked input, multiplication, and robust online computation | Primary reference for the field-arithmetic backend. Its optimistic preprocessing and robust online phases have different liveness properties. The AsynchroMix application is not part of the backend. |
+| Fixed-point multiplication, truncation, and public-constant division | Catrina and Saxena <sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> | Secret fixed-point representation, random masks, probabilistic truncation, and arithmetic building blocks | The paper's protocols use a semi-honest model. Use Stoffel's active-fault protections only within the limits described in the security model. |
+| AVID-style reliable broadcast | Cachin and Tessaro <sup><a href="https://homes.cs.washington.edu/~tessaro/papers/dds.pdf">[3]</a></sup> | Erasure-coded dispersal, Merkle commitment, and asynchronous reliable delivery | Relevant when Stoffel uses coded reliable broadcast. Erasure coding reduces payload replication but does not make the payload secret. |
+| Asynchronous binary agreement and common subset | HoneyBadgerBFT <sup><a href="https://eprint.iacr.org/2016/199.pdf">[4]</a></sup> and Mostefaoui, Moumen, and Raynal <sup><a href="https://doi.org/10.1145/2785953">[16]</a></sup> | Randomized binary agreement, threshold-signature common coin, and common-subset composition | These are available distributed building blocks. They are not automatically part of every preprocessing or arithmetic operation. |
+| hbACSS | Yurek et al. <sup><a href="https://eprint.iacr.org/2021/159.pdf">[2]</a></sup> | Robust asynchronous sharing of many secrets | Stoffel includes Pedersen commitment support associated with this work, not the complete hbACSS protocol. Do not assume hbACSS throughput or liveness for the AVSS backend. |
 
 ## Secret sharing and multiplication foundations
 
 | Stoffel primitive | Research foundation | Security boundary |
 | --- | --- | --- |
-| Degree-`t` polynomial shares | Shamir, *How to Share a Secret* [9] | Provides information-theoretic privacy against fewer than the reconstruction threshold when coefficients are random. Bare Shamir sharing does not verify a malicious dealer. |
-| Feldman coefficient commitments | Feldman, *A Practical Scheme for Non-interactive Verifiable Secret Sharing* [10] | Lets parties verify share consistency. Commitments are not hiding and allow guesses of low-entropy secrets to be tested. |
-| Pedersen polynomial commitments | Pedersen, *Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing* [11] | Adds hiding with random blindings when generators are correctly set up with an unknown discrete-log relation. Stoffel's primitive is a commitment helper, not a complete network VSS protocol. |
-| Beaver multiplication | Beaver, *Efficient Multiparty Protocols Using Circuit Randomization* [12] | Converts a fresh correlated triple into an online multiplication by opening masked differences. Security requires a correct triple used once. |
-| Product resharing and degree reduction | Ben-Or, Goldwasser, and Wigderson [15] | Explains the algebraic pattern of resharing local products and reducing polynomial degree | Algebraic ancestry does not by itself prove that a dealer's claimed product is correct. Active security needs a relation check or an appropriate triple-generation protocol. |
+| Degree-`t` polynomial shares | Shamir, *How to Share a Secret* <sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup> | Provides information-theoretic privacy against fewer than the reconstruction threshold when coefficients are random. Bare Shamir sharing does not verify a malicious dealer. |
+| Feldman coefficient commitments | Feldman, *A Practical Scheme for Non-interactive Verifiable Secret Sharing* <sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> | Lets parties verify share consistency. Commitments are not hiding and allow guesses of low-entropy secrets to be tested. |
+| Pedersen polynomial commitments | Pedersen, *Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing* <sup><a href="https://www.cs.cornell.edu/courses/cs754/2001fa/129.PDF">[11]</a></sup> | Adds hiding with random blindings when generators are correctly set up with an unknown discrete-log relation. Stoffel's primitive is a commitment helper, not a complete network VSS protocol. |
+| Beaver multiplication | Beaver, *Efficient Multiparty Protocols Using Circuit Randomization* <sup><a href="https://doi.org/10.1007/3-540-46766-1_34">[12]</a></sup> | Converts a fresh correlated triple into an online multiplication by opening masked differences. Security requires a correct triple used once. |
+| Product resharing and degree reduction | Ben-Or, Goldwasser, and Wigderson <sup><a href="https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf">[15]</a></sup> | Explains the algebraic pattern of resharing local products and reducing polynomial degree | Algebraic ancestry does not by itself prove that a dealer's claimed product is correct. Active security needs a relation check or an appropriate triple-generation protocol. |
 
 ## Reconstruction and coding foundations
 
 | Stoffel primitive | Research foundation | Role |
 | --- | --- | --- |
-| Reed–Solomon sharing and error correction | Reed and Solomon, *Polynomial Codes Over Certain Finite Fields*; Gao [6] | Polynomial evaluations encode shares; decoding recovers a polynomial in the presence of erasures or bounded errors. |
-| Online error correction | Choudhury, Hirt, and Patra [7] | Provides the asynchronous online-error-correction lineage used by robust reconstruction | Association with the decoder does not imply Stoffel implements that paper's complete MPC protocol. |
-| Fast-transform interpolation | Source-cited FNT reference [5] and Soro–Lacan [17] | Provides related fast polynomial/coding constructions | The original source URL is unavailable. Soro–Lacan is listed as related work rather than silently substituted. Concrete runtime depends on the decoder actually used. |
+| Reed–Solomon sharing and error correction | Reed and Solomon, *Polynomial Codes Over Certain Finite Fields*; Gao <sup><a href="https://www.math.clemson.edu/~sgao/papers/RS.pdf">[6]</a></sup> | Polynomial evaluations encode shares; decoding recovers a polynomial in the presence of erasures or bounded errors. |
+| Online error correction | Choudhury, Hirt, and Patra <sup><a href="https://eprint.iacr.org/2012/517.pdf">[7]</a></sup> | Provides the asynchronous online-error-correction lineage used by robust reconstruction | Association with the decoder does not imply Stoffel implements that paper's complete MPC protocol. |
+| Fast-transform interpolation | Source-cited FNT reference <sup><a href="https://pagespro.isae-supaero.fr/IMG/pdf/FNT_submitted.pdf">[5]</a></sup> and Soro–Lacan <sup><a href="https://arxiv.org/pdf/0907.1788">[17]</a></sup> | Provides related fast polynomial/coding constructions | The original source URL is unavailable. Soro–Lacan is listed as related work rather than silently substituted. Concrete runtime depends on the decoder actually used. |
 
 ## Distributed-systems foundations
 
 | Stoffel primitive | Research foundation | Role and limit |
 | --- | --- | --- |
-| INIT/ECHO/READY reliable broadcast | Bracha, *Asynchronous Byzantine Agreement Protocols* [13] | Provides agreement and conditional totality for one dealer's value. It does not guarantee delivery when a malicious dealer never starts. |
-| Asynchronous common subset | Ben-Or, Kelmer, and Rabin, *Asynchronous Secure Computations with Optimal Resilience* (PODC 1994), as referenced by HoneyBadgerBFT [4] | Combines one reliable broadcast and one binary agreement per proposer to agree on an available subset. |
-| Threshold-signature common coin | Boldyreva, *Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme* (PKC 2003), as referenced by HoneyBadgerBFT [4] | Supplies the threshold-signature lineage for randomized agreement. A centralized trusted dealer is setup, not distributed key generation. |
-| Limits of deterministic asynchronous consensus | Fischer, Lynch, and Paterson [14] | Explains why asynchronous agreement uses randomized expected termination rather than a deterministic fixed deadline. |
+| INIT/ECHO/READY reliable broadcast | Bracha, *Asynchronous Byzantine Agreement Protocols* <sup><a href="https://doi.org/10.1016/0890-5401(87)90054-X">[13]</a></sup> | Provides agreement and conditional totality for one dealer's value. It does not guarantee delivery when a malicious dealer never starts. |
+| Asynchronous common subset | Ben-Or, Kelmer, and Rabin, *Asynchronous Secure Computations with Optimal Resilience* (PODC 1994), as referenced by HoneyBadgerBFT <sup><a href="https://eprint.iacr.org/2016/199.pdf">[4]</a></sup> | Combines one reliable broadcast and one binary agreement per proposer to agree on an available subset. |
+| Threshold-signature common coin | Boldyreva, *Threshold Signatures, Multisignatures and Blind Signatures Based on the Gap-Diffie-Hellman-Group Signature Scheme* (PKC 2003), as referenced by HoneyBadgerBFT <sup><a href="https://eprint.iacr.org/2016/199.pdf">[4]</a></sup> | Supplies the threshold-signature lineage for randomized agreement. A centralized trusted dealer is setup, not distributed key generation. |
+| Limits of deterministic asynchronous consensus | Fischer, Lynch, and Paterson <sup><a href="https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf">[14]</a></sup> | Explains why asynchronous agreement uses randomized expected termination rather than a deterministic fixed deadline. |
 
 ## Protocol coverage
 
@@ -85,21 +85,3 @@ The AVSS backend includes Feldman shares, encrypted dealing, random-share mixing
 [16] Mostefaoui, Moumen and Raynal. Signature-Free Asynchronous Binary Byzantine Consensus with t < n/3, O(n^2) Messages, and O(1) Expected Time (2015). https://doi.org/10.1145/2785953
 
 [17] Soro and Lacan. FNT-based Reed-Solomon Erasure Codes (2009 preprint; CCNC 2010). https://arxiv.org/pdf/0907.1788
-
-[1]: https://eprint.iacr.org/2019/883.pdf
-[2]: https://eprint.iacr.org/2021/159.pdf
-[3]: https://homes.cs.washington.edu/~tessaro/papers/dds.pdf
-[4]: https://eprint.iacr.org/2016/199.pdf
-[5]: https://pagespro.isae-supaero.fr/IMG/pdf/FNT_submitted.pdf
-[6]: https://www.math.clemson.edu/~sgao/papers/RS.pdf
-[7]: https://eprint.iacr.org/2012/517.pdf
-[8]: https://ifca.ai/pub/fc10/31_47.pdf
-[9]: https://www.cs.tau.ac.il/~bchor/Shamir.html
-[10]: https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
-[11]: https://www.cs.cornell.edu/courses/cs754/2001fa/129.PDF
-[12]: https://doi.org/10.1007/3-540-46766-1_34
-[13]: https://doi.org/10.1016/0890-5401(87)90054-X
-[14]: https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf
-[15]: https://www.math.ias.edu/~avi/PUBLICATIONS/MYPAPERS/GBW88/GBW88.pdf
-[16]: https://doi.org/10.1145/2785953
-[17]: https://arxiv.org/pdf/0907.1788

@@ -27,7 +27,7 @@ Online execution inherits the properties of the material it consumes. It cannot 
 
 For HoneyBadgerMPC, correcting `t` erroneous evaluations of a degree-`d` polynomial requires `d+2t+1` evaluations. Offline reconstruction reaches degree `2t`, producing the `4t+1` deployment minimum. Its degree-`t` online openings need at most `3t+1` parties for the same error bound.
 
-AVSS keeps shares at degree `t` and verifies them against Feldman commitments before reconstruction. `t+1` consistent verified shares determine a value, while asynchronous Byzantine quorum intersection sets the full `3t+1` topology.[9][10] With `t=1`, the deployment minimum is five parties for HoneyBadgerMPC and four for AVSS.
+AVSS keeps shares at degree `t` and verifies them against Feldman commitments before reconstruction. `t+1` consistent verified shares determine a value, while asynchronous Byzantine quorum intersection sets the full `3t+1` topology.<sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup><sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> With `t=1`, the deployment minimum is five parties for HoneyBadgerMPC and four for AVSS.
 
 ## Threat-model summary
 
@@ -40,17 +40,17 @@ The table states the strongest end-to-end model supported by each phase. It does
 
 ### HoneyBadgerMPC details
 
-HoneyBadgerMPC combines optimistic preprocessing with robust online arithmetic.[1]
+HoneyBadgerMPC combines optimistic preprocessing with robust online arithmetic.<sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup>
 
 | Aspect | Offline (preprocessing) | Online |
 | --- | --- | --- |
 | Main checks | Dealing, degree checks, verifier reconstruction, and verdict broadcasts over degree-`t` and degree-`2t` sharings. | Robust reconstruction rejects or corrects malformed degree-`t` openings. Multiplication consumes one valid, unused triple per product. |
-| Privacy and correctness | Completed material is intended to remain private and suitable for online use when every required check completes, randomness is cryptographic, channels are protected, and material is not reused. | Field arithmetic protects inputs and intermediate shares up to the threshold, conditional on correct preprocessing. Fixed-point operations add range and statistical-mask assumptions; their source construction uses a semi-honest model.[8] |
+| Privacy and correctness | Completed material is intended to remain private and suitable for online use when every required check completes, randomness is cryptographic, channels are protected, and material is not reused. | Field arithmetic protects inputs and intermediate shares up to the threshold, conditional on correct preprocessing. Fixed-point operations add range and statistical-mask assumptions; their source construction uses a semi-honest model.<sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
 | Failure boundary | A required party can block completion, and unchecked or reused material must not enter the online pool. | Robust opening does not revalidate every property of preprocessing. Invalid or exhausted material stops the guarantee at the point of use. |
 
 ### AVSS details
 
-AVSS uses encrypted share delivery and public Feldman commitments. A commitment verifies that a share belongs to one committed polynomial; it is not hiding and does not prove every higher-level relation.[10]
+AVSS uses encrypted share delivery and public Feldman commitments. A commitment verifies that a share belongs to one committed polynomial; it is not hiding and does not prove every higher-level relation.<sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup>
 
 | Aspect | Offline (preprocessing) | Online |
 | --- | --- | --- |
@@ -115,8 +115,3 @@ For operation stages and cost, see [Protocol costs](./protocol-costs). For const
 [9] Shamir. How to Share a Secret (1979). https://www.cs.tau.ac.il/~bchor/Shamir.html
 
 [10] Feldman. A Practical Scheme for Non-interactive Verifiable Secret Sharing (1987). https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf
-
-[1]: https://eprint.iacr.org/2019/883.pdf
-[8]: https://ifca.ai/pub/fc10/31_47.pdf
-[9]: https://www.cs.tau.ac.il/~bchor/Shamir.html
-[10]: https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf

@@ -144,8 +144,8 @@
           {
             "group": "Protocol Security Reference",
             "pages": [
-              "mpc-protocols/security-model",
               "mpc-protocols/definitions",
+              "mpc-protocols/security-model",
               "mpc-protocols/protocol-costs",
               "mpc-protocols/protocol-papers"
             ]

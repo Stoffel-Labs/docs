@@ -72,6 +72,15 @@ HoneyBadgerMPC's online phase can robustly open degree-`t` shares with `3t+1` pa
 
 A degree-`t` sharing being reconstructible from `t+1` correct shares is not by itself a Byzantine-fault guarantee. HoneyBadgerMPC handles unverified shares through robust reconstruction. AVSS first verifies shares against a common commitment, then reconstructs from a consistent verified set.[9][10]
 
+## Threat-model summary
+
+| Phase | HoneyBadgerMPC | AVSS |
+| --- | --- | --- |
+| Offline (preprocessing) | **Static, active** adversary controlling at most `t` parties, subject to the operation-specific checks completing. | **Static, passive** adversary controlling at most `t` parties for end-to-end triple correctness. Feldman checks detect inconsistent shares but do not prove the triple product relation against an active dealer. |
+| Online | **Static, active** adversary controlling at most `t` parties, conditional on correct, fresh preprocessing. | Active malformed-share behavior is checked against commitments, but end-to-end multiplication inherits the **static, passive** preprocessing model unless triples receive an independent product-relation check. |
+
+These models describe privacy and correctness. They do not imply that either offline phase is asynchronously live against every allowed fault, and neither backend establishes adaptive, mobile, or proactive corruption security.
+
 ## HoneyBadgerMPC threat models
 
 HoneyBadgerMPC deliberately uses **optimistic preprocessing** followed by a more robust online phase.[1] The two phases therefore have different availability guarantees even with the same parties and corruption threshold.

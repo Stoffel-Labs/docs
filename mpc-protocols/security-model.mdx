@@ -33,14 +33,32 @@ Reusing the same party set is operationally simpler, but it couples the phases:
 
 Separating operators or infrastructure can reduce common-mode operational risk, but it does not automatically strengthen the cryptographic model. A handoff to a different committee requires a protocol that securely transfers or reshapes the secret material; copying shares or triples between differently indexed party sets is not such a protocol.
 
-## Backend-specific parameters
+## How each backend determines node count
 
 `n` is the number of computing parties. `t` is the maximum number of corrupted computing parties. Input and output clients are not included in `n`.
 
-| Backend | Protocol topology | Reconstruction model | Main tradeoff |
-| --- | --- | --- | --- |
-| HoneyBadgerMPC | `n >= 4t+1`, with at least five parties | Online degree-`t` openings normally need `2t+1` matching shares and may need up to `3t+1` received shares to correct `t` errors. Degree-`2t` preprocessing can require `4t+1`. | More parties for the same `t`, but robust private field and fixed-point arithmetic. |
-| AVSS | `n >= 3t+1`, with at least four parties | A value can be interpolated from `t+1` verified shares that agree on the same Feldman commitments. Protocol progress still relies on the `3t+1` topology. | Fewer parties and curve-compatible commitments, but group-operation costs and public, non-hiding commitments. |
+### HoneyBadgerMPC: `n >= 4t+1`
+
+HoneyBadgerMPC's online shares have degree `t`, but its preprocessing also reconstructs degree-`2t` values. Correcting up to `t` erroneous evaluations of a degree-`d` polynomial requires at least:
+
+```text
+d + 2t + 1 evaluations
+```
+
+Substituting `d=2t` gives `4t+1`. This is the strongest node-count requirement across the backend's two phases, so it determines the deployment topology. With `t=1`, the minimum fault-tolerant deployment is five computing parties.
+
+The online phase has a lower reconstruction requirement: a degree-`t` opening can check an optimistic candidate with `2t+1` matching evaluations and correct all `t` erroneous evaluations after receiving up to `3t+1`. A HoneyBadgerMPC deployment already has `4t+1`, so it has enough parties for this online path.
+
+### AVSS: `n >= 3t+1`
+
+AVSS uses degree-`t` shares and Feldman commitments. A recipient verifies each share against the commitment polynomial before using it, and `t+1` verified shares with the same commitments determine the value. The larger `3t+1` topology is needed so asynchronous Byzantine broadcast and quorum decisions can still distinguish an honest overlap when up to `t` parties equivocate, send invalid shares, or remain silent.
+
+AVSS does not reconstruct degree-`2t` values with HoneyBadgerMPC's error-correcting path. Its triple generation reshapes local products through `2t+1` selected dealers into new degree-`t` sharings. That produces the `3t+1` node minimum, although the separate product-relation limitation described below still applies. With `t=1`, the minimum fault-tolerant deployment is four computing parties.
+
+| Backend | Minimum topology | Why |
+| --- | --- | --- |
+| HoneyBadgerMPC | `n >= 4t+1`; minimum 5 when `t=1` | Degree-`2t` preprocessing plus correction of up to `t` erroneous evaluations. |
+| AVSS | `n >= 3t+1`; minimum 4 when `t=1` | Degree-`t` verified shares plus asynchronous Byzantine quorum intersection. |
 
 | Fault threshold | HoneyBadgerMPC parties | AVSS parties |
 | --- | --- | --- |
@@ -48,11 +66,7 @@ Separating operators or infrastructure can reduce common-mode operational risk, 
 | `t=2` | 9 | 7 |
 | `t=3` | 13 | 10 |
 
-A degree-`t` sharing being reconstructible from `t+1` correct shares is not by itself a Byzantine-fault guarantee. Unverified shares can be wrong, while robust reconstruction needs additional distinct, authenticated evaluations.[9]
-
-<Note>
-Some Stoffel SDK and off-chain client releases apply a conservative shared `4t+1` validator to both backends. If that layer rejects an AVSS `3t+1` topology, the SDK is imposing a stricter deployment constraint than the AVSS protocol. Check the configuration surface used by your release when planning the actual node count.
-</Note>
+A degree-`t` sharing being reconstructible from `t+1` correct shares is not by itself a Byzantine-fault guarantee. HoneyBadgerMPC handles unverified shares through robust reconstruction. AVSS first verifies shares against a common commitment, then reconstructs from a consistent verified set.[9][10]
 
 ## HoneyBadgerMPC threat models
 

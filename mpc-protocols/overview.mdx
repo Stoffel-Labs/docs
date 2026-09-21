@@ -116,7 +116,7 @@ Generated manifests can carry the bytecode backend and curve into SDK builders, 
 | HoneyBadgerMPC | `parties >= 4 * threshold + 1`; minimum five parties | Robust field openings normally start from `2 * threshold + 1` matching shares; error-correction and degree-`2t` preprocessing can require more. |
 | AVSS | `parties >= 3 * threshold + 1`; minimum four parties | Feldman-verified scalar reconstruction requires `threshold + 1` consistent shares, while Byzantine protocol progress relies on the full topology. |
 
-At the protocol layer, threshold one means five HoneyBadgerMPC parties or four AVSS parties. Some SDK and off-chain client releases apply a conservative shared `4t+1` validator, so confirm that the configuration surface you use accepts the AVSS topology. The lower AVSS protocol party count comes with public commitments and group-operation costs; it is not a drop-in replacement for private application arithmetic.
+With threshold one, this means five HoneyBadgerMPC parties or four AVSS parties. HoneyBadgerMPC needs the extra party because its preprocessing reconstructs degree-`2t` values while correcting up to `t` errors. AVSS verifies degree-`t` shares against public commitments and uses `3t+1` Byzantine quorum intersection. Its lower party count comes with public commitments and group-operation costs; it is not a drop-in replacement for private application arithmetic.
 
 ## Further reading
 

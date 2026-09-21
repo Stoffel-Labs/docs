@@ -58,11 +58,7 @@ Choose topology according to the selected backend's protocol constraint:
 | HoneyBadgerMPC | `parties >= 4 * threshold + 1`, `parties >= 5`, and `threshold > 0` |
 | AVSS | `parties >= 3 * threshold + 1`, `parties >= 4`, and `threshold > 0` |
 
-HoneyBadgerMPC's stronger party requirement supports the degree-`2t` reconstruction used in preprocessing. AVSS uses degree-`t` Feldman shares and tolerates a Byzantine fraction below one third, but introduces public commitments and curve-group work.
-
-<Note>
-Some SDK and off-chain client releases use one conservative `4t+1` validation rule for both backends. In those releases, an AVSS deployment may need more parties than the AVSS protocol-level minimum. Treat the accepted SDK configuration and the protocol's fault threshold as separate facts.
-</Note>
+HoneyBadgerMPC's stronger party requirement comes from correcting up to `t` bad evaluations while reconstructing degree-`2t` values during preprocessing: `2t + 2t + 1 = 4t+1`. AVSS verifies degree-`t` Feldman shares before interpolation and uses `3t+1` for Byzantine quorum intersection, but introduces public commitments and curve-group work.
 
 SDK summaries also expose the minimum reconstruction shares:
 
@@ -176,7 +172,7 @@ AVSS share data can carry Feldman commitment material. StoffelLang exposes `Avss
 
 | Symptom | Check |
 | --- | --- |
-| Config says the threshold is invalid | For HoneyBadgerMPC, confirm `parties >= 4 * threshold + 1` and at least five parties. For AVSS, the protocol minimum is `3 * threshold + 1` and four parties; your SDK release may enforce the stricter shared `4 * threshold + 1` rule. |
+| Config says the threshold is invalid | For HoneyBadgerMPC, confirm `parties >= 4 * threshold + 1` and at least five parties. For AVSS, confirm `parties >= 3 * threshold + 1` and at least four parties. |
 | HoneyBadger rejects a curve selector | Use `backend = "honeybadger"` without a curve, or switch to AVSS for curve workflows. |
 | AVSS client I/O fails on a non-BLS curve | The current SDK off-chain client I/O path supports AVSS over `bls12_381`; test other curves through supported local/runtime paths. |
 | Runtime backend mismatch | Rebuild `.stflb` after changing `[mpc]` config or pass matching SDK/CLI backend overrides. |

@@ -1,0 +1,117 @@
+---
+title: "Security and fault model"
+description: "Compare the preprocessing and online threat models of Stoffel's MPC backends."
+---
+
+Use this page to compare the guarantees and failure modes of Stoffel's MPC backends. A configured threshold is not one end-to-end guarantee: offline preprocessing and online execution protect different assets and depend on different protocol checks.
+
+For terminology such as active adversary, static corruption, asynchronous safety, and conditional liveness, see [Protocol definitions](./definitions).
+
+## Phase responsibilities
+
+| Phase | Purpose | Protected state | If the phase fails |
+| --- | --- | --- | --- |
+| Offline (preprocessing) | Create correlated secret material before application values are computed. | Random shares, multiplication triples, random bits, zero shares, and fixed-point masks. | Material generation can stall or produce unusable material. Invalid material that is accepted can undermine later correctness or privacy. |
+| Online | Accept inputs, compute over secret values, and deliver authorized outputs. | Application inputs, intermediate shares, and output shares. | The computation can stall, reveal more than intended, or return an incorrect result. |
+
+Online execution inherits the properties of the material it consumes. It cannot repair invalid preprocessing. A preprocessing outage does not immediately stop an online run with a reserve of valid, unused material; it stops new work when that reserve is exhausted.
+
+## Node topology
+
+`n` is the number of computing parties and `t` is the maximum corrupted-party count. Input and output clients are not included in `n`. A deployment must satisfy the strongest requirement of either phase.
+
+| Phase | HoneyBadgerMPC | AVSS |
+| --- | --- | --- |
+| Offline (preprocessing) | `n >= 4t+1` | `n >= 3t+1` |
+| Online | `n >= 3t+1` | `n >= 3t+1` |
+
+For HoneyBadgerMPC, correcting `t` erroneous evaluations of a degree-`d` polynomial requires `d+2t+1` evaluations. Offline reconstruction reaches degree `2t`, producing the `4t+1` deployment minimum. Its degree-`t` online openings need at most `3t+1` parties for the same error bound.
+
+AVSS keeps shares at degree `t` and verifies them against Feldman commitments before reconstruction. `t+1` consistent verified shares determine a value, while asynchronous Byzantine quorum intersection sets the full `3t+1` topology.<sup><a href="https://www.cs.tau.ac.il/~bchor/Shamir.html">[9]</a></sup><sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup> With `t=1`, the deployment minimum is five parties for HoneyBadgerMPC and four for AVSS.
+
+## Threat-model summary
+
+| Phase | HoneyBadgerMPC | AVSS |
+| --- | --- | --- |
+| Offline (preprocessing) | **Static, active** adversary controlling at most `t` parties, subject to the operation-specific checks completing. | **Static, passive** adversary controlling at most `t` parties for end-to-end triple correctness. Feldman checks detect inconsistent shares but do not prove the triple product relation against an active dealer. |
+| Online | **Static, active** adversary controlling at most `t` parties, conditional on correct, fresh preprocessing. | Active malformed-share behavior is checked against commitments, but end-to-end multiplication inherits the **static, passive** preprocessing model unless triples receive an independent product-relation check. |
+
+The table states the strongest end-to-end model supported by each phase. It does not imply adaptive, mobile, or proactive corruption security. Those distinctions are defined in [Protocol definitions](./definitions).
+
+### HoneyBadgerMPC details
+
+HoneyBadgerMPC combines optimistic preprocessing with robust online arithmetic.<sup><a href="https://eprint.iacr.org/2019/883.pdf">[1]</a></sup>
+
+| Aspect | Offline (preprocessing) | Online |
+| --- | --- | --- |
+| Main checks | Dealing, degree checks, verifier reconstruction, and verdict broadcasts over degree-`t` and degree-`2t` sharings. | Robust reconstruction rejects or corrects malformed degree-`t` openings. Multiplication consumes one valid, unused triple per product. |
+| Privacy and correctness | Completed material is intended to remain private and suitable for online use when every required check completes, randomness is cryptographic, channels are protected, and material is not reused. | Field arithmetic protects inputs and intermediate shares up to the threshold, conditional on correct preprocessing. Fixed-point operations add range and statistical-mask assumptions; their source construction uses a semi-honest model.<sup><a href="https://ifca.ai/pub/fc10/31_47.pdf">[8]</a></sup> |
+| Failure boundary | A required party can block completion, and unchecked or reused material must not enter the online pool. | Robust opening does not revalidate every property of preprocessing. Invalid or exhausted material stops the guarantee at the point of use. |
+
+### AVSS details
+
+AVSS uses encrypted share delivery and public Feldman commitments. A commitment verifies that a share belongs to one committed polynomial; it is not hiding and does not prove every higher-level relation.<sup><a href="https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf">[10]</a></sup>
+
+| Aspect | Offline (preprocessing) | Online |
+| --- | --- | --- |
+| Main checks | Recipients verify degree-`t` shares against Feldman commitments. Random-share generation uses all dealers; triple generation selects `2t+1` product dealers. | Openings reject shares that do not match the expected commitments. Multiplication opens two masked differences and consumes one triple. |
+| Privacy and correctness | Encrypted delivery protects shares in transit. The integrated triple path does not prove that a committed output equals the product of the committed inputs, so active end-to-end multiplication security is not established. | Linear arithmetic and openings are consistent when parties use the same commitments. Multiplication remains correct only if the consumed triple satisfies `c=ab`. Public commitments permit candidate testing for low-entropy values. |
+| Failure boundary | One required dealer can stall preprocessing. A malicious selected dealer can share a consistent but incorrect product unless another mechanism validates the relation. | Commitment checks reject malformed shares but cannot repair or certify a bad triple. Online execution therefore inherits the offline product-relation limitation. |
+
+## Availability and phase handoff
+
+| Question | HoneyBadgerMPC | AVSS |
+| --- | --- | --- |
+| Can one required party stall offline preprocessing? | Yes | Yes |
+| Can online work continue while replenishment is stalled? | Yes, until valid preloaded material is exhausted. | Yes, until valid preloaded material is exhausted. |
+| What validates an online opening? | Robust reconstruction over field shares. | Verification against the expected Feldman commitments. |
+| Does online validation certify preprocessing? | No. Correct, fresh material remains a precondition. | No. In particular, it does not prove the triple product relation. |
+| When can online execution progress? | With valid material, enough responsive parties, required client participation, and eventual honest-to-honest delivery. | Under the same operational conditions, with valid AVSS material and commitments. |
+
+Both online paths are conditionally live; neither offline path guarantees completion against every allowed fault. This distinction is easy to miss when a protocol is described only as “asynchronous.” See [Asynchronous guarantees](./definitions#asynchronous-guarantees) for the definitions of safety, liveness, conditional liveness, and expected-round termination.
+
+## Cross-phase deployment
+
+The same computing parties may run both phases, but that operational choice couples their risks.
+
+| Concern | Deployment requirement |
+| --- | --- |
+| Corruption budget | Count one static set of at most `t` corrupted parties across preprocessing, storage, and online use. The budget does not reset between phases. |
+| Preprocessing inheritance | Treat valid, fresh preprocessing as an explicit online precondition. Online opening checks do not recreate guarantees missing from the material. |
+| Material lifecycle | Bind material to its backend, `n`, `t`, party identities and indices, and execution context. Consume it atomically and once, including across retries, crashes, and backups. |
+| Common-mode compromise | Account for shared administrators, credentials, hosts, cloud infrastructure, and network capacity. Reusing operators does not create an independent trust boundary. |
+| Committee changes | Use a secure resharing or transfer protocol. Copying shares or triples to a differently indexed committee is not a valid handoff. |
+
+Separating operators or infrastructure can reduce common-mode operational risk, but it does not by itself strengthen the cryptographic model.
+
+## Shared deployment requirements
+
+| Area | Requirement |
+| --- | --- |
+| Transport | Authenticate party and client identities and protect confidential traffic. Reliable broadcast provides agreement, not encryption. |
+| Randomness | Use cryptographically secure random generators. |
+| Fault accounting | Treat `t` as one total corrupted-party budget, not separate allowances for malicious, crashed, and offline parties. |
+| Output exposure | Review authorized outputs and repeated queries separately. Neither backend supplies differential privacy. |
+| Host security | Evaluate constant-time behavior, side channels, forward secrecy, secure erasure, and state protection as separate deployment properties. |
+| Composition | Do not infer formal universal composability or adaptive-corruption security from the backend-level guarantees on this page. |
+
+## Backend decision
+
+| Requirement | Prefer | Important limitation |
+| --- | --- | --- |
+| Private arithmetic over application values with active online fault handling | HoneyBadgerMPC | Requires `4t+1` deployment topology and managed preprocessing reserves. Fixed-point operations add range and masking assumptions. |
+| Public commitments, curve-compatible scalar shares, or threshold-cryptography building blocks | AVSS | Commitments are non-hiding, and the integrated triple path does not establish active end-to-end multiplication security. |
+| Adaptive or mobile corruption security | Neither backend alone | Requires an explicit protocol and state-lifecycle design for that model. |
+| Offline completion despite every allowed fault | Neither backend alone | A required preprocessing participant can stall material generation. |
+
+For operation stages and cost, see [Protocol costs](./protocol-costs). For construction lineage, see [Protocol papers](./protocol-papers).
+
+## Sources
+
+[1] Lu, Yurek, Kulshreshtha, Govind, Mahadev, Kate and Miller. HoneyBadgerMPC and AsynchroMix: Practical Asynchronous MPC and its Application to Anonymous Communication (2019). https://eprint.iacr.org/2019/883.pdf
+
+[8] Catrina and Saxena. Secure Computation With Fixed-Point Numbers (2010). https://ifca.ai/pub/fc10/31_47.pdf
+
+[9] Shamir. How to Share a Secret (1979). https://www.cs.tau.ac.il/~bchor/Shamir.html
+
+[10] Feldman. A Practical Scheme for Non-interactive Verifiable Secret Sharing (1987). https://www.cs.umd.edu/~gasarch/TOPICS/secretsharing/feldmanVSS.pdf

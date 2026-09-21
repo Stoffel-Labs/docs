@@ -139,6 +139,20 @@
         ]
       },
       {
+        "tab": "MPC Protocols",
+        "groups": [
+          {
+            "group": "Protocol Security Reference",
+            "pages": [
+              "mpc-protocols/definitions",
+              "mpc-protocols/security-model",
+              "mpc-protocols/protocol-costs",
+              "mpc-protocols/protocol-papers"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "SDKs",
         "groups": [
           {

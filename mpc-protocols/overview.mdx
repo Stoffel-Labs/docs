@@ -5,14 +5,14 @@ description: "Choose the Stoffel MPC backend that matches your program's secret 
 
 Stoffel separates application code from the MPC protocol used to run it. The selected backend determines how secret values are shared, computed over, and reconstructed across MPC parties.
 
-Stoffel currently supports two asynchronous, robust MPC backend families:
+Stoffel currently supports two MPC backend families:
 
 | Backend | Selector | Use when | Main design lens |
 | --- | --- | --- | --- |
 | HoneyBadgerMPC | `honeybadger` | Your program is mostly private field arithmetic over application values. | Circuit shape: multiplication count, multiplication depth, type choices, reveals, and preprocessing capacity. |
 | AVSS | `avss` or `avss:<curve>` | Your program needs committed scalar shares, public commitments, curve-compatible outputs, or threshold-cryptography building blocks. | Protocol transcript: curve selection, commitments, transcript-to-field boundaries, openings, and verifier-facing artifacts. |
 
-Both backends are designed for asynchronous/robust settings: parties do not rely on a fixed network round clock, and the run can tolerate Byzantine parties up to the configured threshold. The backend choice determines which share representation, curve/field, preprocessing, and client I/O path Stoffel records in the bytecode manifest.
+The backend choice determines which share representation, curve/field, preprocessing, and client I/O path Stoffel records in the bytecode manifest. Security and completion guarantees differ between preprocessing and online execution. See [Security and fault model](./security-model) before treating the configured threshold as an end-to-end Byzantine-security guarantee.
 
 <Note>
 `mpc-protocols` has received an external audit from Zellic. Audit scope matters: validate the specific protocol version, integration code, deployment configuration, and threat model you rely on. Other Stoffel components have also had AI-assisted security review, including tools such as veria.dev. Treat audit and review coverage as component-scoped when evaluating a deployment.
@@ -28,30 +28,9 @@ Select AVSS with the default curve:
 
 ![Campaign-style networked privacy backend diagram showing how clients, the coordinator, preprocessing, and VM parties fit together for MPC execution.](/images/campaign/stoffel-networked-privacy-backend.png)
 
-### Overview
+### Security and cost reference
 
-HoneyBadger is an asynchronous Byzantine fault-tolerant (BFT) MPC protocol that:
-
-- **Tolerates malicious parties**: Up to `t` parties can be actively malicious
-- **Works asynchronously**: No timing assumptions required
-- **Provides guaranteed output delivery**: Honest parties always get results
-
-### Security Guarantees
-
-| Property | Description |
-|----------|-------------|
-| **Privacy** | No coalition of ≤t parties learns anything about honest inputs |
-| **Correctness** | Output is always the correct result of the computation |
-| **Guaranteed Output** | Honest parties always receive their outputs |
-| **Fairness** | Either all honest parties get output, or none do |
-
-### Configuration Constraints
-
-The number of parties `n` and threshold `t` must satisfy:
-
-```
-n >= 3t + 1
-```
+Topology depends on the backend: HoneyBadgerMPC requires `n >= 4t+1`, while AVSS requires `n >= 3t+1`. These constraints do not by themselves guarantee preprocessing availability, fairness, or output delivery under arbitrary delays. Use the [backend-specific parameter table and security matrix](./security-model), [protocol costs](./protocol-costs), and [paper map](./protocol-papers) to evaluate your deployment.
 
 Select AVSS with a specific curve:
 
@@ -130,22 +109,14 @@ let result = Stoffel::load_file("target/debug/threshold-demo.stflb")?
 
 Generated manifests can carry the bytecode backend and curve into SDK builders, so app code does not need to duplicate backend literals by hand.
 
-## Current topology constraints
+## Topology constraints
 
-Stoffel validates local and network MPC configs with the current robust-MPC threshold rule:
+| Backend | Minimum topology | Reconstruction shape |
+| --- | --- | --- |
+| HoneyBadgerMPC | `parties >= 4 * threshold + 1`; minimum five parties | Robust field openings normally start from `2 * threshold + 1` matching shares; error-correction and degree-`2t` preprocessing can require more. |
+| AVSS | `parties >= 3 * threshold + 1`; minimum four parties | Feldman-verified scalar reconstruction requires `threshold + 1` consistent shares, while Byzantine protocol progress relies on the full topology. |
 
-```text
-parties >= 4 * threshold + 1
-```
-
-That means the common developer default is five parties with threshold one. The reconstruction shape differs by backend:
-
-| Backend | Reconstruction shape |
-| --- | --- |
-| HoneyBadgerMPC | Uses robust field-share reconstruction; current SDK summaries report `2 * threshold + 1` reconstruction shares. |
-| AVSS | Uses Feldman-style share reconstruction; current SDK summaries report `threshold + 1` reconstruction shares. |
-
-The protocol literature often describes asynchronous Byzantine thresholds in terms of `n >= 3t + 1`. Stoffel's current configuration layer enforces the stricter `4t + 1` rule because the implemented local/network path includes preprocessing and robust execution requirements.
+With threshold one, this means five HoneyBadgerMPC parties or four AVSS parties. HoneyBadgerMPC needs the extra party because its preprocessing reconstructs degree-`2t` values while correcting up to `t` errors. AVSS verifies degree-`t` shares against public commitments and uses `3t+1` Byzantine quorum intersection. Its lower party count comes with public commitments and group-operation costs; it is not a drop-in replacement for private application arithmetic.
 
 ## Further reading
 

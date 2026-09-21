@@ -5,6 +5,8 @@ description: "How to reason about secret-dependent work, preprocessing demand, t
 
 Use this page after the basic backend decision is clear and the next question is how to shape the work that runs inside MPC. For backend selection, start with [MPC Backends](./overview). For config, bytecode, local runs, and network execution, use [How Backend Selection Works](./implementation). For backend-specific examples, see [HoneyBadgerMPC](./honeybadger-mpc) and [AVSS](./avss).
 
+For the advanced protocol analysis behind these recommendations, use the [phase-specific security model](./security-model), [protocol cost reference](./protocol-costs), and [protocol-to-paper map](./protocol-papers) in the MPC Protocols tab.
+
 This page focuses on the cost model behind those choices: what becomes secret-dependent work, which type choices change preprocessing demand, and how HoneyBadgerMPC circuit costs differ from AVSS transcript costs.
 
 ## Backend cost model
@@ -105,3 +107,6 @@ For docs or examples, require the agent to run `stoffel check` on StoffelLang sn
 - [HoneyBadgerMPC](./honeybadger-mpc)
 - [AVSS](./avss)
 - [How backend selection works](./implementation)
+- [Security and fault model](./security-model)
+- [Protocol costs](./protocol-costs)
+- [Protocol papers](./protocol-papers)

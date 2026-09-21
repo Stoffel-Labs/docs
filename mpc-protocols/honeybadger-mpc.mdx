@@ -1,11 +1,11 @@
 ---
 title: "HoneyBadgerMPC"
-description: "HoneyBadgerMPC backend details for asynchronous, robust, field-based MPC in Stoffel."
+description: "HoneyBadgerMPC backend details for field-based MPC, preprocessing, and online arithmetic in Stoffel."
 ---
 
 HoneyBadgerMPC is Stoffel's default MPC backend. Use it when secret application values are represented as field-compatible shares and the outside system consumes an opened result or client-output shares from private computation.
 
-It is an asynchronous, robust MPC protocol family. In practical terms, Stoffel can run a known set of MPC parties without relying on a fixed network round clock, while tolerating Byzantine parties up to the configured threshold.
+The protocol family separates optimistic preprocessing from robust online arithmetic. These phases do not have identical availability guarantees. The implementation also uses finite waits and bounded state. See the [security and fault model](./security-model) for the exact phase-specific claims, [protocol costs](./protocol-costs) for computation and rounds, and [paper map](./protocol-papers) for references.
 
 ## What it is good for
 

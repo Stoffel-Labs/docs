@@ -33,7 +33,7 @@ For an elliptic curve with base point `G`, the commitment form is conceptually:
 C_j = a_j * G
 ```
 
-where `a_j` is a polynomial coefficient. A party can verify a scalar share against the public commitment points without learning the underlying secret scalar.
+where `a_j` is a polynomial coefficient. A party verifies a share against these points, but the commitments are not hiding: `C_0` allows guesses of low-entropy secrets to be tested. See the [security and fault model](./security-model) for commitment leakage, missing recovery and triple-generation constraints, [protocol costs](./protocol-costs) for phase-specific work, and [paper map](./protocol-papers) for construction references.
 
 ## Security posture
 
@@ -47,7 +47,7 @@ Keep these distinctions in mind:
 - Feldman-style commitments expose public group elements tied to the secret polynomial.
 - Low-entropy application values should not be treated like random cryptographic scalars.
 - Full threshold signing protocols may need additional logic beyond share generation and commitment access.
-- Stoffel's current local/network config enforces `parties >= 4 * threshold + 1`.
+- AVSS topology requires `parties >= 3 * threshold + 1`, with at least four parties. Reconstruction uses `threshold + 1` verified shares that agree on the same commitments.
 
 ## Curves
 

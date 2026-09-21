@@ -5,6 +5,8 @@ description: "How Stoffel carries MPC backend selection through config, bytecode
 
 Use this page after choosing a backend to see how that choice flows through `Stoffel.toml`, CLI flags, Rust SDK builders, bytecode metadata, local execution, and network/client configuration. If you need the app-level input, execution, and output flow, use [MPC Integration](../architecture/mpc). For backend selection guidance, start with [MPC Backends](./overview).
 
+For advanced evaluation of the implementation selected by this configuration, use the [phase-specific security model](./security-model), [protocol cost reference](./protocol-costs), and [protocol-to-paper map](./protocol-papers) in the MPC Protocols tab.
+
 Stoffel records the selected MPC backend in the compiled program and carries it through the CLI, Rust SDK, VM, and network/client layers.
 
 ## End-to-end path
@@ -47,17 +49,16 @@ avss:p-256
 
 `--field` / `curve = "..."` sets the AVSS curve. HoneyBadgerMPC does not take a curve selector in the SDK config; it uses the field configuration expected by the HoneyBadger path.
 
-## Current config validation
+## Backend-specific protocol constraints
 
-Stoffel validates local and network MPC topology with:
+Choose topology according to the selected backend's protocol constraint:
 
-```text
-parties >= 4 * threshold + 1
-parties >= 5
-threshold > 0
-```
+| Backend | Configuration rule |
+| --- | --- |
+| HoneyBadgerMPC | `parties >= 4 * threshold + 1`, `parties >= 5`, and `threshold > 0` |
+| AVSS | `parties >= 3 * threshold + 1`, `parties >= 4`, and `threshold > 0` |
 
-This is the rule developers should use for project config, local runs, and network config. It is stricter than the baseline `3t + 1` threshold often used to introduce asynchronous Byzantine protocols because Stoffel's current end-to-end path includes preprocessing and robust execution requirements.
+HoneyBadgerMPC's stronger party requirement comes from correcting up to `t` bad evaluations while reconstructing degree-`2t` values during preprocessing: `2t + 2t + 1 = 4t+1`. AVSS verifies degree-`t` Feldman shares before interpolation and uses `3t+1` for Byzantine quorum intersection, but introduces public commitments and curve-group work.
 
 SDK summaries also expose the minimum reconstruction shares:
 
@@ -171,7 +172,7 @@ AVSS share data can carry Feldman commitment material. StoffelLang exposes `Avss
 
 | Symptom | Check |
 | --- | --- |
-| Config says the threshold is invalid | Confirm `parties >= 4 * threshold + 1` and `parties >= 5`. |
+| Config says the threshold is invalid | For HoneyBadgerMPC, confirm `parties >= 4 * threshold + 1` and at least five parties. For AVSS, confirm `parties >= 3 * threshold + 1` and at least four parties. |
 | HoneyBadger rejects a curve selector | Use `backend = "honeybadger"` without a curve, or switch to AVSS for curve workflows. |
 | AVSS client I/O fails on a non-BLS curve | The current SDK off-chain client I/O path supports AVSS over `bls12_381`; test other curves through supported local/runtime paths. |
 | Runtime backend mismatch | Rebuild `.stflb` after changing `[mpc]` config or pass matching SDK/CLI backend overrides. |
@@ -182,5 +183,8 @@ AVSS share data can carry Feldman commitment material. StoffelLang exposes `Avss
 - [MPC Protocols](./overview)
 - [HoneyBadgerMPC](./honeybadger-mpc)
 - [AVSS](./avss)
+- [Security and fault model](./security-model)
+- [Protocol costs](./protocol-costs)
+- [Protocol papers](./protocol-papers)
 - [Stoffel VM builtins](../stoffel-vm/builtins)
 - [Rust SDK API](../rust-sdk/api)

@@ -1,0 +1,60 @@
+---
+title: "Protocol definitions"
+description: "Definitions for phases, adversaries, corruption timing, and asynchronous protocol guarantees."
+---
+
+Use these definitions when reading the security, cost, and protocol-reference pages. They separate properties that are often collapsed into a single claim such as “asynchronous” or “Byzantine secure.”
+
+## Execution phases
+
+| Term | Meaning |
+| --- | --- |
+| Offline phase / preprocessing | Work performed before application values are computed. It creates correlated secret material such as random shares, multiplication triples, random bits, and fixed-point masks. |
+| Online phase | Work that accepts application inputs, computes over secret values, and reconstructs or sends authorized outputs. It may consume material created offline. |
+| Preloaded material | Valid, unused preprocessing material already available when online execution begins. Preloading can separate online latency from preprocessing latency, but it does not change the material's security assumptions. |
+
+An online phase cannot repair invalid preprocessing. A preprocessing outage may leave online work unaffected until the reserve of valid material is exhausted.
+
+## Adversary behavior
+
+| Term | Meaning |
+| --- | --- |
+| Passive / semi-honest | Corrupted parties follow the protocol but expose their internal state to the adversary. This model does not cover deliberately malformed messages or incorrect local computation. |
+| Active / malicious | Corrupted parties may deviate arbitrarily, including sending inconsistent values, withholding messages, replaying material, or computing the wrong relation. A protocol may detect some active behavior without providing end-to-end active security. |
+| Byzantine fault | Arbitrary faulty behavior, whether caused by compromise, malicious operation, or software failure. The exact tolerated behavior still depends on the protocol's checks and progress assumptions. |
+
+## Corruption timing
+
+| Term | Meaning |
+| --- | --- |
+| Static corruption | The corrupted party set is fixed before the protocol execution being analyzed. |
+| Adaptive corruption | The adversary chooses additional parties to corrupt as it observes the execution. |
+| Mobile corruption | The adversary may move between party hosts over time. Even if no more than `t` parties are corrupted at once, the accumulated exposure can exceed a static model. |
+| Proactive security | Parties periodically refresh or reshape secret state so prior compromises do not accumulate indefinitely. This requires an explicit refresh protocol; restarting a phase does not provide it. |
+
+When the same parties perform preprocessing and online execution, a static corruption budget spans both phases and the stored material between them. It does not reset when online execution begins.
+
+## Asynchronous guarantees
+
+| Property | What it guarantees | What it does not guarantee |
+| --- | --- | --- |
+| Asynchronous safety | Message delay alone cannot make honest parties accept incompatible or incorrect results or cross the stated privacy boundary. | Completion. A safe execution may wait or stop. |
+| Asynchronous liveness | Honest parties eventually complete despite the allowed faulty parties, assuming the protocol's delivery and scheduling conditions hold. | Completion during a permanent partition, without required client input, or after valid preprocessing is exhausted. |
+| Conditional liveness | Progress is available only while named preconditions hold, such as valid preloaded material, enough responsive parties, and eventual honest-to-honest delivery. | A blanket guarantee that every operation or replenishment attempt terminates. |
+| Expected-round termination | A randomized protocol has a bounded expected number of rounds under its stated scheduler and delivery model. | A fixed deadline for every execution. |
+
+Randomized asynchronous agreement may have an expected-round bound without a deterministic completion deadline. FLP rules out deterministic consensus termination in every fully asynchronous execution with even one fault.<sup><a href="https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf">[14]</a></sup>
+
+## Sharing and reconstruction
+
+| Term | Meaning |
+| --- | --- |
+| `n` | Number of computing parties. Input and output clients are not included unless a protocol explicitly assigns them a computing-party role. |
+| `t` | Maximum corrupted-party count covered by the stated guarantee. It is one total budget, not separate allowances for malicious, crashed, and offline parties. |
+| Degree-`t` sharing | A secret-sharing polynomial of degree `t`. Any `t+1` correct evaluations determine the polynomial, but Byzantine correction or distributed progress can require more parties. |
+| Verified share | A share checked against a common commitment or proof. Verification can establish consistency with that commitment without proving every higher-level relation the application needs. |
+| Robust reconstruction | Reconstruction that identifies or corrects inconsistent evaluations within a stated error bound rather than assuming every supplied share is correct. |
+
+## Sources
+
+[14] Fischer, Lynch and Paterson. Impossibility of Distributed Consensus with One Faulty Process (1985). https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf

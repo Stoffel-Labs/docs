@@ -1,0 +1,20 @@
+{
+  "generator": "scripts/generate_mpc_diagrams.py",
+  "outputs": [
+    {
+      "path": "images/diagrams/mpc-privacy-flow.svg",
+      "width": 1200,
+      "height": 675,
+      "dimension_ok": true,
+      "xml_ok": true,
+      "accessible_title": true,
+      "accessible_description": true,
+      "semantic_checks": {
+        "parties_named_as_parties": true,
+        "party_share_ownership_shown": true,
+        "private_state_stays_inside_boundary": true,
+        "authorized_output_only": true
+      }
+    }
+  ]
+}

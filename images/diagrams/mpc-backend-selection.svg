@@ -26,8 +26,8 @@
   .share-arrow { fill: none; stroke: #2246d2; stroke-width: 2.5; marker-end: url(#blue-arrow); }
   .control-arrow { fill: none; stroke: #596784; stroke-width: 2.5; stroke-dasharray: 7 6; marker-end: url(#arrow); }
 </style>
-  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#172554"/></marker>
-  <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#2246d2"/></marker>
+  <marker id="arrow" markerWidth="10" markerHeight="6" viewBox="0 0 10 6" refX="9.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#172554"/></marker>
+  <marker id="blue-arrow" markerWidth="10" markerHeight="6" viewBox="0 0 10 6" refX="9.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#2246d2"/></marker>
 </defs>
 <rect x="0" y="0" width="1200" height="675" rx="0" class="bg"/>
 <rect x="0" y="0" width="1200" height="92" rx="0" class="header"/>
@@ -36,8 +36,8 @@
 <rect x="412" y="116" width="376" height="66" rx="14" class="card"/>
 <text x="600" y="143" class="body" text-anchor="middle">Stoffel program + protected inputs</text>
 <text x="600" y="166" class="small" text-anchor="middle">Choose the backend before deployment</text>
-<path d="M560 182 C470 205, 340 200, 316 230" class="arrow"/>
-<path d="M640 182 C730 205, 860 200, 884 230" class="arrow"/>
+<path d="M560 182 L560 218 L316 218 L316 230" class="arrow"/>
+<path d="M640 182 L640 218 L884 218 L884 230" class="arrow"/>
 <rect x="286" y="187" width="236" height="24" rx="4" class="label-chip"/>
 <rect x="674" y="187" width="244" height="24" rx="4" class="label-chip"/>
 <text x="404" y="205" class="label" text-anchor="middle">field-oriented application logic</text>

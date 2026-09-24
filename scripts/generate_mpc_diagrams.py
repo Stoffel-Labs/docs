@@ -57,8 +57,8 @@ def svg_document(body: str, title: str, description: str) -> str:
 <desc id="desc">{esc(description)}</desc>
 <defs>
   <style>{CSS}</style>
-  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#172554"/></marker>
-  <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#2246d2"/></marker>
+  <marker id="arrow" markerWidth="10" markerHeight="6" viewBox="0 0 10 6" refX="9.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#172554"/></marker>
+  <marker id="blue-arrow" markerWidth="10" markerHeight="6" viewBox="0 0 10 6" refX="9.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#2246d2"/></marker>
 </defs>
 {body}
 </svg>
@@ -132,8 +132,8 @@ def backend_selection() -> str:
         rect(412, 116, 376, 66, "card"),
         text(600, 143, "Stoffel program + protected inputs", "body", "middle"),
         text(600, 166, "Choose the backend before deployment", "small", "middle"),
-        '<path d="M560 182 C470 205, 340 200, 316 230" class="arrow"/>',
-        '<path d="M640 182 C730 205, 860 200, 884 230" class="arrow"/>',
+        '<path d="M560 182 L560 218 L316 218 L316 230" class="arrow"/>',
+        '<path d="M640 182 L640 218 L884 218 L884 230" class="arrow"/>',
         rect(286, 187, 236, 24, "label-chip", 4),
         rect(674, 187, 244, 24, "label-chip", 4),
         text(404, 205, "field-oriented application logic", "label", "middle"),
@@ -282,6 +282,15 @@ def validate_svg(path: Path) -> dict[str, object]:
             "backend_topologies_separated": all(token in source for token in ["n ≥ 4t + 1", "n ≥ 3t + 1"]),
             "preprocessing_distinguished": all(token in source for token in ["Beaver triples", "Verifiable dealing"]),
             "avss_commitment_visibility_stated": "public and non-hiding" in source,
+            "branch_labels_clear_of_stems": all(
+                token in source
+                for token in [
+                    'M560 182 L560 218 L316 218 L316 230',
+                    'M640 182 L640 218 L884 218 L884 230',
+                    'y="187" width="236" height="24"',
+                    'y="187" width="244" height="24"',
+                ]
+            ),
         }
     )
     return {
@@ -292,6 +301,10 @@ def validate_svg(path: Path) -> dict[str, object]:
         "xml_ok": True,
         "accessible_title": bool(title is not None and title.text),
         "accessible_description": bool(desc is not None and desc.text),
+        "arrowheads_centered_on_stems": all(
+            token in source
+            for token in ['viewBox="0 0 10 6"', 'refX="9.5"', 'refY="3"', 'markerHeight="6"']
+        ),
         "semantic_checks": checks,
     }
 

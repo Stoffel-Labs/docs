@@ -28,7 +28,7 @@ The same `.stflb` artifact connects the application-facing build path to the run
 
 ## Data Flow
 
-![Campaign-style networked privacy backend diagram showing clients, coordinator, preprocessing, party mesh, and encrypted or authorized outputs.](/images/campaign/stoffel-networked-privacy-backend.png)
+For the trust boundaries between the app, coordinator, and MPC parties, see the [MPC Integration runtime diagram](./mpc).
 
 ### Clear Data Path
 - Public inputs and configuration data
@@ -47,19 +47,21 @@ The same `.stflb` artifact connects the application-facing build path to the run
 ### Isolation Boundaries
 - **Process Isolation**: Each MPC node runs in isolated environment
 - **Memory Protection**: Clear and secret data separation
-- **Network Security**: Encrypted communication between nodes
+- **Network Security**: Deployments must authenticate party and client identities and protect confidential traffic
 - **Access Control**: Role-based access to computation resources
 
 ### Trust Model
-- **Honest Majority**: Assumes majority of nodes are honest
-- **Semi-Honest Adversary**: Protects against passive attacks
-- **Input Privacy**: Individual inputs remain private
-- **Computation Privacy**: Intermediate values are protected
+- **Backend-specific thresholds**: HoneyBadgerMPC deployments require `n >= 4t+1`; AVSS requires `n >= 3t+1`
+- **Backend-specific adversaries**: HoneyBadgerMPC targets a static active adversary. AVSS checks shares against public commitments, but its integrated multiplication path inherits a static passive preprocessing limitation unless triples are independently validated
+- **Conditional liveness**: Asynchronous safety does not guarantee that every run or preprocessing attempt completes against every allowed fault
+- **Explicit output boundary**: Inputs and intermediate values stay shared unless the program opens them or sends output shares to an authorized client
+
+For the phase-by-phase model and deployment assumptions, see [Security and fault model](../mpc-protocols/security-model).
 
 ## Scalability Design
 
 ### Horizontal Scaling
-- **Node Addition**: Dynamic addition of MPC nodes
+- **Committee Sizing**: Select a backend-valid party count before execution; changing the committee requires an explicit secure resharing or transfer design
 - **Load Distribution**: Computation workload balancing
 - **Geographic Distribution**: Global node deployment support
 

@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Networked MPC runtime</title>
+<desc id="desc">The app and coordinator establish a session and distribute one compiled artifact. Protected inputs are delivered to MPC parties. Each party runs the Stoffel VM over shares, exchanges authenticated protocol messages, and consumes party-local preprocessing. Per-party output shares return to the authorized client for reconstruction.</desc>
+<defs>
+  <style>
+  .bg { fill: #f7f7fa; }
+  .header { fill: #2246d2; }
+  .zone { fill: #ffffff; stroke: #7f8bb3; stroke-width: 2; stroke-dasharray: 8 7; }
+  .card { fill: #ffffff; stroke: #b8bfd5; stroke-width: 2; }
+  .private { fill: #fff4d6; stroke: #d89a16; stroke-width: 2; }
+  .party { fill: #2246d2; stroke: #15319b; stroke-width: 2; }
+  .output { fill: #e9f7f2; stroke: #16836d; stroke-width: 2; }
+  .hb { fill: #eef1ff; stroke: #2246d2; stroke-width: 2; }
+  .avss { fill: #f3eefe; stroke: #7251b5; stroke-width: 2; }
+  .phase { fill: #ffffff; stroke: #c9cee0; stroke-width: 1.5; }
+  .label-chip { fill: #f7f7fa; }
+  .title { font: 700 28px Arial, sans-serif; fill: #ffffff; }
+  .subtitle { font: 400 15px Arial, sans-serif; fill: #e9edff; }
+  .zone-title { font: 700 17px Arial, sans-serif; fill: #111827; }
+  .body { font: 600 15px Arial, sans-serif; fill: #111827; }
+  .small { font: 400 13px Arial, sans-serif; fill: #4b5563; }
+  .party-title { font: 700 15px Arial, sans-serif; fill: #ffffff; }
+  .party-sub { font: 400 12px Arial, sans-serif; fill: #ffffff; }
+  .label { font: 700 12px Arial, sans-serif; fill: #31416f; }
+  .arrow { fill: none; stroke: #172554; stroke-width: 3; marker-end: url(#arrow); }
+  .share-arrow { fill: none; stroke: #2246d2; stroke-width: 2.5; marker-end: url(#blue-arrow); }
+  .control-arrow { fill: none; stroke: #596784; stroke-width: 2.5; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+</style>
+  <marker id="arrow" markerWidth="10" markerHeight="6" viewBox="0 0 10 6" refX="9.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#172554"/></marker>
+  <marker id="blue-arrow" markerWidth="10" markerHeight="6" viewBox="0 0 10 6" refX="9.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#2246d2"/></marker>
+</defs>
+<rect x="0" y="0" width="1200" height="675" rx="0" class="bg"/>
+<rect x="0" y="0" width="1200" height="92" rx="0" class="header"/>
+<text x="52" y="42" class="title" text-anchor="start">Networked MPC runtime</text>
+<text x="52" y="70" class="subtitle" text-anchor="start">Control-plane coordination is separate from share computation and client-side reconstruction</text>
+<rect x="44" y="122" width="250" height="496" rx="14" class="zone"/>
+<text x="68" y="154" class="zone-title" text-anchor="start">Application boundary</text>
+<rect x="70" y="178" width="198" height="96" rx="14" class="private"/>
+<text x="169" y="213" class="body" text-anchor="middle">App / client</text>
+<text x="169" y="240" class="small" text-anchor="middle">prepares protected inputs</text>
+<text x="169" y="261" class="small" text-anchor="middle">and requests a session</text>
+<rect x="70" y="326" width="198" height="86" rx="14" class="card"/>
+<text x="169" y="359" class="body" text-anchor="middle">.stflb + manifest</text>
+<text x="169" y="386" class="small" text-anchor="middle">same contract for every party</text>
+<rect x="70" y="472" width="198" height="102" rx="14" class="output"/>
+<text x="169" y="506" class="body" text-anchor="middle">Authorized client</text>
+<text x="169" y="533" class="small" text-anchor="middle">receives output shares</text>
+<text x="169" y="554" class="small" text-anchor="middle">and reconstructs</text>
+<rect x="330" y="122" width="250" height="496" rx="14" class="zone"/>
+<text x="354" y="154" class="zone-title" text-anchor="start">Control plane</text>
+<rect x="356" y="178" width="198" height="124" rx="14" class="card"/>
+<text x="455" y="211" class="body" text-anchor="middle">Coordinator</text>
+<text x="455" y="238" class="small" text-anchor="middle">session lifecycle</text>
+<text x="455" y="260" class="small" text-anchor="middle">reservations + routing</text>
+<text x="455" y="282" class="small" text-anchor="middle">deployment metadata</text>
+<rect x="356" y="336" width="198" height="92" rx="14" class="hb"/>
+<text x="455" y="369" class="body" text-anchor="middle">Control metadata</text>
+<text x="455" y="396" class="small" text-anchor="middle">is not the secret</text>
+<text x="455" y="417" class="small" text-anchor="middle">computation</text>
+<text x="455" y="482" class="small" text-anchor="middle">Coordinator arranges delivery;</text>
+<text x="455" y="505" class="small" text-anchor="middle">parties compute on shares and</text>
+<text x="455" y="528" class="small" text-anchor="middle">the authorized client reconstructs.</text>
+<rect x="620" y="122" width="536" height="496" rx="14" class="zone"/>
+<text x="644" y="154" class="zone-title" text-anchor="start">MPC party boundary</text>
+<rect x="650" y="192" width="142" height="108" rx="14" class="party"/>
+<text x="721" y="230" class="party-title" text-anchor="middle">Party 1</text>
+<text x="721" y="257" class="party-sub" text-anchor="middle">Stoffel VM</text>
+<text x="721" y="280" class="party-sub" text-anchor="middle">holds shares</text>
+<rect x="816" y="192" width="142" height="108" rx="14" class="party"/>
+<text x="887" y="230" class="party-title" text-anchor="middle">Party 2</text>
+<text x="887" y="257" class="party-sub" text-anchor="middle">Stoffel VM</text>
+<text x="887" y="280" class="party-sub" text-anchor="middle">holds shares</text>
+<rect x="982" y="192" width="142" height="108" rx="14" class="party"/>
+<text x="1053" y="230" class="party-title" text-anchor="middle">Party n</text>
+<text x="1053" y="257" class="party-sub" text-anchor="middle">Stoffel VM</text>
+<text x="1053" y="280" class="party-sub" text-anchor="middle">holds shares</text>
+<rect x="735" y="312" width="304" height="25" rx="4" class="label-chip"/>
+<text x="887" y="331" class="label" text-anchor="middle">Authenticated party-to-party protocol messages</text>
+<path d="M720 352 C775 406, 832 406, 887 352" class="share-arrow"/>
+<path d="M887 352 C942 406, 999 406, 1054 352" class="share-arrow"/>
+<rect x="650" y="438" width="474" height="110" rx="14" class="card"/>
+<text x="887" y="472" class="body" text-anchor="middle">Party-local preprocessing stores</text>
+<text x="887" y="499" class="small" text-anchor="middle">random shares / triples or verified material</text>
+<text x="887" y="525" class="small" text-anchor="middle">material is consumed by the selected backend</text>
+<path d="M721 438 L721 312" class="control-arrow"/>
+<path d="M887 438 L887 312" class="control-arrow"/>
+<path d="M1053 438 L1053 312" class="control-arrow"/>
+<path d="M268 214 L344 214" class="control-arrow"/>
+<text x="306" y="199" class="label" text-anchor="middle">session</text>
+<path d="M554 238 L638 238" class="control-arrow"/>
+<text x="596" y="223" class="label" text-anchor="middle">control</text>
+<path d="M268 354 C300 390, 310 450, 344 450 L590 450 C620 420, 620 350, 638 320" class="arrow"/>
+<rect x="326" y="437" width="252" height="25" rx="4" class="label-chip"/>
+<text x="452" y="455" class="label" text-anchor="middle">same artifact + manifest to every party</text>
+<path d="M268 266 C285 290, 300 318, 344 318 L590 318 C610 318, 620 290, 638 272" class="share-arrow"/>
+<rect x="370" y="306" width="170" height="25" rx="4" class="label-chip"/>
+<text x="455" y="324" class="label" text-anchor="middle">protected input delivery</text>
+<path d="M638 574 C500 600, 400 600, 268 544" class="share-arrow"/>
+<rect x="372" y="568" width="160" height="25" rx="4" class="label-chip"/>
+<text x="452" y="587" class="label" text-anchor="middle">per-party output shares</text>
+<text x="887" y="590" class="small" text-anchor="middle">No individual party receives a complete private input.</text>
+</svg>

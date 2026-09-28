@@ -1,0 +1,54 @@
+{
+  "generator": "scripts/generate_mpc_diagrams.py",
+  "outputs": [
+    {
+      "path": "images/diagrams/mpc-privacy-flow.svg",
+      "width": 1200,
+      "height": 675,
+      "dimension_ok": true,
+      "xml_ok": true,
+      "accessible_title": true,
+      "accessible_description": true,
+      "arrowheads_centered_on_stems": true,
+      "semantic_checks": {
+        "parties_named_as_parties": true,
+        "party_share_ownership_shown": true,
+        "private_state_stays_inside_boundary": true,
+        "authorized_output_only": true
+      }
+    },
+    {
+      "path": "images/diagrams/mpc-backend-selection.svg",
+      "width": 1200,
+      "height": 675,
+      "dimension_ok": true,
+      "xml_ok": true,
+      "accessible_title": true,
+      "accessible_description": true,
+      "arrowheads_centered_on_stems": true,
+      "semantic_checks": {
+        "backend_roles_separated": true,
+        "backend_topologies_separated": true,
+        "preprocessing_distinguished": true,
+        "avss_commitment_visibility_stated": true,
+        "branch_labels_clear_of_stems": true
+      }
+    },
+    {
+      "path": "images/diagrams/networked-mpc-runtime.svg",
+      "width": 1200,
+      "height": 675,
+      "dimension_ok": true,
+      "xml_ok": true,
+      "accessible_title": true,
+      "accessible_description": true,
+      "arrowheads_centered_on_stems": true,
+      "semantic_checks": {
+        "party_count_is_symbolic": true,
+        "control_and_compute_roles_separated": true,
+        "preprocessing_is_party_local": true,
+        "client_reconstruction_shown": true
+      }
+    }
+  ]
+}

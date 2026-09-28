@@ -22,11 +22,9 @@ The backend choice determines which share representation, curve/field, preproces
 
 Start from the shape of the secret work, not the name of the application.
 
-![MPC privacy flow showing private inputs split into shares, computation across MPC parties, and explicit output reconstruction.](/images/diagrams/mpc-privacy-flow.svg)
+![Backend-selection diagram comparing HoneyBadgerMPC and AVSS by representation, preprocessing, application boundary, and deployment topology.](/images/diagrams/mpc-backend-selection.svg)
 
-Select AVSS with the default curve:
-
-![Campaign-style networked privacy backend diagram showing how clients, the coordinator, preprocessing, and VM parties fit together for MPC execution.](/images/campaign/stoffel-networked-privacy-backend.png)
+This comparison is about the application boundary as well as protocol internals. HoneyBadgerMPC accepts general field-compatible values. AVSS exposes a scalar-and-curve-oriented boundary in which commitments and group encodings may be public protocol artifacts.
 
 ### Security and cost reference
 

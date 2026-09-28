@@ -5,11 +5,7 @@ description: "How Stoffel integrates with MPC backends, secret sharing, client i
 
 Use this page to understand how private client inputs move through Stoffel: input collection, secret sharing, VM execution, openings, and client-output delivery. If you are deciding which backend to use, start with [MPC Backends](../mpc-protocols/overview). If you already chose a backend and need config or runtime details, use [How Backend Selection Works](../mpc-protocols/implementation).
 
-![HoneyBadger MPC runtime diagram showing client input/output paths, coordinator-managed sessions, preprocessing, and protocol rounds among parties.](/images/diagrams/honeybadger-network.svg)
-
-![Campaign-style networked privacy backend diagram showing application clients, coordinator-managed sessions, preprocessing, party mesh communication, and authorized output delivery.](/images/campaign/stoffel-networked-privacy-backend.png)
-
-## Protocol Architecture
+![Networked MPC runtime diagram separating the application boundary, coordinator control plane, and symbolic MPC party mesh, with party-local preprocessing and client-side output reconstruction.](/images/diagrams/networked-mpc-runtime.svg)
 
 ## Protocol architecture
 
@@ -62,18 +58,19 @@ Both backends use the same high-level Stoffel application model, but they are no
 
 Each backend has its own threat model and assumptions. Do not treat “MPC backend” as a single security claim.
 
-| Backend | Security posture |
-| --- | --- |
-| HoneyBadgerMPC | Asynchronous, Byzantine-robust, field-based MPC for private computation over application values. Use it when the output boundary is an opened result or client-output shares. |
-| AVSS | Asynchronous verifiable secret sharing with Feldman-style commitments. Use it when public commitments, curve-encoded values, or scalar responses are part of the verifier-facing protocol boundary. |
+| Backend | Security posture | Deployment topology |
+| --- | --- | --- |
+| HoneyBadgerMPC | Static active-adversary model, with online guarantees conditional on valid, fresh preprocessing. Asynchronous safety does not guarantee completion against every allowed fault. | Full deployments require `n >= 4t+1`; the stronger requirement comes from preprocessing. |
+| AVSS | Feldman checks reject shares inconsistent with a public commitment. End-to-end multiplication inherits the static passive preprocessing limitation unless triples receive an independent product-relation check. | `n >= 3t+1` in preprocessing and online execution. |
 
-Current Stoffel local/network config validates:
+Here, `n` counts computing parties and `t` is the maximum corrupted-party count. Input and output clients are not included in `n`. With `t=1`, use five parties for HoneyBadgerMPC or four for AVSS:
 
 ```text
-parties >= 4 * threshold + 1
+HoneyBadgerMPC: parties >= 4 * threshold + 1
+AVSS:           parties >= 3 * threshold + 1
 ```
 
-Use five parties and threshold one for local development unless you are intentionally testing a larger topology.
+See [Security and fault model](../mpc-protocols/security-model) for phase-specific node counts, preprocessing assumptions, corruption timing, and conditional liveness.
 
 ## Data protection flow
 
